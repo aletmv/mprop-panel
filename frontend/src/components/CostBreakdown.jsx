@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Receipt, PiggyBank, Calculator } from "lucide-react";
-import { formatUSD } from "@/data/mock";
-import { buyerCosts, sellerCosts } from "@/lib/costs";
+import { Receipt, PiggyBank, Calculator, Home } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { formatUSD, formatARS } from "@/data/mock";
+import { buyerCosts, sellerCosts, TC_REFERENCIA } from "@/lib/costs";
 
 const CostRows = ({ items, idPrefix }) => (
   <div className="space-y-3">
@@ -16,7 +17,7 @@ const CostRows = ({ items, idPrefix }) => (
             <p className="text-[11px] text-[#666666] line-through">{formatUSD(it.traditional)}</p>
           )}
           <p className={`text-sm font-bold ${it.amount === 0 ? "text-[#00A650]" : ""}`}>
-            {it.amount === 0 ? "Gratis" : formatUSD(it.amount)}
+            {it.amount === 0 ? it.zeroLabel || "Gratis" : formatUSD(it.amount)}
           </p>
         </div>
       </div>
@@ -24,8 +25,27 @@ const CostRows = ({ items, idPrefix }) => (
   </div>
 );
 
+const FirstHomeToggle = ({ value, onChange, priceARS, testId }) => (
+  <div className="bg-[#F5F5F5] rounded-lg p-3 mt-4">
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2 min-w-0">
+        <Home className="h-4 w-4 text-[#3483FA] shrink-0" />
+        <div>
+          <p className="text-xs font-semibold">¿Es tu primera vivienda?</p>
+          <p className="text-[10px] text-[#666666]">Vivienda única · exención de sellos hasta $226.000.000</p>
+        </div>
+      </div>
+      <Switch checked={value} onCheckedChange={onChange} data-testid={testId} />
+    </div>
+    <p className="text-[10px] text-[#666666] mt-2">
+      Valor en pesos: <span className="font-bold">{formatARS(priceARS)}</span> · TC de referencia {formatARS(TC_REFERENCIA)}
+    </p>
+  </div>
+);
+
 export const BuyerCosts = ({ price }) => {
-  const { items, total, savings, operationTotal } = buyerCosts(price);
+  const [firstHome, setFirstHome] = useState(false);
+  const { items, total, savings, operationTotal, sellos } = buyerCosts(price, firstHome);
   return (
     <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5" data-testid="buyer-costs-card">
       <div className="flex items-center gap-2">
@@ -33,6 +53,9 @@ export const BuyerCosts = ({ price }) => {
         <h2 className="font-heading font-bold text-lg">Transparencia de gastos</h2>
       </div>
       <p className="text-xs text-[#666666] mt-1">Esto pagarías de gastos si comprás esta propiedad.</p>
+
+      <FirstHomeToggle value={firstHome} onChange={setFirstHome} priceARS={sellos.priceARS} testId="buyer-first-home-toggle" />
+
       <div className="mt-4">
         <CostRows items={items} idPrefix="buyer-cost" />
       </div>
@@ -53,8 +76,16 @@ export const BuyerCosts = ({ price }) => {
           tradicional (4%).
         </p>
       </div>
+      {sellos.exempt && (
+        <div className="bg-blue-50 rounded-lg p-3 mt-2" data-testid="buyer-sellos-exempt-note">
+          <p className="text-xs">
+            <span className="font-bold text-[#3483FA]">Sellos: exento.</span> Por ser vivienda única y no superar los
+            $226.000.000, esta operación no paga impuesto de sellos.
+          </p>
+        </div>
+      )}
       <p className="text-[10px] text-[#666666] mt-3">
-        Valores estimados para CABA. Sellos con exención parcial por vivienda única según jurisdicción.
+        Valores estimados para CABA según Ley Tarifaria vigente y TC de referencia del momento.
       </p>
     </div>
   );
@@ -62,8 +93,9 @@ export const BuyerCosts = ({ price }) => {
 
 export const SellerCostsCalculator = ({ defaultPrice = 150000 }) => {
   const [price, setPrice] = useState(String(defaultPrice));
+  const [firstHome, setFirstHome] = useState(false);
   const num = Number(price) || 0;
-  const { items, total, savings, net } = sellerCosts(num);
+  const { items, total, savings, net, sellos } = sellerCosts(num, firstHome);
   return (
     <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5" data-testid="seller-costs-card">
       <div className="flex items-center gap-2">
@@ -84,6 +116,12 @@ export const SellerCostsCalculator = ({ defaultPrice = 150000 }) => {
       />
       {num > 0 && (
         <>
+          <FirstHomeToggle
+            value={firstHome}
+            onChange={setFirstHome}
+            priceARS={sellos.priceARS}
+            testId="seller-first-home-toggle"
+          />
           <div className="mt-4">
             <CostRows items={items} idPrefix="seller-cost" />
           </div>
@@ -106,10 +144,19 @@ export const SellerCostsCalculator = ({ defaultPrice = 150000 }) => {
               inmobiliaria tradicional (2% + IVA).
             </p>
           </div>
+          {sellos.exempt && (
+            <div className="bg-blue-50 rounded-lg p-3 mt-2" data-testid="seller-sellos-exempt-note">
+              <p className="text-xs">
+                <span className="font-bold text-[#3483FA]">Sellos: exento.</span> Por ser vivienda única del comprador y
+                no superar los $226.000.000, la operación no paga impuesto de sellos.
+              </p>
+            </div>
+          )}
         </>
       )}
       <p className="text-[10px] text-[#666666] mt-3">
-        Valores estimados para CABA. No incluye ITI ni impuesto cedular, que dependen de tu situación fiscal.
+        Valores estimados para CABA según Ley Tarifaria vigente y TC de referencia. No incluye ITI ni impuesto cedular,
+        que dependen de tu situación fiscal.
       </p>
     </div>
   );
