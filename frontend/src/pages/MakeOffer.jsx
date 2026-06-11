@@ -21,7 +21,7 @@ export default function MakeOffer() {
   const setQuick = (pct) => setAmount(String(Math.round(property.price * (1 - pct))));
 
   const submit = () => {
-    addOffer({ propertyId: property.id, amount: numAmount, message });
+    addOffer({ propertyId: property.id, amount: numAmount, message, history: [{ by: "comprador", amount: numAmount }] });
     setSent(true);
     toast.success("Oferta enviada al vendedor");
   };

@@ -25,6 +25,10 @@ const seedState = {
       counterAmount: 138000,
       message: "Oferta en efectivo, escritura inmediata.",
       date: "Hace 2 días",
+      history: [
+        { by: "comprador", amount: 130000 },
+        { by: "vendedor", amount: 138000 },
+      ],
     },
   ],
   reservations: [],

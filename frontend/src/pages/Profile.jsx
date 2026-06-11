@@ -1,5 +1,17 @@
+import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { ShieldCheck, ShieldAlert, CalendarClock, Tag, Lock, Landmark, ChevronRight } from "lucide-react";
+import {
+  ShieldCheck,
+  ShieldAlert,
+  CalendarClock,
+  Tag,
+  Lock,
+  Landmark,
+  ChevronRight,
+  ArrowRightLeft,
+  User,
+  Store,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApp } from "@/context/AppContext";
@@ -35,10 +47,44 @@ export default function Profile() {
   const [params] = useSearchParams();
   const { verified, visits, offers, reservations, published, getProperty, updateOffer } = useApp();
   const tab = params.get("tab") || "propiedades";
+  const [counterFor, setCounterFor] = useState(null);
+  const [counterAmount, setCounterAmount] = useState("");
+
+  const offerHistory = (o) =>
+    o.history || [
+      { by: "comprador", amount: o.amount },
+      ...(o.counterAmount ? [{ by: "vendedor", amount: o.counterAmount }] : []),
+    ];
 
   const acceptCounter = (offer) => {
     updateOffer(offer.id, { status: "aceptada", amount: offer.counterAmount });
     toast.success("Contraoferta aceptada. ¡Ya podés reservar!");
+  };
+
+  const sendCounter = (offer) => {
+    const amt = Number(counterAmount);
+    if (!amt || amt < 1000) return;
+    const history = [...offerHistory(offer), { by: "comprador", amount: amt }];
+    updateOffer(offer.id, { status: "pendiente", amount: amt, history });
+    setCounterFor(null);
+    setCounterAmount("");
+    toast.success("Contraoferta enviada al vendedor");
+
+    const sellerLast = offer.counterAmount;
+    setTimeout(() => {
+      if (amt >= Math.round(sellerLast * 0.97)) {
+        updateOffer(offer.id, { status: "aceptada", history });
+        toast.success("¡El vendedor aceptó tu contraoferta!");
+      } else {
+        const mid = Math.round((amt + sellerLast) / 2 / 500) * 500;
+        updateOffer(offer.id, {
+          status: "contraoferta",
+          counterAmount: mid,
+          history: [...history, { by: "vendedor", amount: mid }],
+        });
+        toast.info("El vendedor envió una nueva contraoferta");
+      }
+    }, 4000);
   };
 
   return (
@@ -127,6 +173,26 @@ export default function Profile() {
                     <p className="text-xs text-[#666666] mt-0.5">{o.date}</p>
                   </div>
                 </div>
+                {offerHistory(o).length > 1 && (
+                  <div className="border-t border-gray-100 mt-3 pt-3" data-testid={`offer-history-${o.id}`}>
+                    <p className="text-[10px] uppercase tracking-widest text-[#666666] font-semibold flex items-center gap-1.5">
+                      <ArrowRightLeft className="h-3 w-3" /> Negociación
+                    </p>
+                    <div className="space-y-1.5 mt-2">
+                      {offerHistory(o).map((h, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          {h.by === "comprador" ? (
+                            <User className="h-3.5 w-3.5 text-[#3483FA]" />
+                          ) : (
+                            <Store className="h-3.5 w-3.5 text-[#666666]" />
+                          )}
+                          <span className="text-[#666666]">{h.by === "comprador" ? "Tu oferta" : "Vendedor"}</span>
+                          <span className="font-bold ml-auto">{formatUSD(h.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {o.status === "contraoferta" && (
                   <div className="bg-blue-50 rounded-lg p-3 mt-3">
                     <p className="text-xs">
@@ -141,6 +207,16 @@ export default function Profile() {
                         Aceptar
                       </button>
                       <button
+                        data-testid={`counter-offer-btn-${o.id}`}
+                        onClick={() => {
+                          setCounterFor(counterFor === o.id ? null : o.id);
+                          setCounterAmount("");
+                        }}
+                        className="flex-1 bg-[#FFE600] text-[#333333] text-xs font-semibold rounded-md py-2 hover:bg-yellow-400 transition-colors"
+                      >
+                        Contraofertar
+                      </button>
+                      <button
                         data-testid={`reject-counter-${o.id}`}
                         onClick={() => updateOffer(o.id, { status: "rechazada" })}
                         className="flex-1 border border-gray-300 text-[#666666] text-xs font-semibold rounded-md py-2 hover:bg-gray-50 transition-colors"
@@ -148,6 +224,34 @@ export default function Profile() {
                         Rechazar
                       </button>
                     </div>
+                    {counterFor === o.id && (
+                      <div className="mt-3 bg-white rounded-md p-3">
+                        <label className="text-[10px] uppercase tracking-widest text-[#666666] font-semibold">
+                          Tu nueva oferta (U$S)
+                        </label>
+                        <div className="flex gap-2 mt-1.5">
+                          <input
+                            data-testid={`counter-amount-input-${o.id}`}
+                            inputMode="numeric"
+                            value={counterAmount ? Number(counterAmount).toLocaleString("es-AR") : ""}
+                            onChange={(e) => setCounterAmount(e.target.value.replace(/\D/g, ""))}
+                            placeholder={`Entre ${formatUSD(o.amount)} y ${formatUSD(o.counterAmount)}`}
+                            className="flex-1 min-w-0 border border-gray-300 rounded-md focus:ring-[#3483FA] focus:border-[#3483FA] focus:outline-none py-2 px-3 text-sm font-semibold"
+                          />
+                          <button
+                            data-testid={`send-counter-btn-${o.id}`}
+                            onClick={() => sendCounter(o)}
+                            disabled={!Number(counterAmount) || Number(counterAmount) < 1000}
+                            className="bg-[#3483FA] text-white text-xs font-bold rounded-md px-4 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Enviar
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-[#666666] mt-1.5">
+                          El vendedor responde en minutos. Tu oferta es vinculante por 48 hs.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
                 {o.status === "aceptada" && (
