@@ -1,0 +1,69 @@
+{
+  "summary": "Frontend-only e2e testing of MercadoProp marketplace prototype (mock data, no backend). Tested 12 user flows in mobile viewport 390x844 and verified desktop 1920x1080 renders. Most flows working; found one significant test/code-quality bug with duplicate data-testid attributes on detail page action buttons.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "PropertyDetail.jsx - ActionButtons",
+        "issue": "DUPLICATE data-testid: `make-offer-btn`, `reserve-btn` and `schedule-visit-btn` each render TWICE in the DOM — one inside the desktop sidebar (wrapper div has `hidden sm:block`) and one inside the mobile fixed bottom bar (`sm:hidden`). Each viewport hides one via CSS, so user-facing functionality is OK, but Playwright's first match is always the hidden one which breaks automated testing (Element is not visible / clicks ignored). Recommended fix: pass unique testids per variant (e.g. add `compact` suffix in mobile ActionButtons, or render ActionButtons once and toggle the wrapper layout via responsive classes).",
+        "selector": "[data-testid=\"make-offer-btn\"], [data-testid=\"reserve-btn\"], [data-testid=\"schedule-visit-btn\"]",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Layout / fixed mobile action bar",
+        "issue": "The 'Made with Emergent' branded floating badge (bottom-right) overlaps the mobile fixed action bar at viewport 390x844, partially covering the 'Reservar con Mercado Pago' button. Not blocking but visually conflicting in the preview environment.",
+        "selector": ".sm:hidden.fixed.bottom-14",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Mobile detail page",
+        "issues": [
+          "Fixed action bar sits above bottom nav at bottom-14 (correct), but Emergent floating badge overlaps the reserve CTA. In production environment this won't be an issue, but worth noting."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "FIX duplicate data-testid in PropertyDetail.jsx ActionButtons component — the same button is rendered for both desktop sidebar (`hidden sm:block`) and mobile fixed bar (`sm:hidden`). This causes Playwright to click the hidden one. Suggested patch: in the `ActionButtons` component, append `-compact` to testids when `compact=true`, or render the buttons only once and switch wrapper styling responsively."
+  ],
+  "critical_code_review_comments": [
+    "DUPLICATE testids on key CTAs (schedule-visit-btn, make-offer-btn, reserve-btn) violate the data-testid uniqueness guideline. Tests had to be patched with `:visible` filter to disambiguate.",
+    "AppContext.jsx persists ALL state to localStorage but does not version-migrate. If the seed shape changes in future, users with stale localStorage will see broken UI. Consider a version check.",
+    "ScheduleVisit uses ScheduleVisit page testids `visit-slot-1000` (HHMM concatenated, removing the colon). Works but is brittle for slots like `16:30` -> `visit-slot-1630`. Document this convention.",
+    "Verification flow uses external Unsplash demo URLs (IMG.avatarM/IMG.map). If the network is slow the photo capture preview blinks, but the `capture-success-check` badge appears immediately so flow is OK.",
+    "No keyboard/aria fallbacks on custom radio-like buttons (notary cards, day/slot pickers, filters). Minor a11y concern.",
+    "Several long components (PropertyDetail.jsx ~194 lines, Publish.jsx 300+ lines) are still maintainable but trending large; consider extracting wizard step components."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (no backend by design)",
+    "frontend": "~85% (10 of 12 flows confirmed working end-to-end; 2 flows blocked by duplicate-testid test workaround but functionally OK per code review and isolated tests)"
+  },
+  "test_credentials": "None required — no auth in prototype",
+  "seed_data_creation": "None — used built-in seed (1 visit on p5, 1 counter offer on p4 = o-seed-1)",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Use viewport 390x844 (mobile-first). When testing CTAs on PropertyDetail (`schedule-visit-btn`, `make-offer-btn`, `reserve-btn`) you MUST disambiguate the duplicate DOM elements: use `page.locator('[data-testid=\"...\"]:visible').click()`. Best workflow: 1) clear localStorage, 2) navigate via card click p1, 3) test gating by clicking make-offer-btn or reserve-btn (should redirect to /verificacion?return=...). 4) Verification flow: 3 steps of `use-demo-photo-btn` → wait 800ms+ → `verification-next-btn`. After step 3, wait for processing message then up to 5s for success title '¡Identidad verificada!'. Avoid force=True on use-demo-photo-btn — standard click works reliably. 5) Escrow total for p1 = U$S 1.850 (185000 * 1%). Operation number format `MP-XXXXXXXXX`. State key in localStorage: mercadoprop_state_v1.",
+  "tests_confirmed_passing": [
+    "Home: 6 property cards visible, results-count='6 propiedades', search 'Palermo' filters to 1 card, filter Casa filters to 2 cards (p2, p6)",
+    "PropertyDetail p1: title rendered, price 'U$S 185.000' visible, gallery-dot-0/1/2 all clickable and switch image",
+    "Gating: unverified user clicking make-offer-btn (visible) → redirects to /verificacion?return=%2Foferta%2Fp1",
+    "Verification: 3-step flow with use-demo-photo-btn → capture-success-check appears → verification-next-btn → processing → success title '¡Identidad verificada!' → continue navigates to return URL",
+    "ScheduleVisit p1: visit-confirm-btn disabled until BOTH day and slot selected; selecting day only keeps it disabled (verified), selecting slot enables it; success screen → profile visits tab shows new visit alongside seed v-seed-1",
+    "Counter offer: seed offer offer-item-o-seed-1 exists with 'Contraoferta recibida' status; accept-counter-o-seed-1 → status changes and reserve-from-offer-o-seed-1 button appears",
+    "Persistence: after page reload, visits (including seed) and verification state survive in localStorage",
+    "Navigation: nav-home/nav-publish/nav-profile bottom nav and header-logo all functional",
+    "Desktop 1920x1080: home renders 6 cards correctly, no layout broken"
+  ],
+  "tests_blocked_by_test_environment": [
+    "Full E2E reserve→notary→publish chain blocked across runs because of cumulative state + duplicate-testid issue. Each piece works in isolation; recommend fixing the duplicate-testid bug first then re-running the chain."
+  ],
+  "rca_of_the_issue": "Duplicate data-testid root cause: PropertyDetail.jsx defines ActionButtons component used in two wrappers — `<div className=\"hidden sm:block ...\">` for desktop and `<div className=\"sm:hidden fixed bottom-14 ...\">` for mobile. Both render the same ActionButtons children with identical data-testid attributes. CSS only hides them visually so DOM contains two of each. Playwright's default behavior picks the first match which is the desktop one (hidden on mobile viewport), causing 'Element is not visible' errors. Mitigation in tests: use `:visible` filter. Proper fix in code: pass distinct testids based on compact prop, e.g. `data-testid={compact ? 'make-offer-btn-mobile' : 'make-offer-btn'}` or render the ActionButtons only once and use Tailwind responsive utilities on the wrapper to switch layout (flex on mobile, stacked on desktop)."
+}
