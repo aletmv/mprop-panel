@@ -8,6 +8,10 @@ export const STAGES = [
       { label: "Validación de las partes", detail: "Verificar físicamente los DNI de compradores, vendedores, cónyuges y apoderados para constatar que son quienes dicen ser." },
       { label: "Control de inhibiciones", detail: "Constatar con los certificados de última hora que ninguna de las partes esté inhibida judicialmente para vender o disponer de sus bienes." },
     ],
+    docs: [
+      { label: "DNI de las partes (escaneo)", hint: "Frente y dorso de compradores, vendedores y cónyuges" },
+      { label: "Certificado de inhibiciones", hint: "Emitido por el registro · vigencia máx. 15 días" },
+    ],
   },
   {
     title: "Fiscalización y Conteo del Dinero",
@@ -15,6 +19,10 @@ export const STAGES = [
     tasks: [
       { label: "Control del pago", detail: "Presenciar el conteo de los dólares billete físicos (o fiscalizar las transferencias bancarias de alto valor) y dejar constancia exacta en la escritura del monto y medio de pago." },
       { label: "Declaración de origen de fondos", detail: "Hacer firmar las declaraciones juradas de licitud de fondos requeridas por la Unidad de Información Financiera (UIF)." },
+    ],
+    docs: [
+      { label: "Comprobante de pago / acta de conteo", hint: "Transferencia fiscalizada o acta del conteo de billetes" },
+      { label: "DDJJ de licitud de fondos (UIF)", hint: "Firmada por ambas partes" },
     ],
   },
   {
@@ -26,6 +34,11 @@ export const STAGES = [
       { label: "Liberación de deudas", detail: "Si los certificados de ABL o expensas arrojan deudas del vendedor, retener ese dinero para saldar las cuentas y entregar la propiedad con saldo $0." },
       { label: "Comisión MercadoProp (1%)", detail: "El escribano oficia de agente de retención de la comisión del 1% de la plataforma (comprador y vendedor) y la rinde a Mercado Pago." },
     ],
+    docs: [
+      { label: "Constancia de retención de Sellos", hint: "Presentación AGIP" },
+      { label: "Constancia Ganancias Cedulares / ITI", hint: "Presentación ARCA (ex AFIP)" },
+      { label: "Certificados ABL y expensas", hint: "Libre deuda o detalle de retención" },
+    ],
   },
   {
     title: "Perfeccionamiento del Título y Firma",
@@ -33,6 +46,10 @@ export const STAGES = [
     tasks: [
       { label: "Lectura del protocolo", detail: "Leer en voz alta la Escritura Pública: nomenclatura catastral, antecedentes de dominio (estudio de títulos por 20 años) y condiciones pactadas." },
       { label: "La firma", detail: "Hacer firmar el libro de protocolo (matriz) a compradores y vendedores, y firmar dando fe pública al acto." },
+    ],
+    docs: [
+      { label: "Certificado de dominio vigente", hint: "Con reserva de prioridad" },
+      { label: "Escritura matriz firmada (escaneo)", hint: "Folio del libro de protocolo" },
     ],
   },
   {
@@ -42,8 +59,14 @@ export const STAGES = [
       { label: "Expedición del testimonio", detail: "Entregar la copia certificada provisoria (primer testimonio) al comprador." },
       { label: "Inscripción registral", detail: "Enviar el documento al Registro de la Propiedad Inmueble (DNRPI) para asentar oficialmente el cambio de titularidad." },
     ],
+    docs: [
+      { label: "Primer testimonio", hint: "Copia certificada para el comprador" },
+      { label: "Constancia de presentación DNRPI", hint: "Cargo de entrada al registro" },
+    ],
   },
 ];
+
+export const docId = (si, di) => `s${si}d${di}`;
 
 export const TOTAL_TASKS = STAGES.reduce((s, st) => s + st.tasks.length, 0);
 

@@ -1,16 +1,22 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Circle, ChevronDown, Users, Landmark, HandCoins } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, ChevronDown, Users, Landmark, HandCoins, Paperclip, FileCheck2, X } from "lucide-react";
+import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
 import { CURRENT_USER, formatUSD } from "@/data/mock";
-import { STAGES, taskId, folderProgress, retentionBreakdown } from "@/data/notaryProcess";
+import { STAGES, taskId, docId, folderProgress, retentionBreakdown } from "@/data/notaryProcess";
 import { NotaryAssistant } from "@/components/NotaryAssistant";
+
+const slug = (s) =>
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 32);
 
 export default function NotaryFolder() {
   const { resId } = useParams();
   const navigate = useNavigate();
-  const { notarySession, reservations, folderTasks, toggleFolderTask, getProperty } = useApp();
+  const { notarySession, reservations, folderTasks, folderDocs, toggleFolderTask, addFolderDoc, removeFolderDoc, getProperty } = useApp();
   const [openStage, setOpenStage] = useState(null);
+  const [pendingDoc, setPendingDoc] = useState(null);
+  const fileRef = useRef(null);
 
   if (!notarySession) return <Navigate to="/escribanos" replace />;
   const reservation = reservations.find((r) => r.id === resId && r.notaryId === notarySession);
@@ -18,9 +24,29 @@ export default function NotaryFolder() {
 
   const p = getProperty(reservation.propertyId);
   const tasks = folderTasks[resId] || {};
+  const docs = folderDocs[resId] || {};
   const prog = folderProgress(tasks);
   const ret = retentionBreakdown(p.price);
   const expanded = openStage === null ? Math.min(prog.current, STAGES.length - 1) : openStage;
+
+  const onFile = (e) => {
+    const f = e.target.files?.[0];
+    if (f && pendingDoc) {
+      addFolderDoc(resId, pendingDoc, {
+        name: f.name,
+        size: f.size > 1048576 ? `${(f.size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(f.size / 1024))} KB`,
+        date: new Date().toLocaleDateString("es-AR"),
+      });
+      toast.success("Documento adjuntado a la carpeta");
+    }
+    e.target.value = "";
+    setPendingDoc(null);
+  };
+
+  const attachDemo = (dId, label) => {
+    addFolderDoc(resId, dId, { name: `${slug(label)}.pdf`, size: "840 KB", date: new Date().toLocaleDateString("es-AR") });
+    toast.success("Documento de demo adjuntado");
+  };
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto">
@@ -67,6 +93,7 @@ export default function NotaryFolder() {
         {STAGES.map((stage, si) => {
           const stageDone = stage.tasks.every((_, ti) => tasks[taskId(si, ti)]);
           const isOpen = expanded === si;
+          const docsAttached = stage.docs.filter((_, di) => docs[docId(si, di)]).length;
           return (
             <div key={stage.title} className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
               <button
@@ -85,6 +112,14 @@ export default function NotaryFolder() {
                   <p className="font-semibold text-sm">{stage.title}</p>
                   <p className="text-[11px] text-[#666666] line-clamp-1">{stage.desc}</p>
                 </div>
+                <span
+                  data-testid={`stage-docs-count-${si}`}
+                  className={`flex items-center gap-1 text-[10px] font-bold rounded-full px-2 py-1 shrink-0 ${
+                    docsAttached === stage.docs.length ? "bg-green-50 text-[#00A650]" : "bg-gray-100 text-[#666666]"
+                  }`}
+                >
+                  <Paperclip className="h-3 w-3" /> {docsAttached}/{stage.docs.length}
+                </span>
                 <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
               </button>
 
@@ -141,12 +176,80 @@ export default function NotaryFolder() {
                       </div>
                     </div>
                   )}
+
+                  <div className="border-t border-gray-100 pt-3 mt-3" data-testid={`stage-docs-${si}`}>
+                    <p className="text-[10px] uppercase tracking-widest text-[#666666] font-semibold flex items-center gap-1.5">
+                      <Paperclip className="h-3.5 w-3.5" /> Documentación requerida · {docsAttached}/{stage.docs.length}
+                    </p>
+                    <div className="space-y-2 mt-2">
+                      {stage.docs.map((d, di) => {
+                        const dId = docId(si, di);
+                        const file = docs[dId];
+                        return file ? (
+                          <div
+                            key={dId}
+                            data-testid={`doc-attached-${dId}`}
+                            className="flex items-center gap-3 rounded-lg border border-green-100 bg-green-50/50 p-3"
+                          >
+                            <FileCheck2 className="h-5 w-5 text-[#00A650] shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold line-clamp-1">{d.label}</p>
+                              <p className="text-[11px] text-[#666666] line-clamp-1">
+                                {file.name} · {file.size} · {file.date}
+                              </p>
+                            </div>
+                            <button
+                              data-testid={`doc-remove-${dId}`}
+                              onClick={() => removeFolderDoc(resId, dId)}
+                              className="p-1.5 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                              aria-label="Quitar documento"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            key={dId}
+                            data-testid={`doc-empty-${dId}`}
+                            className="flex items-center gap-3 rounded-lg border-2 border-dashed border-gray-200 p-3"
+                          >
+                            <Paperclip className="h-5 w-5 text-gray-300 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold line-clamp-1">{d.label}</p>
+                              <p className="text-[11px] text-[#666666] line-clamp-1">{d.hint}</p>
+                            </div>
+                            <div className="flex gap-1.5 shrink-0">
+                              <button
+                                data-testid={`doc-attach-${dId}`}
+                                onClick={() => {
+                                  setPendingDoc(dId);
+                                  fileRef.current?.click();
+                                }}
+                                className="text-[11px] font-bold text-white bg-[#142A5C] hover:bg-[#1d3a7a] rounded-full px-3 py-1.5 transition-colors"
+                              >
+                                Adjuntar
+                              </button>
+                              <button
+                                data-testid={`doc-demo-${dId}`}
+                                onClick={() => attachDemo(dId, d.label)}
+                                className="text-[11px] font-bold text-[#142A5C] border border-[#142A5C]/30 hover:bg-blue-50 rounded-full px-3 py-1.5 transition-colors"
+                              >
+                                Demo
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
           );
         })}
       </div>
+
+      <input ref={fileRef} type="file" className="hidden" onChange={onFile} data-testid="folder-doc-input" />
 
       <NotaryAssistant
         ctx={{

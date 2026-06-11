@@ -42,6 +42,7 @@ const seedState = {
   published: [],
   notarySession: null,
   folderTasks: {},
+  folderDocs: {},
 };
 
 const DEMO_RESERVATIONS = [
@@ -58,12 +59,48 @@ const DEMO_FOLDER_TASKS = {
   "res-demo-4": { s0t0: true, s0t1: true, s1t0: true, s1t1: true, s2t0: true, s2t1: true, s2t2: true, s2t3: true, s3t0: true, s3t1: true, s4t0: true },
 };
 
+const dDoc = (name, size, date) => ({ name, size, date });
+const DEMO_FOLDER_DOCS = {
+  "res-demo-1": { s0d0: dDoc("dni-partes-rios-alvarez.pdf", "1,4 MB", "05/06/2026") },
+  "res-demo-2": {
+    s0d0: dDoc("dni-partes-gutierrez-martinez.pdf", "1,1 MB", "29/05/2026"),
+    s0d1: dDoc("cert-inhibiciones-712098344.pdf", "320 KB", "30/05/2026"),
+    s1d0: dDoc("acta-conteo-senia.pdf", "540 KB", "02/06/2026"),
+    s1d1: dDoc("ddjj-uif-firmada.pdf", "780 KB", "02/06/2026"),
+  },
+  "res-demo-3": {
+    s0d0: dDoc("dni-partes-funes-martinez.pdf", "1,3 MB", "21/05/2026"),
+    s0d1: dDoc("cert-inhibiciones-698455201.pdf", "310 KB", "22/05/2026"),
+    s1d0: dDoc("transferencia-fiscalizada-mp.pdf", "260 KB", "26/05/2026"),
+    s1d1: dDoc("ddjj-uif-firmada.pdf", "790 KB", "26/05/2026"),
+    s2d0: dDoc("constancia-sellos-agip.pdf", "410 KB", "30/05/2026"),
+    s2d1: dDoc("constancia-ganancias-arca.pdf", "390 KB", "30/05/2026"),
+    s2d2: dDoc("libre-deuda-abl-expensas.pdf", "350 KB", "31/05/2026"),
+  },
+  "res-demo-4": {
+    s0d0: dDoc("dni-partes-paz-alvarez.pdf", "1,5 MB", "12/05/2026"),
+    s0d1: dDoc("cert-inhibiciones-687014772.pdf", "300 KB", "13/05/2026"),
+    s1d0: dDoc("acta-conteo-completo.pdf", "620 KB", "17/05/2026"),
+    s1d1: dDoc("ddjj-uif-firmada.pdf", "800 KB", "17/05/2026"),
+    s2d0: dDoc("constancia-sellos-agip.pdf", "420 KB", "21/05/2026"),
+    s2d1: dDoc("constancia-ganancias-arca.pdf", "400 KB", "21/05/2026"),
+    s2d2: dDoc("libre-deuda-abl-expensas.pdf", "340 KB", "22/05/2026"),
+    s3d0: dDoc("cert-dominio-vigente.pdf", "280 KB", "28/05/2026"),
+    s3d1: dDoc("escritura-matriz-folio-412.pdf", "2,1 MB", "03/06/2026"),
+    s4d0: dDoc("primer-testimonio.pdf", "1,9 MB", "06/06/2026"),
+  },
+};
+
 const withDemoFolders = (s) => {
   const have = new Set(s.reservations.map((r) => r.id));
   const missing = DEMO_RESERVATIONS.filter((r) => !have.has(r.id));
-  if (!missing.length) return s;
-  return {
+  const merged = {
     ...s,
+    folderDocs: { ...DEMO_FOLDER_DOCS, ...(s.folderDocs || {}) },
+  };
+  if (!missing.length) return merged;
+  return {
+    ...merged,
     reservations: [...s.reservations, ...missing],
     folderTasks: { ...DEMO_FOLDER_TASKS, ...s.folderTasks },
   };
@@ -123,6 +160,19 @@ export const AppProvider = ({ children }) => {
       },
     }));
 
+  const addFolderDoc = (resId, dId, meta) =>
+    setState((s) => ({
+      ...s,
+      folderDocs: { ...s.folderDocs, [resId]: { ...(s.folderDocs[resId] || {}), [dId]: meta } },
+    }));
+
+  const removeFolderDoc = (resId, dId) =>
+    setState((s) => {
+      const docs = { ...(s.folderDocs[resId] || {}) };
+      delete docs[dId];
+      return { ...s, folderDocs: { ...s.folderDocs, [resId]: docs } };
+    });
+
   const allProperties = [...state.published, ...PROPERTIES];
   const getProperty = (id) => allProperties.find((p) => p.id === id);
 
@@ -142,6 +192,8 @@ export const AppProvider = ({ children }) => {
         notaryLogin,
         notaryLogout,
         toggleFolderTask,
+        addFolderDoc,
+        removeFolderDoc,
       }}
     >
       {children}
