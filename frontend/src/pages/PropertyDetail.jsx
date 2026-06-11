@@ -168,14 +168,14 @@ const ActionButtons = ({ property, goGated, navigate, compact = false }) => (
   <>
     <div className={compact ? "flex gap-2" : "space-y-3"}>
       <button
-        data-testid="schedule-visit-btn"
+        data-testid={compact ? "schedule-visit-btn-mobile" : "schedule-visit-btn"}
         onClick={() => navigate(`/visita/${property.id}`)}
         className="w-full border border-[#3483FA] text-[#3483FA] hover:bg-blue-50 font-semibold rounded-md px-4 py-3 transition-colors text-sm flex items-center justify-center gap-2"
       >
         <CalendarClock className="h-4 w-4" /> Agendar visita
       </button>
       <button
-        data-testid="make-offer-btn"
+        data-testid={compact ? "make-offer-btn-mobile" : "make-offer-btn"}
         onClick={() => goGated(`/oferta/${property.id}`)}
         className="w-full bg-[#FFE600] text-[#333333] hover:bg-yellow-400 font-semibold rounded-md px-4 py-3 transition-colors text-sm"
       >
@@ -183,7 +183,7 @@ const ActionButtons = ({ property, goGated, navigate, compact = false }) => (
       </button>
     </div>
     <button
-      data-testid="reserve-btn"
+      data-testid={compact ? "reserve-btn-mobile" : "reserve-btn"}
       onClick={() => goGated(`/reserva/${property.id}`)}
       className="w-full bg-[#3483FA] text-white hover:bg-blue-600 font-semibold rounded-md px-4 py-3 transition-colors text-sm"
     >
