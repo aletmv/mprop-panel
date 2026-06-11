@@ -49,8 +49,8 @@ export const BuyerCosts = ({ price }) => {
       <div className="bg-green-50 rounded-lg p-3 mt-4 flex gap-2.5 items-center" data-testid="buyer-costs-savings">
         <PiggyBank className="h-5 w-5 text-[#00A650] shrink-0" />
         <p className="text-xs">
-          <span className="font-bold text-[#00A650]">Ahorrás {formatUSD(savings)}</span> comprando entre personas, sin
-          comisión inmobiliaria.
+          <span className="font-bold text-[#00A650]">Ahorrás {formatUSD(savings)}</span> vs. la comisión inmobiliaria
+          tradicional (4%).
         </p>
       </div>
       <p className="text-[10px] text-[#666666] mt-3">
