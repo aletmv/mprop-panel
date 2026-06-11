@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApp } from "@/context/AppContext";
 import { CURRENT_USER, NOTARIES, formatUSD } from "@/data/mock";
 import { PropertyCard } from "@/components/PropertyCard";
+import { SellerCostsCalculator } from "@/components/CostBreakdown";
 
 const statusChip = {
   pendiente: { label: "Pendiente", cls: "bg-yellow-50 text-yellow-700" },
@@ -118,7 +119,7 @@ export default function Profile() {
           <TabsTrigger value="reservas" data-testid="tab-reservas" className="text-xs">Reservas</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="propiedades" className="mt-4">
+        <TabsContent value="propiedades" className="mt-4 space-y-4">
           {published.length === 0 ? (
             <Empty text="Todavía no publicaste ninguna propiedad." cta="Publicar mi propiedad" to="/publicar" />
           ) : (
@@ -128,6 +129,7 @@ export default function Profile() {
               ))}
             </div>
           )}
+          <SellerCostsCalculator defaultPrice={published[0]?.price || 150000} />
         </TabsContent>
 
         <TabsContent value="visitas" className="mt-4 space-y-3">

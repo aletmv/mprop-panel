@@ -43,6 +43,7 @@ Crear prototipo navegable de marketplace inmobiliario P2P con publicación de pr
 - Publicación de propiedad con wizard (aparece en home con badge "Tu publicación")
 - Contraoferta seedeada con aceptar/rechazar → CTA "Reservar ahora"
 - **Negociación multi-ronda**: tercera opción "Contraofertar" en ofertas — el comprador envía nueva oferta, el vendedor (simulado, ~4s) acepta si está dentro del 97% de su última contraoferta o responde con el punto medio; historial de negociación visible en la card (offer.history)
+- **Transparencia de gastos** (11 jun): card "Transparencia de gastos" en detalle de propiedad para el comprador (escribanía ~2%, sellos 1,75%, certificados, comisión $0 con ahorro vs. 4% tradicional, costo total de operación) + calculadora "Gastos de venta" en panel de usuario tab Avisos (comisión 1% vs. 2%+IVA, sellos, certificados, neto a recibir). Lógica en `src/lib/costs.js`, UI en `src/components/CostBreakdown.jsx`. Verificado con screenshots (cálculos correctos)
 - Persistencia localStorage tras recarga
 - Testing: iteration_1.json — 10/12 flujos OK; bug de data-testid duplicados corregido (sufijo `-mobile` en CTAs del detalle) y cadena escrow→escribanía verificada manualmente después del fix. Negociación multi-ronda verificada con screenshot tool (2 rondas + aceptación)
 

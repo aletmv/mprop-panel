@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { formatUSD, formatARS, reservationAmount, IMG } from "@/data/mock";
+import { BuyerCosts } from "@/components/CostBreakdown";
 
 export default function PropertyDetail() {
   const { id } = useParams();
@@ -104,6 +105,8 @@ export default function PropertyDetail() {
               ))}
             </div>
           </div>
+
+          <BuyerCosts price={property.price} />
 
           <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-5 pb-3">
