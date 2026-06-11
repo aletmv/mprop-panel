@@ -1,15 +1,10 @@
 import { useState } from "react";
-import { Search, ShieldCheck, Handshake, Landmark } from "lucide-react";
+import { Search } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { PropertyCard } from "@/components/PropertyCard";
+import { HeroBanner } from "@/components/HeroBanner";
 
 const FILTERS = ["Todos", "Departamento", "Casa", "PH"];
-
-const trustItems = [
-  { icon: ShieldCheck, text: "Identidad verificada con biometría" },
-  { icon: Handshake, text: "Tu reserva protegida con Mercado Pago" },
-  { icon: Landmark, text: "Escribanías auditadas en un clic" },
-];
 
 export default function Home() {
   const { allProperties, published } = useApp();
@@ -28,34 +23,20 @@ export default function Home() {
 
   return (
     <div>
-      <div className="bg-[#FFE600] px-4 pb-6 pt-2">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            data-testid="home-search-input"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscá por barrio, ciudad o tipo..."
-            className="w-full bg-white rounded-full shadow-sm border-0 py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#3483FA]"
-          />
+      <div className="bg-[#FFE600]">
+        <div className="px-4 pt-2">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              data-testid="home-search-input"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscá por barrio, ciudad o tipo..."
+              className="w-full bg-white rounded-full shadow-sm border-0 py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#3483FA]"
+            />
+          </div>
         </div>
-        <h1 className="font-heading font-extrabold text-2xl sm:text-3xl tracking-tight mt-5 leading-snug">
-          Comprá y vendé propiedades
-          <br />
-          entre personas, sin vueltas.
-        </h1>
-        <p className="text-sm text-[#333333]/80 mt-1">Con la seguridad del ecosistema Mercado Pago.</p>
-      </div>
-
-      <div className="bg-white border-b border-gray-100">
-        <div className="px-4 py-3 flex gap-4 overflow-x-auto sm:justify-center">
-          {trustItems.map(({ icon: Icon, text }) => (
-            <div key={text} className="flex items-center gap-2 shrink-0 text-xs text-[#666666]">
-              <Icon className="h-4 w-4 text-[#3483FA]" />
-              {text}
-            </div>
-          ))}
-        </div>
+        <HeroBanner />
       </div>
 
       <div className="px-4 mt-5">
