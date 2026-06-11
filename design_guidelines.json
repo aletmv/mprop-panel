@@ -1,0 +1,114 @@
+{
+  "theme": "light",
+  "archetype": "Swiss & High-Contrast",
+  "brand": {
+    "name": "MercadoProp",
+    "primary_color": "#FFE600",
+    "secondary_color": "#3483FA",
+    "success_color": "#00A650",
+    "background_color": "#F5F5F5",
+    "surface_color": "#FFFFFF",
+    "text_primary": "#333333",
+    "text_secondary": "#666666"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Manrope",
+      "weight": "800",
+      "tracking": "tracking-tight",
+      "scale": {
+        "h1": "text-4xl sm:text-5xl",
+        "h2": "text-2xl sm:text-3xl",
+        "h3": "text-xl sm:text-2xl",
+        "h4": "text-lg sm:text-xl"
+      }
+    },
+    "body": {
+      "font_family": "Work Sans",
+      "weight": "400",
+      "scale": {
+        "base": "text-base",
+        "small": "text-sm",
+        "micro": "text-xs uppercase tracking-widest"
+      }
+    }
+  },
+  "layout_and_spacing": {
+    "container": "max-w-md mx-auto sm:max-w-7xl px-4 sm:px-6 lg:px-8",
+    "cards": "bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden",
+    "inputs": "w-full border-gray-300 rounded-md focus:ring-[#3483FA] focus:border-[#3483FA] py-3 px-4",
+    "buttons": {
+      "primary": "w-full bg-[#3483FA] text-white hover:bg-blue-600 font-semibold rounded-md px-6 py-3.5 transition-colors text-center",
+      "secondary": "w-full bg-[#FFE600] text-[#333333] hover:bg-yellow-400 font-semibold rounded-md px-6 py-3.5 transition-colors text-center",
+      "outline": "w-full border border-[#3483FA] text-[#3483FA] hover:bg-blue-50 font-semibold rounded-md px-6 py-3.5 transition-colors text-center"
+    },
+    "general_spacing": "gap-4 md:gap-6",
+    "section_padding": "py-8 md:py-12"
+  },
+  "components_strategy": {
+    "navigation": "Sticky top nav for mobile. Background #FFE600. Logo text in dark. Search bar integrated. Consider bottom navigation bar for mobile app feel.",
+    "property_card": "Mobile-first width. Image top (aspect ratio 4:3), price large bold (e.g., U$S 150.000), title, location small. Minimal border radius.",
+    "wizard_publish": "Multi-step form. Prominent step indicator. Full-width 'Continuar' primary button at bottom.",
+    "biometric_validation": "Simulated camera view overlay. Clear instructions 'Subí tu selfie', 'Foto del frente del DNI', 'Foto del dorso'. Green checkmark on success (#00A650).",
+    "calendar_booking": "Clean horizontal scroll for dates or standard date picker. Distinct time slot pill buttons.",
+    "escrow_checkout": "MercadoPago style checkout summary card. Total amount, simulated retention info text. Full-width 'Pagar y Reservar' blue button.",
+    "notary_selection": "List of notary offices (Escribanías) with rating/distance. 'Seleccionar' inline button.",
+    "icons": "lucide-react for all icons (Home, Calendar, Camera, MapPin, CheckCircle, Search, User, ChevronRight)."
+  },
+  "image_urls": {
+    "properties": [
+      {
+        "url": "https://images.unsplash.com/photo-1624204386084-dd8c05e32226?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBleHRlcmlvcnxlbnwwfHx8fDE3ODExOTM2NzV8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Modern apartment building exterior",
+        "category": "property_listing"
+      },
+      {
+        "url": "https://images.pexels.com/photos/18153132/pexels-photo-18153132.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Contemporary apartment building",
+        "category": "property_listing"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1697807650304-907257330a3e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwxfHxjb3p5JTIwaG91c2UlMjBleHRlcmlvcnxlbnwwfHx8fDE3ODExOTM2NzV8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Cozy house exterior",
+        "category": "property_listing"
+      }
+    ],
+    "users": [
+      {
+        "url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGZhY2V8ZW58MHx8fHwxNzgxMTkzNjc1fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Seller or user portrait (female)",
+        "category": "avatar"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1587397845856-e6cf49176c70?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGZhY2V8ZW58MHx8fHwxNzgxMTkzNjc1fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Seller or user portrait (male)",
+        "category": "avatar"
+      }
+    ],
+    "places": [
+      {
+        "url": "https://images.pexels.com/photos/13219418/pexels-photo-13219418.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Notary office interior",
+        "category": "notary_office"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1667846789627-e6c54f1e2eff?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTF8MHwxfHNlYXJjaHwyfHxhcmdlbnRpbmElMjBjaXR5JTIwc3RyZWV0fGVufDB8fHx8MTc4MTE5MzY3NXww&ixlib=rb-4.1.0&q=85",
+        "description": "Argentina city street map background",
+        "category": "map_placeholder"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Use Manrope for headings and Work Sans for body text. Install these via Google Fonts in index.html or import in CSS.",
+    "Design mobile-first. Make it feel like a mobile web app (MercadoLibre style). Use full-width buttons and generous padding.",
+    "Implement navigation in #FFE600 with dark text/icons. Use #3483FA for primary action buttons.",
+    "Build a Multi-step Wizard for publishing properties using Shadcn forms.",
+    "For Biometric Validation, create a mock UI resembling a phone camera interface with an overlay framing the face/ID.",
+    "Use mock data with values in ARS/USD typical for Argentina (e.g., U$S 120.000, 3 Ambientes, Palermo). Use 'español rioplatense' (e.g., 'Ingresá', 'Subí tu foto').",
+    "Include 'data-testid' on all interactive elements (buttons, inputs, links).",
+    "All URLs from 'image_urls' must be used; do not use generic placeholders like via.placeholder.com.",
+    "Escrow checkout should simulate a MercadoPago payment modal/screen.",
+    "Keep the UI minimalist: ample whitespace, light gray backgrounds #F5F5F5 with stark white #FFFFFF cards.",
+    "Avoid unnecessary gradients or decorative elements not aligned with the MercadoPago brand."
+  ]
+}
