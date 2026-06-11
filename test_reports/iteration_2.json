@@ -1,0 +1,66 @@
+{
+  "summary": "Frontend-only E2E testing of the new MercadoProp Portal de Escribanías feature (/escribanos, /escribanos/panel, /escribanos/carpeta/:resId). Drove the full pre-requisite consumer flow (home → property p1 → mobile reserve → 3-step verification → escrow → notary n1) to seed a folder, then exhaustively validated login, panel stats, tabs (Carpetas/Agenda), folder detail with 5-stage checklist, retention table with MercadoProp 1%+1% commission, AI Assistant (welcome + 3 chips + free text + close), guards, logout, multi-notary (n2 empty state), persistence, and regression of marketplace home + profile. All 12 features in the request passed.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "NotaryAssistant FAB vs Emergent badge",
+        "issue": "The `ai-assistant-open` floating button (fixed bottom-5 right-4) is overlapped by the preview-only `#emergent-badge` (bottom-right) on mobile 390x844 viewport. Real users can still tap it (badge is small and not perfectly aligned), but Playwright reports pointer-event interception unless force=True or the badge is hidden. Same root-cause type as the iteration_1 mobile action bar overlap and is purely a preview-environment artifact (badge not present in production).",
+        "selector": "[data-testid=\"ai-assistant-open\"]",
+        "priority": "LOW"
+      },
+      {
+        "component": "NotaryLogin <select>",
+        "issue": "Console warning: 'In HTML, <span> cannot be a child of <option>'. The `option` body uses interpolated text `${n.name} — ${n.titular}` which the visual-editor wrapper instruments by injecting <span style='display:contents'>, producing an invalid DOM tree inside <option> and a React hydration warning. Not a runtime/user-facing bug, but should be flagged for the source-instrumentation tooling (the file itself is fine).",
+        "selector": "[data-testid=\"notary-login-select\"] option",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "OPTIONAL: raise z-index of `.ai-assistant-open` floating button or position it slightly higher (e.g. bottom-20) on mobile so the Emergent preview badge does not intercept clicks. Not blocking — user-facing UI works in production.",
+    "OPTIONAL: review the NOTARIES option rendering to suppress the React hydration warning emitted by the dev-tools instrumentation."
+  ],
+  "critical_code_review_comments": [
+    "NotaryPanel computes `totalRetentions` via `f.ret.items.find(i => i.highlight).amount` — if a future change removes the highlight flag this throws TypeError. Add `?.amount ?? 0` guard.",
+    "NotaryFolder uses `setOpenStage(isOpen ? -1 : si)` so collapsing the currently-open stage sets it to -1; the toggle UX works but means clicking the active stage header hides every task list (no open stage at all) instead of just collapsing visually. Acceptable but worth confirming intentional.",
+    "AppContext.notaryLogin/folderTasks share the same `mercadoprop_state_v1` localStorage blob with no schema versioning — same observation as iteration_1.",
+    "NotaryAssistant FAB does not have an aria-label and uses only `Sparkles` icon + text; screen readers will read 'Asistente IA' which is fine, but the close button (icon-only X) has no aria-label.",
+    "NotaryFolder's STAGES iteration uses `for (ti in range(4))` style only in tests; in code the data file allows variable task counts (1..4). Verified at runtime."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "N/A (no backend)", "frontend": "100% (12/12 feature checkpoints passed)" },
+  "test_credentials": "Portal de Escribanías: cualquier credencial. Form precargado: demo@escribania.com / demo1234. Dropdown notary n1..n4.",
+  "seed_data_creation": "Pre-requisito: vía UI se completó el flujo reserva→escribanía n1 sobre p1 (precio U$S 185.000), creando la carpeta `res-<timestamp>` con paymentId MP-XXXXXXXXX. La carpeta se persiste en localStorage key `mercadoprop_state_v1`.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Mobile viewport 390x844. Setup helper: clear localStorage 'mercadoprop_state_v1', then click property-card-p1 → reserve-btn-mobile → 3× use-demo-photo-btn+verification-next-btn → verification-continue-btn → pay-reserve-btn → choose-notary-btn → notary-card-n1 + notary-confirm-btn. This guarantees a folder exists for n1. The AI Assistant FAB is intercepted by Emergent badge in preview — use force=True click OR `document.getElementById('emergent-badge')?.remove()`. Stage 0 in NotaryFolder is OPEN by default (because openStage===null → expanded=prog.current=0). Do NOT click stage-header-0 before clicking task-s0t0 or you will toggle it closed. retention-total for p1 = U$S 18.500, MercadoProp 1%+1% line = U$S 3.700, honorarios = U$S 2.775. AI typing latency ~900ms.",
+  "tests_confirmed_passing": [
+    "PRE-REQ: full consumer flow (home p1 → reserve-mobile → verification 3 steps → escrow → notary n1) creates folder",
+    "Login portal: /escribanos default select=n1, notary-login-btn navigates to /escribanos/panel with header 'MercadoProp · Escribanías'",
+    "Panel title: 'Hola, Esc. María Inés Lagos'",
+    "Panel stats: Carpetas activas=1, Firmas pendientes=1, Comisión 1% a rendir=U$S 3.700, Honorarios proyectados=U$S 2.775",
+    "Folder card: address Palermo, buyer Joaquín Pereira, seller Sofía Martínez, progress 0/12, badge 'ETAPA 1: CONTROL DE IDENTIDAD Y CAPACIDAD LEGAL'",
+    "Tab Agenda: 2 items — Revisión de carpeta y certificados (En curso) + Firma de escritura (A coordinar)",
+    "Folder detail: header with address+partes, 5 acordeón stages, etapa 1 expanded by default, marking task-s0t0+task-s0t1 → folder-progress 2/12",
+    "Mesa de retenciones: open stage-header-2 → retention-table shows Sellos U$S 6.475, Ganancias U$S 8.325, ABL 'Sin deuda', Comisión MercadoProp (1%+1%) U$S 3.700 highlighted in yellow, retention-total U$S 18.500, honorarios U$S 2.775",
+    "Complete all 12 tasks → folder-progress 12/12 + folder-complete-badge visible 'Carpeta completa · escritura presentada en el DNRPI'",
+    "Agenda after complete: status updates to 'Firmada'/'Completada' as expected",
+    "AI Assistant: ai-assistant-open opens panel, ai-message-0 mentions 'Av. Santa Fe 4120' and etapa",
+    "AI chip retenciones: ai-typing indicator visible, reply contains '3.700' and '1%'",
+    "AI chip minuta: reply contains buyer 'Joaquín' and seller 'Sofía'",
+    "AI free input '¿qué hago con la UIF?' + ai-send: reply mentions UIF and fondos",
+    "AI close: ai-assistant-close hides panel",
+    "Persistence: page reload on /escribanos/panel maintains session and 12/12 progress (also verified between runs via localStorage)",
+    "Guards: /escribanos/panel and /escribanos/carpeta/res-x without session redirect to /escribanos",
+    "Multi-notary: login as n2 → notary-folders-empty empty state visible with explanatory text",
+    "notary-logout-btn returns to /escribanos; notary-go-marketplace returns to marketplace home",
+    "Regression: home loads hero-carousel + 6 property-card-* elements",
+    "Regression: /perfil shows profile-notary-portal-link card",
+    "Desktop 1920x1080: header has 'Escribanos' link to /escribanos (mobile hides it)"
+  ],
+  "rca_of_the_issue": "No blocking issues. The only friction encountered during automation was the preview-environment Emergent floating badge intercepting the AI Assistant FAB on mobile — identical class of issue called out in iteration_1 for the mobile reserve CTA. Mitigation: force=True click or DOM removal of #emergent-badge before clicking. Not a code defect; the badge is injected only in the Emergent preview shell and not in production."
+}

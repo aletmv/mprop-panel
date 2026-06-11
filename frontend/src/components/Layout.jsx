@@ -1,7 +1,8 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { Home, PlusSquare, User, Building2, ShieldCheck } from "lucide-react";
+import { Home, PlusSquare, User, Building2, ShieldCheck, Scale } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { NotaryShell } from "@/components/NotaryShell";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -19,6 +20,16 @@ const navItems = [
 
 export const Layout = ({ children }) => {
   const { verified } = useApp();
+  const { pathname } = useLocation();
+
+  if (pathname.startsWith("/escribanos")) {
+    return (
+      <>
+        <ScrollToTop />
+        <NotaryShell>{children}</NotaryShell>
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] font-body text-[#333333]">
@@ -47,6 +58,13 @@ export const Layout = ({ children }) => {
                 {label}
               </NavLink>
             ))}
+            <Link
+              to="/escribanos"
+              data-testid="desktop-nav-notary-portal"
+              className="text-sm font-semibold text-[#333333] hover:text-[#3483FA] transition-colors flex items-center gap-1"
+            >
+              <Scale className="h-4 w-4" /> Escribanos
+            </Link>
           </nav>
           {verified && (
             <span

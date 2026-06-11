@@ -33,12 +33,14 @@ const seedState = {
   ],
   reservations: [],
   published: [],
+  notarySession: null,
+  folderTasks: {},
 };
 
 const load = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : seedState;
+    return raw ? { ...seedState, ...JSON.parse(raw) } : seedState;
   } catch {
     return seedState;
   }
@@ -77,6 +79,18 @@ export const AppProvider = ({ children }) => {
   const addPublished = (property) =>
     setState((s) => ({ ...s, published: [{ ...property, id: `pub-${Date.now()}` }, ...s.published] }));
 
+  const notaryLogin = (notaryId) => setState((s) => ({ ...s, notarySession: notaryId }));
+  const notaryLogout = () => setState((s) => ({ ...s, notarySession: null }));
+
+  const toggleFolderTask = (resId, tId) =>
+    setState((s) => ({
+      ...s,
+      folderTasks: {
+        ...s.folderTasks,
+        [resId]: { ...(s.folderTasks[resId] || {}), [tId]: !(s.folderTasks[resId] || {})[tId] },
+      },
+    }));
+
   const allProperties = [...state.published, ...PROPERTIES];
   const getProperty = (id) => allProperties.find((p) => p.id === id);
 
@@ -93,6 +107,9 @@ export const AppProvider = ({ children }) => {
         addReservation,
         setReservationNotary,
         addPublished,
+        notaryLogin,
+        notaryLogout,
+        toggleFolderTask,
       }}
     >
       {children}

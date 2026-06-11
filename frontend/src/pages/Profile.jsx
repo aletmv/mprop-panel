@@ -308,6 +308,21 @@ export default function Profile() {
           })}
         </TabsContent>
       </Tabs>
+
+      <Link
+        to="/escribanos"
+        data-testid="profile-notary-portal-link"
+        className="mt-5 bg-[#142A5C] text-white rounded-lg p-4 flex items-center gap-3 hover:bg-[#1d3a7a] transition-colors block"
+      >
+        <span className="bg-white/10 rounded-lg p-2.5">
+          <Landmark className="h-5 w-5 text-[#FFE600]" />
+        </span>
+        <span className="flex-1">
+          <span className="block text-sm font-bold">¿Sos escribano?</span>
+          <span className="block text-xs text-white/70">Gestioná tu agenda, carpetas y Asistente IA en el Portal de Escribanías.</span>
+        </span>
+        <ChevronRight className="h-5 w-5 text-white/60" />
+      </Link>
     </div>
   );
 }
