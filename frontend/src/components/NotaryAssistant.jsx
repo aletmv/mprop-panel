@@ -53,7 +53,7 @@ export const NotaryAssistant = ({ ctx }) => {
         <button
           data-testid="ai-assistant-open"
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-4 z-40 bg-[#142A5C] text-white rounded-full pl-4 pr-5 py-3 shadow-lg hover:bg-[#1d3a7a] transition-colors flex items-center gap-2"
+          className="fixed bottom-20 sm:bottom-5 right-4 z-40 bg-[#142A5C] text-white rounded-full pl-4 pr-5 py-3 shadow-lg hover:bg-[#1d3a7a] transition-colors flex items-center gap-2"
         >
           <Sparkles className="h-5 w-5 text-[#FFE600]" />
           <span className="text-sm font-semibold">Asistente IA</span>

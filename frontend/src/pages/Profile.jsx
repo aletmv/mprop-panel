@@ -271,8 +271,10 @@ export default function Profile() {
         </TabsContent>
 
         <TabsContent value="reservas" className="mt-4 space-y-3">
-          {reservations.length === 0 && <Empty text="No tenés reservas activas." cta="Explorar propiedades" to="/" />}
-          {reservations.map((r) => {
+          {reservations.filter((r) => !r.buyer).length === 0 && (
+            <Empty text="No tenés reservas activas." cta="Explorar propiedades" to="/" />
+          )}
+          {reservations.filter((r) => !r.buyer).map((r) => {
             const p = getProperty(r.propertyId);
             const notary = NOTARIES.find((n) => n.id === r.notaryId);
             if (!p) return null;

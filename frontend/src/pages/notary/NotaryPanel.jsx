@@ -22,7 +22,7 @@ export default function NotaryPanel() {
     .filter(Boolean);
 
   const pendingSignatures = enriched.filter((f) => f.prog.current <= 3).length;
-  const totalRetentions = enriched.reduce((s, f) => s + f.ret.items.find((i) => i.highlight).amount, 0);
+  const totalRetentions = enriched.reduce((s, f) => s + (f.ret.items.find((i) => i.highlight)?.amount ?? 0), 0);
   const totalFees = enriched.reduce((s, f) => s + f.ret.fee, 0);
 
   const stats = [
@@ -84,7 +84,7 @@ export default function NotaryPanel() {
                     <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
                   </div>
                   <p className="text-xs text-[#666666] mt-0.5 flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5" /> {CURRENT_USER.name} (comprador) · {p.seller.name} (vendedor)
+                    <Users className="h-3.5 w-3.5" /> {r.buyer || CURRENT_USER.name} (comprador) · {p.seller.name} (vendedor)
                   </p>
                   <p className="text-xs text-[#666666] mt-0.5">
                     {formatUSD(p.price)} · Operación {r.paymentId}
@@ -122,7 +122,7 @@ export default function NotaryPanel() {
             {
               id: `${r.id}-firma`,
               title: `Firma de escritura — ${p.address}`,
-              sub: `${CURRENT_USER.name} y ${p.seller.name} · lectura de protocolo (~45 min)`,
+              sub: `${r.buyer || CURRENT_USER.name} y ${p.seller.name} · lectura de protocolo (~45 min)`,
               status: prog.current >= 4 ? "Firmada" : prog.current >= 3 ? "Lista para coordinar" : "A coordinar",
               done: prog.current >= 4,
             },

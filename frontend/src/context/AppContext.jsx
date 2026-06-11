@@ -37,10 +37,35 @@ const seedState = {
   folderTasks: {},
 };
 
+const DEMO_RESERVATIONS = [
+  { id: "res-demo-1", propertyId: "p2", amount: 2480, paymentId: "MP-734120985", date: "05/06/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Valentina Ríos" },
+  { id: "res-demo-2", propertyId: "p3", amount: 1000, paymentId: "MP-712098344", date: "29/05/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Marcos Gutiérrez" },
+  { id: "res-demo-3", propertyId: "p5", amount: 1560, paymentId: "MP-698455201", date: "21/05/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Camila Funes" },
+  { id: "res-demo-4", propertyId: "p6", amount: 3200, paymentId: "MP-687014772", date: "12/05/2026", status: "escribania_asignada", notaryId: "n2", buyer: "Federico Paz" },
+];
+
+const DEMO_FOLDER_TASKS = {
+  "res-demo-1": { s0t0: true },
+  "res-demo-2": { s0t0: true, s0t1: true, s1t0: true, s1t1: true, s2t0: true, s2t1: true },
+  "res-demo-3": { s0t0: true, s0t1: true, s1t0: true, s1t1: true, s2t0: true, s2t1: true, s2t2: true, s2t3: true },
+  "res-demo-4": { s0t0: true, s0t1: true, s1t0: true, s1t1: true, s2t0: true, s2t1: true, s2t2: true, s2t3: true, s3t0: true, s3t1: true, s4t0: true },
+};
+
+const withDemoFolders = (s) => {
+  const have = new Set(s.reservations.map((r) => r.id));
+  const missing = DEMO_RESERVATIONS.filter((r) => !have.has(r.id));
+  if (!missing.length) return s;
+  return {
+    ...s,
+    reservations: [...s.reservations, ...missing],
+    folderTasks: { ...DEMO_FOLDER_TASKS, ...s.folderTasks },
+  };
+};
+
 const load = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...seedState, ...JSON.parse(raw) } : seedState;
+    return withDemoFolders(raw ? { ...seedState, ...JSON.parse(raw) } : seedState);
   } catch {
     return seedState;
   }

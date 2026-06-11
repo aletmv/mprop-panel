@@ -37,7 +37,7 @@ export default function NotaryFolder() {
             </h1>
             <p className="text-xs text-[#666666]">{p.neighborhood}, {p.city} · {formatUSD(p.price)} · Op. {reservation.paymentId}</p>
             <p className="text-xs text-[#666666] mt-1 flex items-center gap-1">
-              <Users className="h-3.5 w-3.5" /> {CURRENT_USER.name} (comprador) · {p.seller.name} (vendedor)
+              <Users className="h-3.5 w-3.5" /> {reservation.buyer || CURRENT_USER.name} (comprador) · {p.seller.name} (vendedor)
             </p>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function NotaryFolder() {
         ctx={{
           p,
           price: p.price,
-          buyer: CURRENT_USER.name,
+          buyer: reservation.buyer || CURRENT_USER.name,
           seller: p.seller.name,
           stageIdx: prog.current,
           done: prog.done,
