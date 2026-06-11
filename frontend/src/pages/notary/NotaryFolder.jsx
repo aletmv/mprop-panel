@@ -47,7 +47,16 @@ export default function NotaryFolder() {
           </div>
           <span className="text-xs font-bold" data-testid="folder-progress">{prog.done}/{prog.total} tareas</span>
         </div>
-        {prog.current >= STAGES.length && (
+        {prog.current < STAGES.length ? (
+          <p className="text-xs text-[#666666] mt-2" data-testid="folder-next-stage">
+            Etapa actual: <span className="font-bold text-[#142A5C]">{STAGES[prog.current].title}</span>
+            {prog.current < STAGES.length - 1 ? (
+              <> · Próxima: <span className="font-semibold">{STAGES[prog.current + 1].title}</span></>
+            ) : (
+              <> · Última etapa del proceso</>
+            )}
+          </p>
+        ) : (
           <p className="text-xs font-bold text-[#00A650] mt-2 flex items-center gap-1" data-testid="folder-complete-badge">
             <CheckCircle2 className="h-4 w-4" /> Carpeta completa · escritura presentada en el DNRPI
           </p>

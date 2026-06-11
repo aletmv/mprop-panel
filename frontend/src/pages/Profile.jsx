@@ -18,6 +18,7 @@ import { useApp } from "@/context/AppContext";
 import { CURRENT_USER, NOTARIES, formatUSD } from "@/data/mock";
 import { PropertyCard } from "@/components/PropertyCard";
 import { SellerCostsCalculator } from "@/components/CostBreakdown";
+import { CalendarMonth, ViewToggle, parseARDate, addDaysISO } from "@/components/CalendarMonth";
 
 const statusChip = {
   pendiente: { label: "Pendiente", cls: "bg-yellow-50 text-yellow-700" },
@@ -50,6 +51,33 @@ export default function Profile() {
   const tab = params.get("tab") || "propiedades";
   const [counterFor, setCounterFor] = useState(null);
   const [counterAmount, setCounterAmount] = useState("");
+  const [visitView, setVisitView] = useState("lista");
+
+  const myReservations = reservations.filter((r) => !r.buyer);
+
+  const calendarEvents = [
+    ...visits
+      .filter((v) => v.iso)
+      .map((v) => {
+        const p = getProperty(v.propertyId);
+        return p && { date: v.iso, label: `Visita — ${p.neighborhood}`, sublabel: `${v.time} hs · ${p.address}`, color: "blue" };
+      })
+      .filter(Boolean),
+    ...myReservations
+      .filter((r) => r.notaryId)
+      .map((r) => {
+        const p = getProperty(r.propertyId);
+        return (
+          p && {
+            date: addDaysISO(parseARDate(r.date), 21),
+            label: `Firma estimada — ${p.neighborhood}`,
+            sublabel: "Coordinada por tu escribanía",
+            color: "green",
+          }
+        );
+      })
+      .filter(Boolean),
+  ];
 
   const offerHistory = (o) =>
     o.history || [
@@ -133,8 +161,13 @@ export default function Profile() {
         </TabsContent>
 
         <TabsContent value="visitas" className="mt-4 space-y-3">
-          {visits.length === 0 && <Empty text="No tenés visitas agendadas." cta="Explorar propiedades" to="/" />}
-          {visits.map((v) => {
+          {(visits.length > 0 || calendarEvents.length > 0) && (
+            <ViewToggle value={visitView} onChange={setVisitView} prefix="visits" />
+          )}
+          {visits.length === 0 && visitView === "lista" && <Empty text="No tenés visitas agendadas." cta="Explorar propiedades" to="/" />}
+          {visitView === "calendario" && <CalendarMonth events={calendarEvents} testId="visits-calendar" />}
+          {visitView === "lista" &&
+            visits.map((v) => {
             const p = getProperty(v.propertyId);
             if (!p) return null;
             return (

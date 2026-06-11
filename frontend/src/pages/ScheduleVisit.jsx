@@ -23,6 +23,7 @@ export default function ScheduleVisit() {
       propertyId: property.id,
       date: `${selectedDay.dayName} ${selectedDay.dayNum} ${selectedDay.month}`,
       time: selectedSlot,
+      iso: selectedDay.iso,
     });
     setConfirmed(true);
     toast.success("Visita agendada con éxito");

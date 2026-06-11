@@ -5,6 +5,12 @@ const AppContext = createContext(null);
 
 const STORAGE_KEY = "mercadoprop_state_v1";
 
+const nextSaturdayISO = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + (((6 - d.getDay() + 7) % 7) || 7));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 const seedState = {
   verified: false,
   visits: [
@@ -13,6 +19,7 @@ const seedState = {
       propertyId: "p5",
       date: "Próximo sábado",
       time: "11:00",
+      iso: nextSaturdayISO(),
       status: "confirmada",
     },
   ],

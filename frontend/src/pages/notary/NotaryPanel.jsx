@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { FolderOpen, CalendarDays, PenLine, HandCoins, ChevronRight, Users, Inbox } from "lucide-react";
+import { FolderOpen, CalendarDays, PenLine, HandCoins, ChevronRight, Users, Inbox, ArrowRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApp } from "@/context/AppContext";
 import { NOTARIES, CURRENT_USER, formatUSD } from "@/data/mock";
 import { STAGES, folderProgress, retentionBreakdown } from "@/data/notaryProcess";
+import { NotaryAssistant } from "@/components/NotaryAssistant";
+import { CalendarMonth, ViewToggle, parseARDate, addDaysISO } from "@/components/CalendarMonth";
 
 export default function NotaryPanel() {
   const { notarySession, reservations, folderTasks, getProperty } = useApp();
+  const [agendaView, setAgendaView] = useState("lista");
   if (!notarySession) return <Navigate to="/escribanos" replace />;
 
   const notary = NOTARIES.find((n) => n.id === notarySession);
@@ -20,6 +24,19 @@ export default function NotaryPanel() {
       return { r, p, prog, ret: retentionBreakdown(p.price) };
     })
     .filter(Boolean);
+
+  const agendaEvents = enriched.flatMap(({ r, p, prog }) => {
+    const base = parseARDate(r.date);
+    return [
+      { date: base, label: `Revisión de carpeta — ${p.neighborhood}`, sublabel: `Carpeta ${r.paymentId}`, color: prog.current >= 1 ? "green" : "navy" },
+      {
+        date: addDaysISO(base, 21),
+        label: `Firma de escritura — ${p.address}`,
+        sublabel: prog.current >= 4 ? "Firmada" : "Fecha estimada · a coordinar con las partes",
+        color: prog.current >= 4 ? "green" : "yellow",
+      },
+    ];
+  });
 
   const pendingSignatures = enriched.filter((f) => f.prog.current <= 3).length;
   const totalRetentions = enriched.reduce((s, f) => s + (f.ret.items.find((i) => i.highlight)?.amount ?? 0), 0);
@@ -98,6 +115,14 @@ export default function NotaryPanel() {
                   <span className="inline-block text-[10px] font-bold uppercase tracking-wider rounded-full px-2.5 py-1 mt-2 bg-blue-50 text-[#142A5C]">
                     {prog.current >= STAGES.length ? "Carpeta completa" : `Etapa ${prog.current + 1}: ${STAGES[prog.current].title}`}
                   </span>
+                  {prog.current < STAGES.length && (
+                    <p className="text-[11px] text-[#666666] mt-1.5 flex items-center gap-1" data-testid={`next-stage-${r.id}`}>
+                      <ArrowRight className="h-3 w-3 shrink-0" />
+                      {prog.current < STAGES.length - 1
+                        ? `Próxima: Etapa ${prog.current + 2} · ${STAGES[prog.current + 1].title}`
+                        : "Última etapa: al completarla, la carpeta queda inscripta"}
+                    </p>
+                  )}
                 </div>
               </div>
             </Link>
@@ -105,13 +130,20 @@ export default function NotaryPanel() {
         </TabsContent>
 
         <TabsContent value="agenda" className="mt-4 space-y-3">
+          {enriched.length > 0 && (
+            <ViewToggle value={agendaView} onChange={setAgendaView} prefix="notary-agenda" accent="#142A5C" />
+          )}
           {enriched.length === 0 && (
             <div className="text-center py-14 bg-white rounded-lg border border-gray-100" data-testid="notary-agenda-empty">
               <CalendarDays className="h-10 w-10 text-gray-300 mx-auto" />
               <p className="text-sm text-[#666666] mt-3">Tu agenda se completa con las firmas y revisiones de cada carpeta.</p>
             </div>
           )}
-          {enriched.flatMap(({ r, p, prog }) => [
+          {agendaView === "calendario" && enriched.length > 0 && (
+            <CalendarMonth events={agendaEvents} testId="notary-agenda-calendar" accent="#142A5C" />
+          )}
+          {agendaView === "lista" &&
+            enriched.flatMap(({ r, p, prog }) => [
             {
               id: `${r.id}-rev`,
               title: `Revisión de carpeta y certificados — ${p.neighborhood}`,
@@ -142,6 +174,20 @@ export default function NotaryPanel() {
           ))}
         </TabsContent>
       </Tabs>
+
+      <NotaryAssistant
+        mode="panel"
+        ctx={{
+          notary,
+          folders: enriched.map(({ r, p, prog, ret }) => ({
+            p,
+            prog,
+            ret,
+            buyer: r.buyer || CURRENT_USER.name,
+            tasks: folderTasks[r.id] || {},
+          })),
+        }}
+      />
     </div>
   );
 }

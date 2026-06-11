@@ -89,6 +89,46 @@ export const aiReply = (key, ctx) => {
   return replies[key] || replies.siguiente;
 };
 
+export const aiPanelReply = (key, pctx) => {
+  const { notary, folders } = pctx;
+  const stageLabel = (f) => (f.prog.current >= STAGES.length ? "Carpeta completa" : `Etapa ${f.prog.current + 1}: ${STAGES[f.prog.current].title}`);
+  const totRet = folders.reduce((s, f) => s + f.ret.total, 0);
+  const totCom = folders.reduce((s, f) => s + (f.ret.items.find((i) => i.highlight)?.amount ?? 0), 0);
+  const totFee = folders.reduce((s, f) => s + f.ret.fee, 0);
+
+  const replies = {
+    bienvenida:
+      folders.length === 0
+        ? `Hola, ${notary.titular}. Todavía no tenés carpetas activas: se crean cuando un comprador reserva una propiedad y elige tu escribanía. Mientras tanto puedo contarte cómo funciona el proceso de 5 etapas.`
+        : `Hola, ${notary.titular}. Tenés ${folders.length} carpeta${folders.length > 1 ? "s" : ""} activa${folders.length > 1 ? "s" : ""}. Puedo darte un resumen del estudio, calcular las retenciones totales o decirte qué sigue en cada operación. Para redactar minutas, entrá a la carpeta puntual y pedímela ahí.`,
+    resumen: `📁 Resumen del estudio\n\n${folders.map((f) => `• ${f.p.address} (${fmt(f.p.price)}) — ${f.buyer} / ${f.p.seller.name}\n  ${stageLabel(f)} · ${f.prog.done}/${f.prog.total} tareas`).join("\n")}`,
+    siguiente: `➡️ Próximos pasos por carpeta\n\n${folders
+      .map((f) => {
+        if (f.prog.current >= STAGES.length) return `• ${f.p.address}: carpeta completa, esperando inscripción definitiva del DNRPI.`;
+        const st = STAGES[f.prog.current];
+        const pending = st.tasks.find((_, ti) => !(f.tasks || {})[taskId(f.prog.current, ti)]) || st.tasks[0];
+        return `• ${f.p.address}: ${st.title} — siguiente tarea: ${pending.label}.`;
+      })
+      .join("\n")}`,
+    retenciones: `🧮 Retenciones totales del estudio (${folders.length} carpetas)\n\n• Total a retener en mesas de dinero: ${fmt(totRet)}\n• Comisión MercadoProp (1%+1%) a rendir: ${fmt(totCom)}\n• Honorarios proyectados (1,5%): ${fmt(totFee)}\n\nPara el detalle por operación, abrí cada carpeta y consultame ahí.`,
+    minuta: `📝 Las minutas se redactan dentro de cada carpeta, así uso los datos exactos de las partes y la operación. Abrí la carpeta correspondiente y pedime "Redactar minuta".`,
+  };
+  return replies[key] || replies.resumen;
+};
+
+export const aiPanelFree = (text, pctx) => {
+  const t = text.toLowerCase();
+  if (/(retencion|impuesto|sello|comision|honorario|ganancia)/.test(t)) return aiPanelReply("retenciones", pctx);
+  if (/(minuta|escritura|redact)/.test(t)) return aiPanelReply("minuta", pctx);
+  if (/(resumen|carpeta|estado)/.test(t)) return aiPanelReply("resumen", pctx);
+  if (/(firma|agenda|cita|coordin)/.test(t))
+    return `🖋️ Firmas pendientes:\n\n${pctx.folders
+      .filter((f) => f.prog.current < 4)
+      .map((f) => `• ${f.p.address} — ${f.buyer} y ${f.p.seller.name} (${f.prog.current >= 3 ? "lista para coordinar" : "aún en etapas previas"})`)
+      .join("\n") || "No tenés firmas pendientes."}\n\nMirá la pestaña Agenda en vista calendario para ver las fechas estimadas.`;
+  return aiPanelReply("siguiente", pctx);
+};
+
 export const aiFreeReply = (text, ctx) => {
   const t = text.toLowerCase();
   if (/(retencion|impuesto|sello|ganancia|iti|comision|abl|expensa)/.test(t)) return aiReply("retenciones", ctx);

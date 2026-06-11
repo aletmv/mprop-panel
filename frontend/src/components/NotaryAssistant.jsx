@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, X, Send } from "lucide-react";
-import { aiReply, aiFreeReply } from "@/data/notaryProcess";
+import { aiReply, aiFreeReply, aiPanelReply, aiPanelFree } from "@/data/notaryProcess";
 
 const CHIPS = [
-  { key: "resumen", label: "Resumen de la carpeta" },
+  { key: "resumen", label: "Resumen" },
   { key: "siguiente", label: "¿Qué sigue?" },
   { key: "retenciones", label: "Calcular retenciones" },
   { key: "minuta", label: "Redactar minuta" },
 ];
 
-export const NotaryAssistant = ({ ctx }) => {
+export const NotaryAssistant = ({ ctx, mode = "folder" }) => {
+  const replyFn = mode === "panel" ? aiPanelReply : aiReply;
+  const freeFn = mode === "panel" ? aiPanelFree : aiFreeReply;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -18,7 +20,7 @@ export const NotaryAssistant = ({ ctx }) => {
 
   useEffect(() => {
     if (open && messages.length === 0) {
-      setMessages([{ role: "ai", text: aiReply("bienvenida", ctx) }]);
+      setMessages([{ role: "ai", text: replyFn("bienvenida", ctx) }]);
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -36,7 +38,7 @@ export const NotaryAssistant = ({ ctx }) => {
 
   const sendChip = (chip) => {
     setMessages((m) => [...m, { role: "user", text: chip.label }]);
-    respond(aiReply(chip.key, ctx));
+    respond(replyFn(chip.key, ctx));
   };
 
   const sendFree = () => {
@@ -44,7 +46,7 @@ export const NotaryAssistant = ({ ctx }) => {
     if (!text) return;
     setInput("");
     setMessages((m) => [...m, { role: "user", text }]);
-    respond(aiFreeReply(text, ctx));
+    respond(freeFn(text, ctx));
   };
 
   return (
@@ -53,7 +55,7 @@ export const NotaryAssistant = ({ ctx }) => {
         <button
           data-testid="ai-assistant-open"
           onClick={() => setOpen(true)}
-          className="fixed bottom-20 sm:bottom-5 right-4 z-40 bg-[#142A5C] text-white rounded-full pl-4 pr-5 py-3 shadow-lg hover:bg-[#1d3a7a] transition-colors flex items-center gap-2"
+          className="fixed bottom-20 right-4 z-40 bg-[#142A5C] text-white rounded-full pl-4 pr-5 py-3 shadow-lg hover:bg-[#1d3a7a] transition-colors flex items-center gap-2"
         >
           <Sparkles className="h-5 w-5 text-[#FFE600]" />
           <span className="text-sm font-semibold">Asistente IA</span>
@@ -67,7 +69,9 @@ export const NotaryAssistant = ({ ctx }) => {
               <Sparkles className="h-5 w-5 text-[#FFE600]" />
               <div className="flex-1">
                 <p className="text-sm font-bold">Asistente IA notarial</p>
-                <p className="text-[10px] text-white/70">Conoce tu carpeta y el proceso completo · demo simulada</p>
+                <p className="text-[10px] text-white/70">
+                  {mode === "panel" ? "Vista general del estudio · demo simulada" : "Conoce tu carpeta y el proceso completo · demo simulada"}
+                </p>
               </div>
               <button data-testid="ai-assistant-close" onClick={() => setOpen(false)} className="p-1 hover:bg-white/10 rounded">
                 <X className="h-5 w-5" />
