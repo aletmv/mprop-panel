@@ -148,6 +148,9 @@ export const AppProvider = ({ children }) => {
   const addPublished = (property) =>
     setState((s) => ({ ...s, published: [{ ...property, id: `pub-${Date.now()}` }, ...s.published] }));
 
+  const removePublished = (id) =>
+    setState((s) => ({ ...s, published: s.published.filter((p) => p.id !== id) }));
+
   const notaryLogin = (notaryId) => setState((s) => ({ ...s, notarySession: notaryId }));
   const notaryLogout = () => setState((s) => ({ ...s, notarySession: null }));
 
@@ -194,6 +197,7 @@ export const AppProvider = ({ children }) => {
         toggleFolderTask,
         addFolderDoc,
         removeFolderDoc,
+        removePublished,
       }}
     >
       {children}

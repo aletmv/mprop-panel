@@ -6,6 +6,10 @@
   font-family: "Work Sans", sans-serif;
 }
 
+.font-logo {
+  font-family: "Baloo 2", "Manrope", sans-serif;
+}
+
 ::selection {
   background: #ffe600;
   color: #333333;

@@ -1,8 +1,9 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { Home, PlusSquare, User, Building2, ShieldCheck, Scale } from "lucide-react";
+import { Home, PlusSquare, User, ShieldCheck, Scale } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { NotaryShell } from "@/components/NotaryShell";
+import { Logo } from "@/components/Logo";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -36,14 +37,8 @@ export const Layout = ({ children }) => {
       <ScrollToTop />
       <header className="sticky top-0 z-40 bg-[#FFE600] shadow-sm">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" data-testid="header-logo" className="flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-[#333333]" strokeWidth={2.4} />
-            <span className="font-heading font-extrabold text-lg tracking-tight">
-              MercadoProp
-            </span>
-            <span className="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-widest bg-[#3483FA] text-white rounded-full px-2 py-0.5">
-              por Mercado Pago
-            </span>
+          <Link to="/" data-testid="header-logo" className="flex items-center">
+            <Logo />
           </Link>
           <nav className="hidden sm:flex items-center gap-6">
             {navItems.map(({ to, label, testId }) => (

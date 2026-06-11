@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Scale, LogOut, Store } from "lucide-react";
+import { LogOut, Store } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { NOTARIES } from "@/data/mock";
+import { Logo } from "@/components/Logo";
 
 export const NotaryShell = ({ children }) => {
   const { notarySession, notaryLogout } = useApp();
@@ -11,12 +12,9 @@ export const NotaryShell = ({ children }) => {
   return (
     <div className="min-h-screen bg-[#F0F2F7] font-body text-[#333333]">
       <header className="sticky top-0 z-40 bg-[#142A5C] text-white shadow-md">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <Link to={notarySession ? "/escribanos/panel" : "/escribanos"} data-testid="notary-header-logo" className="flex items-center gap-2 min-w-0">
-            <Scale className="h-5 w-5 text-[#FFE600] shrink-0" />
-            <span className="font-heading font-extrabold text-base tracking-tight truncate">
-              MercadoProp <span className="text-[#FFE600]">· Escribanías</span>
-            </span>
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+          <Link to={notarySession ? "/escribanos/panel" : "/escribanos"} data-testid="notary-header-logo" className="flex items-center min-w-0">
+            <Logo variant="dark" tag="Escribanías" />
           </Link>
           <div className="flex items-center gap-3 shrink-0">
             {notary && (

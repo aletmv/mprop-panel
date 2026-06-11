@@ -11,6 +11,7 @@ import {
   ArrowRightLeft,
   User,
   Store,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,11 +48,18 @@ const Empty = ({ text, cta, to }) => (
 export default function Profile() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { verified, visits, offers, reservations, published, getProperty, updateOffer } = useApp();
+  const { verified, visits, offers, reservations, published, getProperty, updateOffer, removePublished } = useApp();
   const tab = params.get("tab") || "propiedades";
   const [counterFor, setCounterFor] = useState(null);
   const [counterAmount, setCounterAmount] = useState("");
   const [visitView, setVisitView] = useState("lista");
+  const [unpubConfirm, setUnpubConfirm] = useState(null);
+
+  const unpublish = (p) => {
+    removePublished(p.id);
+    setUnpubConfirm(null);
+    toast.success("Publicación dada de baja");
+  };
 
   const myReservations = reservations.filter((r) => !r.buyer);
 
@@ -153,7 +161,35 @@ export default function Profile() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {published.map((p) => (
-                <PropertyCard key={p.id} property={p} mine />
+                <div key={p.id}>
+                  <PropertyCard property={p} mine />
+                  {unpubConfirm === p.id ? (
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        data-testid={`confirm-unpublish-${p.id}`}
+                        onClick={() => unpublish(p)}
+                        className="flex-1 bg-red-500 text-white text-xs font-bold rounded-md py-2.5 hover:bg-red-600 transition-colors"
+                      >
+                        Confirmar baja
+                      </button>
+                      <button
+                        data-testid={`cancel-unpublish-${p.id}`}
+                        onClick={() => setUnpubConfirm(null)}
+                        className="flex-1 border border-gray-300 text-[#666666] text-xs font-semibold rounded-md py-2.5 hover:bg-gray-50 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      data-testid={`unpublish-${p.id}`}
+                      onClick={() => setUnpubConfirm(p.id)}
+                      className="w-full flex items-center justify-center gap-1.5 border border-red-200 text-red-500 text-xs font-semibold rounded-md py-2.5 mt-2 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Dar de baja
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           )}
