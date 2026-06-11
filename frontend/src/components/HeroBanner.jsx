@@ -15,9 +15,9 @@ const SLIDES = [
     icon: Calculator,
   },
   {
-    kicker: "Identidad biométrica",
-    title: "Filtro anti-curiosos definitivo.",
-    text: "Validación por DNI y reconocimiento facial en tiempo real a través del RENAPER para coordinar visitas 100% seguras.",
+    kicker: "Visitas Seguras",
+    title: "Cuidamos tu casa y a tu familia.",
+    text: "Solo le abrís la puerta a personas con identidad real, validadas mediante reconocimiento facial y cruce de datos con el RENAPER.",
     icon: ScanFace,
   },
   {
