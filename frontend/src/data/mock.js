@@ -235,6 +235,13 @@ export const NOTARIES = [
   },
 ];
 
+export const PHOTOGRAPHERS = [
+  { id: "f1", name: "Lucía Benítez", avatar: IMG.avatarF, rating: 4.9, reviews: 182, zone: "CABA y GBA Norte", tag: "Drone + tour 360 incluido", price: 90, ig: "lucia.inmofoto" },
+  { id: "f2", name: "Tomás Aguirre", avatar: IMG.avatarM, rating: 4.8, reviews: 140, zone: "CABA", tag: "Entrega en 24 hs", price: 75, ig: "tomi.aguirre.ph" },
+  { id: "f3", name: "Carla Méndez", avatar: IMG.avatarF, rating: 4.7, reviews: 98, zone: "Zona Oeste y CABA", tag: "Especialista en interiores", price: 70, ig: "carlamendez.estudio" },
+  { id: "f4", name: "Julián Soto", avatar: IMG.avatarM, rating: 4.6, reviews: 75, zone: "GBA Sur", tag: "Foto + video reel", price: 65, ig: "juliansoto.realestate" },
+];
+
 export const TIME_SLOTS = ["10:00", "11:00", "12:00", "14:00", "15:00", "16:30", "18:00"];
 
 export const formatUSD = (n) => `U$S ${Number(n).toLocaleString("es-AR")}`;

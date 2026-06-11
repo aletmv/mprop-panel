@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ImagePlus, ShieldCheck, ShieldAlert, CheckCircle2, PartyPopper } from "lucide-react";
+import { ArrowLeft, ImagePlus, ShieldCheck, ShieldAlert, CheckCircle2, PartyPopper, Camera, Star, Instagram } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
-import { CURRENT_USER, IMG, formatUSD } from "@/data/mock";
+import { CURRENT_USER, IMG, PHOTOGRAPHERS, formatUSD } from "@/data/mock";
 
 const TYPES = ["Departamento", "Casa", "PH"];
 
@@ -27,6 +27,7 @@ export default function Publish() {
     description: "",
     price: "",
     photos: [],
+    photographerId: null,
   });
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -40,6 +41,7 @@ export default function Publish() {
     form.m2 && Number(form.m2) > 0,
     form.address && form.neighborhood,
     form.title && form.price && Number(form.price) > 0,
+    true,
     verified,
   ][step];
 
@@ -70,6 +72,7 @@ export default function Publish() {
   };
 
   if (done) {
+    const photog = PHOTOGRAPHERS.find((f) => f.id === form.photographerId);
     return (
       <div className="px-4 py-16 max-w-md mx-auto text-center">
         <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-8">
@@ -83,6 +86,15 @@ export default function Publish() {
             {form.title} ya aparece en el marketplace por {formatUSD(Number(form.price))}. Te avisamos cuando recibas
             visitas u ofertas.
           </p>
+          {photog && (
+            <p className="text-sm bg-blue-50 rounded-lg p-3 mt-3 flex items-center gap-2 text-left" data-testid="publish-success-photographer">
+              <Camera className="h-4 w-4 text-[#3483FA] shrink-0" />
+              <span className="text-xs">
+                <span className="font-bold">{photog.name}</span> te va a contactar en 24 hs para coordinar la sesión de
+                fotos profesional.
+              </span>
+            </p>
+          )}
           <button
             data-testid="publish-view-listing-btn"
             onClick={() => navigate("/")}
@@ -95,7 +107,7 @@ export default function Publish() {
     );
   }
 
-  const stepTitles = ["Datos de la propiedad", "Ubicación", "Fotos y precio", "Verificación y publicación"];
+  const stepTitles = ["Datos de la propiedad", "Ubicación", "Fotos y precio", "Fotografía profesional", "Verificación y publicación"];
 
   return (
     <div className="px-4 py-6 max-w-md mx-auto">
@@ -114,7 +126,7 @@ export default function Publish() {
       </div>
 
       <p className="text-xs uppercase tracking-widest text-[#666666] font-semibold mt-6">
-        Publicá tu propiedad · Paso {step + 1} de 4
+        Publicá tu propiedad · Paso {step + 1} de 5
       </p>
       <h1 className="font-heading font-extrabold text-2xl tracking-tight mt-1" data-testid="publish-step-title">
         {stepTitles[step]}
@@ -277,6 +289,74 @@ export default function Publish() {
 
         {step === 3 && (
           <>
+            <p className="text-xs text-[#666666] -mt-1">
+              Las publicaciones con fotos profesionales reciben hasta 3 veces más visitas. Elegí un fotógrafo del pool
+              de MercadoProp o seguí con tus propias fotos.
+            </p>
+            <button
+              data-testid="photographer-skip"
+              onClick={() => set("photographerId", null)}
+              className={`w-full flex items-center gap-3 rounded-lg border p-3.5 text-left transition-colors ${
+                form.photographerId === null ? "border-[#3483FA] ring-1 ring-[#3483FA]" : "border-gray-200 hover:border-[#3483FA]"
+              }`}
+            >
+              <span className="bg-[#F5F5F5] rounded-full p-2.5">
+                <Camera className="h-5 w-5 text-[#666666]" />
+              </span>
+              <span className="flex-1">
+                <span className="block text-sm font-semibold">Voy a usar mis propias fotos</span>
+                <span className="block text-xs text-[#666666]">Sin costo · usás las fotos que subiste en el paso anterior</span>
+              </span>
+              {form.photographerId === null && <CheckCircle2 className="h-5 w-5 text-[#3483FA] shrink-0" />}
+            </button>
+
+            <div className="space-y-2">
+              {PHOTOGRAPHERS.map((f) => (
+                <button
+                  key={f.id}
+                  data-testid={`photographer-card-${f.id}`}
+                  onClick={() => set("photographerId", f.id)}
+                  className={`w-full flex items-start gap-3 rounded-lg border p-3.5 text-left transition-colors ${
+                    form.photographerId === f.id ? "border-[#3483FA] ring-1 ring-[#3483FA]" : "border-gray-200 hover:border-[#3483FA]"
+                  }`}
+                >
+                  <img src={f.avatar} alt={f.name} className="h-12 w-12 rounded-full object-cover shrink-0" />
+                  <span className="flex-1 min-w-0">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold">{f.name}</span>
+                      {form.photographerId === f.id && <CheckCircle2 className="h-5 w-5 text-[#3483FA] shrink-0" />}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-[#666666] mt-0.5">
+                      <Star className="h-3.5 w-3.5 fill-[#FFE600] text-[#FFE600]" />
+                      <span className="font-bold text-[#333333]">{f.rating}</span> ({f.reviews} reseñas) · {f.zone}
+                    </span>
+                    <span className="block text-[11px] text-[#00A650] font-semibold mt-0.5">{f.tag}</span>
+                    <span className="flex items-center justify-between mt-1.5">
+                      <a
+                        href={`https://instagram.com/${f.ig}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        data-testid={`photographer-ig-${f.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 text-[11px] font-semibold text-[#3483FA] hover:underline"
+                      >
+                        <Instagram className="h-3.5 w-3.5" /> @{f.ig}
+                      </a>
+                      <span className="text-xs font-bold">{formatUSD(f.price)} · sesión</span>
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-[#666666]">
+              La sesión se abona vía Mercado Pago al coordinar la visita del fotógrafo. Podés cancelar sin costo hasta
+              24 hs antes.
+            </p>
+          </>
+        )}
+
+        {step === 4 && (
+          <>
             {verified ? (
               <div className="bg-green-50 rounded-lg p-4 flex gap-3" data-testid="publish-verified-ok">
                 <ShieldCheck className="h-5 w-5 text-[#00A650] shrink-0 mt-0.5" />
@@ -310,6 +390,7 @@ export default function Publish() {
                 ["Ubicación", `${form.address}, ${form.neighborhood}`],
                 ["Título", form.title],
                 ["Precio", form.price ? formatUSD(Number(form.price)) : "—"],
+                ["Fotografía", form.photographerId ? `${PHOTOGRAPHERS.find((f) => f.id === form.photographerId).name} (${formatUSD(PHOTOGRAPHERS.find((f) => f.id === form.photographerId).price)})` : "Fotos propias"],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-4">
                   <span className="text-[#666666]">{k}</span>
@@ -326,11 +407,11 @@ export default function Publish() {
 
       <button
         data-testid="publish-next-btn"
-        onClick={() => (step < 3 ? setStep(step + 1) : publish())}
+        onClick={() => (step < 4 ? setStep(step + 1) : publish())}
         disabled={!canNext}
         className="w-full bg-[#3483FA] text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold rounded-md px-6 py-3.5 transition-colors mt-5"
       >
-        {step < 3 ? "Continuar" : "Publicar propiedad"}
+        {step < 4 ? "Continuar" : "Publicar propiedad"}
       </button>
     </div>
   );
