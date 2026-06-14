@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Lock, Wallet, CreditCard, Loader2, CheckCircle2, ChevronRight } from "lucide-react";
+import { ArrowLeft, Lock, Wallet, CreditCard, Loader2, CheckCircle2, ChevronRight, ShieldAlert, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { formatUSD, reservationAmount } from "@/data/mock";
 
@@ -14,9 +14,13 @@ export default function EscrowCheckout() {
   const [phase, setPhase] = useState("summary"); // summary | processing | success
   const [resId, setResId] = useState(null);
   const [opNumber, setOpNumber] = useState("");
+  const [acceptForfeit, setAcceptForfeit] = useState(false);
+  const [acceptRole, setAcceptRole] = useState(false);
 
   if (!property) return null;
   const amount = reservationAmount(property.price);
+  const senaAmount = Math.round(property.price * 0.04);
+  const canPay = acceptForfeit && acceptRole;
 
   const pay = () => {
     setPhase("processing");
@@ -129,6 +133,106 @@ export default function EscrowCheckout() {
         </div>
       </div>
 
+      <h2 className="text-xs uppercase tracking-widest text-[#666666] font-semibold mt-6">Condiciones de la reserva</h2>
+      <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5 mt-3" data-testid="reservation-conditions-card">
+        <div className="flex items-start gap-3">
+          <span className="bg-orange-50 rounded-full p-2 shrink-0">
+            <ShieldAlert className="h-5 w-5 text-orange-500" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-semibold text-sm">Reglas que aceptás al reservar</p>
+            <p className="text-xs text-[#666666] mt-0.5">Leelas antes de avanzar al pago.</p>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-100 mt-4 pt-4 space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-[#666666]">Monto de reserva</span>
+            <span className="font-semibold" data-testid="cond-amount">{formatUSD(amount)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#666666]">Equivale al</span>
+            <span className="font-semibold">1% del precio acordado</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#666666]">Destino inicial</span>
+            <span className="font-semibold text-right max-w-[60%]">Cuenta transaccional de la operación</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#666666]">Próximo paso</span>
+            <span className="font-semibold">Selección de autoridad notarial</span>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-100 mt-4 pt-4 space-y-3 text-xs leading-relaxed text-[#333333]">
+          <p>
+            <span className="font-bold">Luego de la revisión notarial:</span> si no hay observaciones, alertas o
+            inconsistencias que impidan avanzar, deberás integrar la <span className="font-bold">seña del 4%</span>{" "}
+            (<span className="font-semibold">{formatUSD(senaAmount)}</span>) dentro de las{" "}
+            <span className="font-bold">72 horas</span>.
+          </p>
+          <p className="bg-red-50 border border-red-100 text-red-700 rounded-md p-3">
+            <span className="font-bold">Si no integrás la seña a tiempo:</span> la reserva podrá transferirse al
+            vendedor como compensación y la operación se dará por caída.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-3 mt-4">
+        <label
+          data-testid="accept-forfeit-checkbox"
+          className={`flex gap-3 items-start bg-white rounded-lg border p-4 cursor-pointer transition-colors ${
+            acceptForfeit ? "border-[#3483FA] ring-1 ring-[#3483FA]" : "border-gray-200"
+          }`}
+        >
+          <span
+            className={`h-5 w-5 rounded border-2 shrink-0 mt-0.5 flex items-center justify-center ${
+              acceptForfeit ? "border-[#3483FA] bg-[#3483FA]" : "border-gray-300 bg-white"
+            }`}
+          >
+            {acceptForfeit && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+          </span>
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={acceptForfeit}
+            onChange={(e) => setAcceptForfeit(e.target.checked)}
+          />
+          <span className="text-xs leading-relaxed">
+            Entiendo que, si la autoridad notarial no registra observaciones, alertas o inconsistencias que impidan
+            avanzar, tendré <span className="font-bold">72 horas para integrar la seña del 4%</span>. Si no lo hago
+            dentro de ese plazo, el monto de la reserva podrá transferirse al vendedor como compensación y la
+            operación se dará por caída.
+          </span>
+        </label>
+
+        <label
+          data-testid="accept-role-checkbox"
+          className={`flex gap-3 items-start bg-white rounded-lg border p-4 cursor-pointer transition-colors ${
+            acceptRole ? "border-[#3483FA] ring-1 ring-[#3483FA]" : "border-gray-200"
+          }`}
+        >
+          <span
+            className={`h-5 w-5 rounded border-2 shrink-0 mt-0.5 flex items-center justify-center ${
+              acceptRole ? "border-[#3483FA] bg-[#3483FA]" : "border-gray-300 bg-white"
+            }`}
+          >
+            {acceptRole && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+          </span>
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={acceptRole}
+            onChange={(e) => setAcceptRole(e.target.checked)}
+          />
+          <span className="text-xs leading-relaxed">
+            Entiendo que <span className="font-bold">MercadoProp coordina la operación</span> y ejecuta las
+            condiciones aceptadas por las partes, pero <span className="font-bold">no decide discrecionalmente</span>{" "}
+            sobre el destino de los fondos.
+          </span>
+        </label>
+      </div>
+
       <h2 className="text-xs uppercase tracking-widest text-[#666666] font-semibold mt-6">Medio de pago</h2>
       <div className="space-y-2 mt-3">
         <button
@@ -176,9 +280,14 @@ export default function EscrowCheckout() {
       <button
         data-testid="pay-reserve-btn"
         onClick={pay}
-        className="w-full bg-[#3483FA] text-white hover:bg-blue-600 font-semibold rounded-md px-6 py-3.5 transition-colors mt-5"
+        disabled={!canPay}
+        className={`w-full font-semibold rounded-md px-6 py-3.5 transition-colors mt-5 ${
+          canPay
+            ? "bg-[#3483FA] text-white hover:bg-blue-600"
+            : "bg-gray-200 text-gray-400 cursor-not-allowed"
+        }`}
       >
-        Pagar y reservar {formatUSD(amount)}
+        {canPay ? `Pagar y reservar ${formatUSD(amount)}` : "Aceptá las condiciones para continuar"}
       </button>
       <p className="text-[11px] text-[#666666] text-center mt-3">
         Pago simulado en modo test. No se realizará ningún cargo real.
