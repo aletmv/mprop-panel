@@ -23,20 +23,22 @@ export default function Home() {
 
   return (
     <div>
-      <div className="bg-[#FFE600]">
-        <div className="px-4 pt-2">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              data-testid="home-search-input"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscá por barrio, ciudad o tipo..."
-              className="w-full bg-white rounded-full shadow-sm border-0 py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#3483FA]"
-            />
+      <div className="bg-[#FFE600] relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen">
+        <div className="max-w-5xl mx-auto">
+          <div className="px-4 pt-2">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                data-testid="home-search-input"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscá por barrio, ciudad o tipo..."
+                className="w-full bg-white rounded-full shadow-sm border-0 py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#3483FA]"
+              />
+            </div>
           </div>
+          <HeroBanner />
         </div>
-        <HeroBanner />
       </div>
 
       <div className="px-4 mt-5">
