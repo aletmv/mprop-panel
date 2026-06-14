@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Clock, CheckCircle2, Landmark, Circle } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Clock, CheckCircle2, Landmark, Circle, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
 import { NOTARIES, formatUSD } from "@/data/mock";
@@ -31,38 +31,87 @@ export default function NotarySelection() {
 
   if (done) {
     const notary = NOTARIES.find((n) => n.id === selected);
+    // Bóveda digital number: deterministic 7-digit derived from resId
+    const seed = String(resId).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+    const vaultNumber = String(1000000 + ((seed * 7919) % 9000000)).padStart(7, "0");
+
     const timeline = [
-      { label: "Reserva pagada y retenida en custodia", done: true },
-      { label: `Escribanía asignada: ${notary.name}`, done: true },
-      { label: "Firma del boleto de compraventa", done: false },
-      { label: "Escritura y liberación de fondos", done: false },
+      { label: "Reserva pagada", status: "done" },
+      { label: `Escribanía asignada: ${notary.name}`, status: "done" },
+      { label: "Revisión de la documentación del inmueble y titular", status: "current" },
+      { label: "Habilitación de seña del 4%", status: "pending" },
+      { label: "Habilitación de pago de tasas, impuestos y honorarios", status: "pending" },
+      { label: "Liquidación final de la operación", status: "pending" },
+      { label: "Firma del boleto de compraventa", status: "pending" },
+      { label: "Habilitación para el pago del saldo restante ante escribano", status: "pending" },
+      { label: "Escrituración", status: "pending" },
     ];
+
     return (
       <div className="px-4 py-12 max-w-md mx-auto">
-        <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-8 text-center">
-          <span className="inline-flex bg-green-50 rounded-full p-4">
-            <CheckCircle2 className="h-12 w-12 text-[#00A650]" />
-          </span>
-          <h1 className="font-heading font-extrabold text-2xl tracking-tight mt-4" data-testid="notary-success-title">
-            ¡Reserva completa!
-          </h1>
-          <p className="text-sm text-[#666666] mt-2">
-            {notary.titular} se pondrá en contacto en las próximas 24 hs para coordinar la firma del boleto.
-          </p>
-          <div className="text-left mt-6 space-y-4">
-            {timeline.map(({ label, done: isDone }, i) => (
-              <div key={label} className="flex gap-3 items-start">
-                {isDone ? (
-                  <CheckCircle2 className="h-5 w-5 text-[#00A650] shrink-0" />
-                ) : (
-                  <Circle className="h-5 w-5 text-gray-300 shrink-0" />
-                )}
-                <p className={`text-sm ${isDone ? "font-semibold" : "text-[#666666]"}`} data-testid={`timeline-step-${i}`}>
-                  {label}
-                </p>
-              </div>
-            ))}
+        <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-8">
+          <div className="text-center">
+            <span className="inline-flex bg-green-50 rounded-full p-4">
+              <CheckCircle2 className="h-12 w-12 text-[#00A650]" />
+            </span>
+            <h1 className="font-heading font-extrabold text-2xl tracking-tight mt-4" data-testid="notary-success-title">
+              Reserva acreditada
+            </h1>
+            <p className="text-sm text-[#666666] mt-2">
+              Se creó la bóveda digital de la operación{" "}
+              <span className="font-bold text-[#333333]" data-testid="vault-number">
+                MercadoProp #{vaultNumber}
+              </span>
+              .
+            </p>
           </div>
+
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex gap-3 mt-5">
+            <ShieldCheck className="h-5 w-5 text-[#3483FA] shrink-0 mt-0.5" />
+            <p className="text-xs leading-relaxed text-[#333333]">
+              La escribanía asignada iniciará la recolección y revisión de la documentación del inmueble y del
+              titular. Si no detecta impedimentos para avanzar, se habilitará el pago de la{" "}
+              <span className="font-bold">seña del 4%</span>. Desde ese momento tendrás{" "}
+              <span className="font-bold">72 hs</span> para integrarla.
+            </p>
+          </div>
+
+          <p className="text-xs uppercase tracking-widest text-[#666666] font-semibold mt-6">Próximos pasos</p>
+          <div className="mt-3 space-y-3" data-testid="reservation-timeline">
+            {timeline.map(({ label, status }, i) => {
+              const isDone = status === "done";
+              const isCurrent = status === "current";
+              return (
+                <div key={label} className="flex gap-3 items-start">
+                  {isDone && <CheckCircle2 className="h-5 w-5 text-[#00A650] shrink-0 mt-0.5" />}
+                  {isCurrent && (
+                    <span className="h-5 w-5 shrink-0 mt-0.5 inline-flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 text-[#3483FA] animate-spin" />
+                    </span>
+                  )}
+                  {status === "pending" && <Circle className="h-5 w-5 text-gray-300 shrink-0 mt-0.5" />}
+                  <p
+                    className={`text-sm leading-snug ${
+                      isDone
+                        ? "font-semibold text-[#333333]"
+                        : isCurrent
+                        ? "font-semibold text-[#3483FA]"
+                        : "text-[#666666]"
+                    }`}
+                    data-testid={`timeline-step-${i}`}
+                  >
+                    {label}
+                    {isCurrent && (
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-widest bg-blue-100 text-[#3483FA] rounded-full px-2 py-0.5 align-middle">
+                        En curso
+                      </span>
+                    )}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
           <button
             data-testid="notary-go-profile-btn"
             onClick={() => navigate("/perfil?tab=reservas")}
