@@ -5,12 +5,12 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { HeroBanner } from "@/components/HeroBanner";
 
 const CATEGORIES = [
-  { key: "Todos", label: "Todos", icon: LayoutGrid, color: "bg-blue-50 text-[#3483FA]" },
-  { key: "Departamento", label: "Departamento", icon: Building2, color: "bg-amber-50 text-amber-600" },
-  { key: "Casa", label: "Casa", icon: HomeIcon, color: "bg-emerald-50 text-emerald-600" },
-  { key: "PH", label: "PH", icon: Building, color: "bg-rose-50 text-rose-600" },
-  { key: "Lote", label: "Lote", icon: Map, color: "bg-orange-50 text-orange-600" },
-  { key: "Terreno", label: "Terreno", icon: Trees, color: "bg-lime-50 text-lime-700" },
+  { key: "Todos", label: "Todos", icon: LayoutGrid },
+  { key: "Departamento", label: "Departamento", icon: Building2 },
+  { key: "Casa", label: "Casa", icon: HomeIcon },
+  { key: "PH", label: "PH", icon: Building },
+  { key: "Lote", label: "Lote", icon: Map },
+  { key: "Terreno", label: "Terreno", icon: Trees },
 ];
 
 export default function Home() {
@@ -51,7 +51,7 @@ export default function Home() {
       <div className="px-4 mt-5">
         <h2 className="font-heading font-extrabold text-lg tracking-tight text-[#333333]">Explorá por tipo</h2>
         <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 mt-3 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {CATEGORIES.map(({ key, label, icon: Icon, color }) => {
+          {CATEGORIES.map(({ key, label, icon: Icon }) => {
             const active = filter === key;
             return (
               <button
@@ -61,14 +61,12 @@ export default function Home() {
                 className="shrink-0 flex flex-col items-center gap-2 group focus:outline-none"
               >
                 <span
-                  className={`h-20 w-20 sm:h-24 sm:w-24 rounded-2xl flex items-center justify-center transition-all ${
-                    active
-                      ? "bg-[#3483FA] ring-4 ring-blue-100 shadow-md"
-                      : `${color} group-hover:scale-[1.03] group-hover:shadow-sm`
+                  className={`h-20 w-20 sm:h-24 sm:w-24 rounded-2xl flex items-center justify-center bg-[#F5F5F5] transition-colors border-2 ${
+                    active ? "border-[#3483FA]" : "border-transparent"
                   }`}
                 >
                   <Icon
-                    className={`h-9 w-9 sm:h-11 sm:w-11 ${active ? "text-white" : ""}`}
+                    className={`h-9 w-9 sm:h-11 sm:w-11 ${active ? "text-[#3483FA]" : "text-[#333333]"}`}
                     strokeWidth={1.8}
                   />
                 </span>
