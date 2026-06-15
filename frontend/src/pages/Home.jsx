@@ -1,10 +1,17 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, LayoutGrid, Building2, Home as HomeIcon, Building, Map, Trees } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { PropertyCard } from "@/components/PropertyCard";
 import { HeroBanner } from "@/components/HeroBanner";
 
-const FILTERS = ["Todos", "Departamento", "Casa", "PH"];
+const CATEGORIES = [
+  { key: "Todos", label: "Todos", icon: LayoutGrid, color: "bg-blue-50 text-[#3483FA]" },
+  { key: "Departamento", label: "Departamento", icon: Building2, color: "bg-amber-50 text-amber-600" },
+  { key: "Casa", label: "Casa", icon: HomeIcon, color: "bg-emerald-50 text-emerald-600" },
+  { key: "PH", label: "PH", icon: Building, color: "bg-rose-50 text-rose-600" },
+  { key: "Lote", label: "Lote", icon: Map, color: "bg-orange-50 text-orange-600" },
+  { key: "Terreno", label: "Terreno", icon: Trees, color: "bg-lime-50 text-lime-700" },
+];
 
 export default function Home() {
   const { allProperties, published } = useApp();
@@ -42,19 +49,39 @@ export default function Home() {
       </div>
 
       <div className="px-4 mt-5">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              data-testid={`filter-${f.toLowerCase()}`}
-              onClick={() => setFilter(f)}
-              className={`shrink-0 text-xs font-semibold rounded-full px-4 py-2 transition-colors ${
-                filter === f ? "bg-[#3483FA] text-white" : "bg-white text-[#666666] border border-gray-200 hover:border-[#3483FA]"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+        <h2 className="font-heading font-extrabold text-lg tracking-tight text-[#333333]">Explorá por tipo</h2>
+        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 mt-3 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {CATEGORIES.map(({ key, label, icon: Icon, color }) => {
+            const active = filter === key;
+            return (
+              <button
+                key={key}
+                data-testid={`filter-${key.toLowerCase()}`}
+                onClick={() => setFilter(key)}
+                className="shrink-0 flex flex-col items-center gap-2 group focus:outline-none"
+              >
+                <span
+                  className={`h-20 w-20 sm:h-24 sm:w-24 rounded-2xl flex items-center justify-center transition-all ${
+                    active
+                      ? "bg-[#3483FA] ring-4 ring-blue-100 shadow-md"
+                      : `${color} group-hover:scale-[1.03] group-hover:shadow-sm`
+                  }`}
+                >
+                  <Icon
+                    className={`h-9 w-9 sm:h-11 sm:w-11 ${active ? "text-white" : ""}`}
+                    strokeWidth={1.8}
+                  />
+                </span>
+                <span
+                  className={`text-xs sm:text-sm font-semibold transition-colors ${
+                    active ? "text-[#3483FA]" : "text-[#333333]"
+                  }`}
+                >
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <p className="text-xs text-[#666666] mt-4 uppercase tracking-widest font-semibold" data-testid="results-count">
