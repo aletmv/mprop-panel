@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ListChecks, GripVertical, X, Inbox, Clock, ChevronRight, ChevronDown, CheckSquare, RotateCcw, Check,
+  GripVertical, X, Inbox, Clock, ChevronDown, CheckCircle2, RotateCcw, Check,
 } from 'lucide-react';
 import { dayTasks, useDayTasks } from './dayTasksStore';
 import { DND_TYPE } from './dndTypes';
@@ -23,9 +23,6 @@ const TaskItem = ({ op, idx, dragIdx, onDragStart, onDragOver, onDragEnd, onOpen
     >
       <span className="flex items-center justify-center w-5 text-slate-300 group-hover:text-slate-500 shrink-0 self-center">
         <GripVertical className="w-4 h-4" />
-      </span>
-      <span className="w-6 h-6 rounded-md bg-primary/10 text-primary text-[11px] font-bold grid place-items-center shrink-0 tabular-nums mt-0.5">
-        {idx + 1}
       </span>
       <button onClick={() => onOpen(op.id)} data-testid={`task-open-${op.id}`} className="flex-1 min-w-0 text-left">
         <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -78,7 +75,7 @@ const DoneItem = ({ op }) => {
       className="group flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-lg p-2.5"
     >
       <span className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 grid place-items-center shrink-0 mt-0.5">
-        <CheckSquare className="w-3.5 h-3.5" />
+        <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2} />
       </span>
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-semibold text-slate-500 line-through leading-snug">{titulo}</div>
@@ -171,15 +168,13 @@ export const TasksBoard = ({ operaciones }) => {
       }`}
     >
       <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="w-9 h-9 rounded-lg bg-primary/10 text-primary grid place-items-center">
-            <ListChecks className="w-5 h-5" />
-          </span>
-          <div>
-            <h2 className="font-display font-bold text-[18px] text-foreground leading-tight">Tareas del día</h2>
-            <div className="text-[12px] text-muted-foreground">
-              Arrastrá o agregá con + desde el tablero · Marcá ✓ al finalizar
-            </div>
+        <div>
+          <h2 className="font-display font-bold text-[20px] text-foreground leading-tight">Tareas del día</h2>
+          <div className="text-[12px] text-muted-foreground mt-0.5 num-tabular">
+            <span className="font-semibold text-foreground" data-testid="tasks-pending-count">
+              {pendingTasks.length}
+            </span>{' '}
+            pendiente{pendingTasks.length === 1 ? '' : 's'}
           </div>
         </div>
         {pendingTasks.length > 0 && (
@@ -236,7 +231,6 @@ export const TasksBoard = ({ operaciones }) => {
             className="w-full flex items-center justify-between gap-2 group"
           >
             <div className="flex items-center gap-2">
-              <CheckSquare className="w-4 h-4 text-emerald-600" />
               <span className="text-[12.5px] font-semibold text-slate-700">
                 Completadas hoy
               </span>
@@ -266,13 +260,6 @@ export const TasksBoard = ({ operaciones }) => {
               ))}
             </ul>
           )}
-        </div>
-      )}
-
-      {pendingTasks.length > 0 && (
-        <div className="text-[10.5px] text-muted-foreground mt-3 flex items-center gap-2">
-          <GripVertical className="w-3 h-3" />
-          Arrastrá los items para reordenar · {pendingTasks.length} pendiente{pendingTasks.length === 1 ? '' : 's'}
         </div>
       )}
     </div>
