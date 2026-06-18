@@ -1,0 +1,5 @@
+/* Reset global app styles to allow design system to fully control look */
+.App {
+  min-height: 100vh;
+  text-align: left;
+}
