@@ -88,9 +88,6 @@ const NavItem = ({ item, collapsed }) => {
           {item.badge}
         </span>
       )}
-      {!collapsed && item.soon && (
-        <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Pronto</span>
-      )}
       {collapsed && item.badge && (
         <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-accent text-accent-foreground text-[9px] font-bold grid place-items-center">
           {item.badge}

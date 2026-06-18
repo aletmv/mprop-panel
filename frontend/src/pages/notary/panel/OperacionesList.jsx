@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { PanelShell, Topbar } from './PanelShell';
 import { StatusBadge } from './StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Search, SlidersHorizontal, Plus, MapPin, Calendar, ArrowUpDown,
-  CheckCircle2, ChevronRight, Download,
+  CheckCircle2, ChevronRight, Download, X,
 } from 'lucide-react';
 import { operaciones as MOCK_OPERACIONES, estadoLabel, riesgoLabel } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
+import { HITO_MAP } from './Kanban';
 import { useApp } from '@/context/AppContext';
 
 const filtrosBase = [
@@ -24,7 +25,12 @@ const filtrosBase = [
 const OperacionesList = () => {
   const ctx = useApp();
   const { notarySession } = ctx;
-  const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const hitoId = searchParams.get('hito');
+  const hito = hitoId ? HITO_MAP[hitoId] : null;
+  const operacionesAll = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
+  const operaciones = hito ? operacionesAll.filter((o) => hito.states.includes(o.estado)) : operacionesAll;
+
   const filtros = useMemo(
     () =>
       filtrosBase.map((f) => ({
@@ -50,13 +56,46 @@ const OperacionesList = () => {
     });
   }, [filtro, busqueda, operaciones]);
 
+  const clearHito = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('hito');
+    setSearchParams(next);
+  };
+
   if (!notarySession) return <Navigate to="/escribanos" replace />;
 
   return (
     <PanelShell>
-      <Topbar title="Legajos" subtitle="Todos los legajos en gestión por tu escribanía" />
+      <Topbar
+        title={hito ? `Legajos · ${hito.label}` : 'Legajos'}
+        subtitle={hito ? hito.sub : 'Todos los legajos en gestión por tu escribanía'}
+      />
 
       <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-5" data-testid="operaciones-list">
+        {hito && (
+          <div
+            className="card-surface p-4 flex items-center justify-between gap-3 flex-wrap"
+            data-testid="hito-filter-banner"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[10px] uppercase tracking-[0.12em] font-bold text-muted-foreground">
+                Filtrado por hito
+              </span>
+              <span className="font-semibold text-[13px] text-foreground truncate">{hito.label}</span>
+              <span className="text-[12px] text-muted-foreground">·</span>
+              <span className="text-[12px] text-muted-foreground tabular-nums">
+                {operaciones.length} legajo{operaciones.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <button
+              onClick={clearHito}
+              data-testid="clear-hito-filter"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:underline"
+            >
+              <X className="w-3.5 h-3.5" /> Quitar filtro
+            </button>
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[260px] max-w-md">
             <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
