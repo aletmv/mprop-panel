@@ -1,413 +1,583 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Topbar } from '@/components/Layout';
-import { StatusBadge } from '@/components/StatusBadge';
-import { ProgressStepper } from '@/components/ProgressStepper';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
-  ChevronLeft, MapPin, Building2, DollarSign, FileText, ShieldAlert, CheckCircle2,
-  CircleDot, Circle, Clock, ChevronRight, AlertTriangle, FileSignature, Download,
-  MessageSquarePlus, MoreHorizontal, Sparkles, ExternalLink, Hash, Phone, Mail
+  ChevronLeft, CheckCircle2, AlertTriangle, FileSignature, Download,
+  MessageSquarePlus, ChevronRight, Sparkles, ExternalLink, Phone, Mail,
+  FileText, DollarSign, Building2, CircleDot, Circle, Clock, Copy,
 } from 'lucide-react';
 import {
-  operaciones, pasos, alertas as alertasAll, eventos, documentos, estadoLabel, riesgoLabel
+  operaciones, pasos, alertas as alertasAll, eventos, documentos, estadoLabel, riesgoLabel,
 } from '@/lib/mockData';
 
-const eventoIcon = {
-  documento: FileText, alerta: AlertTriangle, decision: FileSignature,
-  pago: DollarSign, gestion: Building2, apertura: CircleDot,
-};
-const eventoColor = {
-  documento: 'info', alerta: 'destructive', decision: 'primary',
-  pago: 'success', gestion: 'warning', apertura: 'muted',
+/* =========================================================================
+   Atoms (institutional MP-style)
+   ========================================================================= */
+
+const StatusDot = ({ variant = 'muted', label, className = '' }) => {
+  const dot = {
+    success: 'bg-[hsl(var(--success))]',
+    warning: 'bg-[hsl(var(--warning))]',
+    destructive: 'bg-[hsl(var(--destructive))]',
+    info: 'bg-[hsl(var(--info))]',
+    muted: 'bg-slate-400',
+    primary: 'bg-[hsl(var(--primary))]',
+  }[variant];
+  return (
+    <span className={`inline-flex items-center gap-2 text-sm font-medium text-slate-700 ${className}`}>
+      <span className={`w-2 h-2 rounded-full ${dot}`} />
+      {label}
+    </span>
+  );
 };
 
-const ParticipantCard = ({ rol, parte }) => (
-  <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
-    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground grid place-items-center font-bold text-[13px] shrink-0">
-      {parte.avatar}
-    </div>
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-1.5">
-        <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">{rol}</span>
-        {parte.verificado ? (
-          <CheckCircle2 className="w-3 h-3 text-success" />
-        ) : (
-          <AlertTriangle className="w-3 h-3 text-warning" />
-        )}
-      </div>
-      <div className="font-semibold text-[14px] text-foreground truncate">{parte.nombre}</div>
-      <div className="text-[11px] text-muted-foreground">DNI {parte.dni}</div>
-    </div>
-    <Button variant="ghost" size="icon" className="shrink-0 w-8 h-8">
-      <MoreHorizontal className="w-4 h-4" />
-    </Button>
+const Pill = ({ variant = 'muted', children, className = '' }) => {
+  const styles = {
+    success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    warning: 'bg-amber-50 text-amber-700 border-amber-200',
+    destructive: 'bg-red-50 text-red-700 border-red-200',
+    info: 'bg-sky-50 text-sky-700 border-sky-200',
+    muted: 'bg-slate-50 text-slate-600 border-slate-200',
+    primary: 'bg-sky-50 text-sky-700 border-sky-200',
+  }[variant];
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles} ${className}`}>
+      {children}
+    </span>
+  );
+};
+
+const SectionLabel = ({ children }) => (
+  <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500">{children}</div>
+);
+
+const Card = ({ children, className = '', ...rest }) => (
+  <div className={`bg-white border border-slate-200 rounded-xl shadow-sm ${className}`} {...rest}>
+    {children}
   </div>
 );
 
-const documentoEstado = {
-  validado: { icon: CheckCircle2, color: 'text-success', bg: 'bg-success-soft', label: 'Validado' },
-  alerta: { icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive-soft', label: 'Atención' },
-  pendiente: { icon: Circle, color: 'text-muted-foreground', bg: 'bg-muted', label: 'Pendiente' },
-};
+/* =========================================================================
+   Page
+   ========================================================================= */
 
 const OperacionDetail = () => {
   const { id } = useParams();
-  const op = operaciones.find(o => o.id === id) || operaciones[0];
+  const op = operaciones.find((o) => o.id === id) || operaciones[0];
   const e = estadoLabel[op.estado];
   const r = riesgoLabel[op.riesgo];
   const observado = op.estado === 'observado';
-  const opAlertas = alertasAll.filter(a => a.operacionId === op.id);
+  const opAlertas = alertasAll.filter((a) => a.operacionId === op.id);
+  const pasoIdx = pasos.findIndex((p) => p === op.pasoActual);
+  const fase = pasoIdx >= 0 ? pasoIdx + 1 : 1;
 
   const [tab, setTab] = useState('resumen');
 
   return (
-    <>
-      <Topbar
-        title={op.direccion}
-        subtitle={
-          <span className="flex items-center gap-2 flex-wrap">
-            <Link to="/operaciones" className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
-              <ChevronLeft className="w-3 h-3" /> Operaciones
-            </Link>
-            <span>/</span>
-            <span className="font-mono">{op.id}</span>
-          </span>
-        }
-      />
-
-      <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-6">
-        {/* Hero header */}
-        <div className="card-surface p-6 lg:p-7 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent pointer-events-none" />
-          <div className="relative flex flex-col lg:flex-row lg:items-start gap-6">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-3">
-                <StatusBadge variant={e.color}>{e.label}</StatusBadge>
-                <StatusBadge variant={r.color}>{r.label}</StatusBadge>
-                {observado && <StatusBadge variant="destructive" dot={false}>
-                  <AlertTriangle className="w-3 h-3" />
-                  Atención requerida
-                </StatusBadge>}
-              </div>
-              <h1 className="font-display font-bold text-[28px] lg:text-[32px] text-foreground leading-tight text-balance">{op.direccion}</h1>
-              <div className="text-[14px] text-muted-foreground mt-1.5 flex items-center gap-3 flex-wrap">
-                <span className="inline-flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {op.barrio}</span>
-                <span>·</span>
-                <span className="inline-flex items-center gap-1"><Building2 className="w-3.5 h-3.5" /> {op.tipo}</span>
-                <span>·</span>
-                <span className="inline-flex items-center gap-1"><Hash className="w-3.5 h-3.5" /> Matrícula {op.matricula}</span>
-              </div>
-
-              {/* Quick metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Precio</div>
-                  <div className="font-display font-bold text-[20px] text-foreground num-tabular">
-                    {op.moneda} {op.precio.toLocaleString('es-AR')}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">UC / UF</div>
-                  <div className="font-display font-bold text-[20px] text-foreground num-tabular">{op.uc} <span className="text-muted-foreground font-normal">/</span> {op.uf}</div>
-                </div>
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Firma tentativa</div>
-                  <div className="font-display font-bold text-[20px] text-foreground">{op.firma.slice(0,5)}</div>
-                  <div className="text-[11px] text-destructive font-semibold">en {op.diasFirma} días</div>
-                </div>
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Responsable</div>
-                  <div className="font-semibold text-[14px] text-foreground">Gestoría AVN</div>
-                  <div className="text-[11px] text-muted-foreground">Esc. M.I. Lagos</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2 lg:items-end">
-              <div className="flex gap-2">
-                <Button variant="outline" className="gap-2">
-                  <MessageSquarePlus className="w-4 h-4" /> Nota interna
-                </Button>
-                <Button variant="outline" className="gap-2">
-                  <Download className="w-4 h-4" /> Exportar
-                </Button>
-              </div>
-              <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground">
-                <FileSignature className="w-4 h-4" /> Programar firma
-              </Button>
-            </div>
+    <div className="bg-[hsl(var(--background))] min-h-screen">
+      {/* ============================================
+          ZONE A — Sticky compact header
+          ============================================ */}
+      <header
+        className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200"
+        data-testid="legajo-detail-header"
+      >
+        <div className="max-w-[1280px] mx-auto px-6 md:px-8 py-3 flex items-center gap-4">
+          <Link
+            to="/operaciones"
+            className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 transition-colors duration-150"
+            data-testid="back-to-operaciones-link"
+          >
+            <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
+            <span className="hidden sm:inline">Operaciones</span>
+          </Link>
+          <span className="text-slate-300">/</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-mono text-sm text-slate-700 tracking-tight" data-testid="legajo-id">
+              {op.id}
+            </span>
+            <button
+              className="text-slate-400 hover:text-slate-700 transition-colors duration-150"
+              aria-label="Copiar ID"
+              data-testid="copy-legajo-id"
+            >
+              <Copy className="w-3.5 h-3.5" strokeWidth={1.5} />
+            </button>
+          </div>
+          <div className="hidden md:flex items-center gap-2">
+            <StatusDot variant={e.color} label={e.label} />
+            {observado && <Pill variant="destructive">Atención requerida</Pill>}
           </div>
 
-          {/* Stepper */}
-          <div className="relative mt-8 pt-6 border-t border-border">
-            <ProgressStepper pasos={pasos} pasoActual={op.pasoActual} observado={observado} />
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              className="text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium px-3 h-9 hidden lg:inline-flex"
+              data-testid="btn-nota-interna"
+            >
+              <MessageSquarePlus className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> Nota
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium px-3 h-9 hidden lg:inline-flex"
+              data-testid="btn-exportar"
+            >
+              <Download className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> Exportar
+            </Button>
+            <Button
+              className="bg-[hsl(var(--primary))] text-white hover:bg-[hsl(200_100%_40%)] font-medium px-4 h-9 shadow-sm transition-colors duration-150"
+              data-testid="btn-programar-firma"
+            >
+              <FileSignature className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> Programar firma
+            </Button>
           </div>
         </div>
+      </header>
 
-        {/* Tabs */}
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="bg-card border border-border h-11 p-1">
-            <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4">Resumen</TabsTrigger>
-            <TabsTrigger value="documentos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4">
-              Documentos <span className="ml-1.5 text-[10px] opacity-80">{documentos.length}</span>
-            </TabsTrigger>
-            <TabsTrigger value="eventos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4">
-              Timeline <span className="ml-1.5 text-[10px] opacity-80">{eventos.length}</span>
-            </TabsTrigger>
-            <TabsTrigger value="pagos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4">Pagos</TabsTrigger>
-          </TabsList>
+      <div className="max-w-[1280px] mx-auto px-6 md:px-8 py-6 md:py-8 space-y-6">
+        {/* ============================================
+            ZONE B — Active alerts banner (only if any)
+            ============================================ */}
+        {opAlertas.length > 0 && (
+          <div className="space-y-3" data-testid="alerts-zone">
+            {opAlertas
+              .filter((a) => a.nivel === 'critica' || a.nivel === 'media')
+              .map((a) => {
+                const isCrit = a.nivel === 'critica';
+                const cfg = isCrit
+                  ? { wrap: 'bg-red-50 border-l-4 border-red-500', icon: 'text-red-600', label: 'Crítica', pill: 'destructive' }
+                  : { wrap: 'bg-amber-50 border-l-4 border-amber-500', icon: 'text-amber-600', label: 'Media', pill: 'warning' };
+                return (
+                  <div
+                    key={a.id}
+                    className={`${cfg.wrap} p-4 rounded-r-lg flex gap-3`}
+                    data-testid={`alert-${a.id}`}
+                  >
+                    <AlertTriangle className={`w-5 h-5 ${cfg.icon} shrink-0 mt-0.5`} strokeWidth={1.5} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Pill variant={cfg.pill}>Alerta {cfg.label}</Pill>
+                        <span className="text-xs text-slate-500">{a.responsable} · Prioridad {a.prioridad}</span>
+                      </div>
+                      <h3 className="text-base font-semibold text-slate-900 mt-1.5 leading-snug">{a.titulo}</h3>
+                      <p className="text-sm text-slate-600 mt-1 leading-relaxed">{a.descripcion}</p>
 
-          {/* RESUMEN */}
-          <TabsContent value="resumen" className="mt-5">
-            <div className="grid grid-cols-12 gap-5">
-              {/* Left */}
-              <div className="col-span-12 lg:col-span-8 space-y-5">
-                {/* Alertas */}
-                {opAlertas.length > 0 && (
-                  <div className="space-y-3">
-                    {opAlertas.map(a => {
-                      const colorMap = {
-                        critica: { bg: 'bg-destructive-soft', border: 'border-destructive/15', text: 'text-destructive', label: 'Crítica', badge: 'destructive' },
-                        media: { bg: 'bg-warning-soft', border: 'border-warning/20', text: 'text-warning-foreground', label: 'Media', badge: 'warning' },
-                        info: { bg: 'bg-info-soft', border: 'border-info/20', text: 'text-info', label: 'Info', badge: 'info' },
-                      }[a.nivel];
-                      return (
-                        <div key={a.id} className={`rounded-2xl border ${colorMap.bg} ${colorMap.border} p-5`}>
-                          <div className="flex items-start gap-4">
-                            <div className={`w-10 h-10 rounded-xl bg-card border ${colorMap.border} grid place-items-center shrink-0`}>
-                              <ShieldAlert className={`w-5 h-5 ${colorMap.text}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <StatusBadge variant={colorMap.badge} dot={false}>Alerta {colorMap.label}</StatusBadge>
-                                <span className="text-[11px] text-muted-foreground">Prioridad {a.prioridad} · {a.responsable}</span>
-                              </div>
-                              <h3 className="font-display font-bold text-[18px] text-foreground mt-2 text-balance">{a.titulo}</h3>
-                              <p className="text-[13px] text-foreground/75 mt-1.5 leading-relaxed">{a.descripcion}</p>
-
-                              {a.nivel === 'critica' && (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 p-3 rounded-xl bg-card border border-border">
-                                  <div>
-                                    <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Vence</div>
-                                    <div className="font-semibold text-foreground text-[14px]">{a.vence}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Firma tentativa</div>
-                                    <div className="font-semibold text-foreground text-[14px]">{a.firmaTentativa}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Impacto</div>
-                                    <div className="font-semibold text-destructive text-[14px]">{a.impacto}</div>
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-card/70">
-                                <Sparkles className={`w-4 h-4 ${colorMap.text} shrink-0 mt-0.5`} />
-                                <div className="flex-1">
-                                  <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Acción sugerida</div>
-                                  <div className="text-[13px] text-foreground">{a.accion}</div>
-                                </div>
-                                <Button size="sm" className="bg-foreground text-card hover:bg-foreground/90 shrink-0">
-                                  Resolver <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
+                      <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+                        <div className="inline-flex items-start gap-1.5 text-sm text-slate-700">
+                          <Sparkles className={`w-4 h-4 ${cfg.icon} shrink-0 mt-0.5`} strokeWidth={1.5} />
+                          <span><span className="text-slate-500">Acción sugerida ·</span> {a.accion}</span>
                         </div>
-                      );
-                    })}
+                        <Button
+                          size="sm"
+                          className="bg-slate-900 text-white hover:bg-slate-800 font-medium px-3 h-8 shadow-sm transition-colors duration-150"
+                          data-testid={`btn-resolver-${a.id}`}
+                        >
+                          Resolver <ChevronRight className="w-3.5 h-3.5 ml-0.5" strokeWidth={1.5} />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                )}
+                );
+              })}
+          </div>
+        )}
 
-                {/* Estado del legajo */}
-                <div className="card-surface p-6">
-                  <h2 className="font-display font-bold text-[18px] text-foreground mb-4">Estado del legajo</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Título en estudio</div>
-                      <div className="text-[14px] text-foreground">Hito 3 de 5 · Análisis notarial</div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Próxima acción</div>
-                      <div className="text-[14px] text-foreground">Solicitar inhibición del vendedor</div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Responsable</div>
-                      <div className="text-[14px] text-foreground">Gestoría</div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Condición</div>
-                      <div className="text-[14px] text-destructive font-semibold">Observado · Dominio vence antes de la firma</div>
-                    </div>
-                  </div>
+        {/* ============================================
+            ZONE C — Executive snapshot (4 clean cards)
+            ============================================ */}
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4" data-testid="executive-snapshot">
+          {/* Card 1 · Inmueble + precio */}
+          <Card className="p-5">
+            <SectionLabel>Inmueble</SectionLabel>
+            <h2 className="text-lg font-semibold tracking-tight text-slate-900 mt-2 leading-snug">
+              {op.direccion}
+            </h2>
+            <div className="text-sm text-slate-500 mt-0.5">{op.barrio} · {op.tipo}</div>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <SectionLabel>Precio acordado</SectionLabel>
+              <div className="text-2xl font-semibold tracking-tight text-slate-900 mt-1 tabular-nums">
+                <span className="text-sm text-slate-500 font-medium mr-1">{op.moneda}</span>
+                {op.precio.toLocaleString('es-AR')}
+              </div>
+            </div>
+          </Card>
+
+          {/* Card 2 · Estado + próxima acción */}
+          <Card className="p-5">
+            <SectionLabel>Estado actual</SectionLabel>
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <StatusDot variant={e.color} label={e.label} />
+              <Pill variant={r.color}>{r.label}</Pill>
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <SectionLabel>Fase</SectionLabel>
+                <span className="text-xs text-slate-500 font-medium">{fase} de {pasos.length}</span>
+              </div>
+              <div className="text-sm font-medium text-slate-900 mt-1">{op.pasoActual}</div>
+              <div className="text-sm text-slate-600 mt-2 leading-relaxed">
+                <span className="text-slate-500">Próxima · </span>
+                Solicitar inhibición del vendedor
+              </div>
+            </div>
+          </Card>
+
+          {/* Card 3 · Firma */}
+          <Card className="p-5">
+            <SectionLabel>Firma tentativa</SectionLabel>
+            <div className="text-lg font-semibold tracking-tight text-slate-900 mt-2 tabular-nums">{op.firma}</div>
+            <div className="mt-1 inline-flex items-center gap-1.5 text-sm">
+              <Clock className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.5} />
+              <span className={op.diasFirma <= 5 ? 'text-red-600 font-semibold' : 'text-slate-600'}>
+                {op.diasFirma > 0 ? `en ${op.diasFirma} días` : op.diasFirma === 0 ? 'hoy' : `hace ${Math.abs(op.diasFirma)} días`}
+              </span>
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <button
+                className="text-sm font-medium text-[hsl(var(--primary))] hover:underline inline-flex items-center gap-1"
+                data-testid="link-ver-agenda"
+              >
+                Ver en agenda <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </button>
+            </div>
+          </Card>
+
+          {/* Card 4 · Responsables */}
+          <Card className="p-5">
+            <SectionLabel>Responsables</SectionLabel>
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-700 grid place-items-center text-xs font-semibold">
+                  ML
                 </div>
-
-                {/* Identificación */}
-                <div className="card-surface p-6">
-                  <h2 className="font-display font-bold text-[18px] text-foreground mb-4">Identificación del inmueble</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="p-4 rounded-xl bg-muted/40 border border-border">
-                      <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Identificación registral</div>
-                      <div className="font-mono font-semibold text-foreground text-[15px] mt-1">{op.matricula}</div>
-                      <Link to="#" className="text-[11px] text-primary font-semibold inline-flex items-center gap-1 mt-2 hover:underline">
-                        Ver en Registro <ExternalLink className="w-3 h-3" />
-                      </Link>
-                    </div>
-                    <div className="p-4 rounded-xl bg-muted/40 border border-border">
-                      <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Identificación catastral</div>
-                      <div className="font-mono font-semibold text-foreground text-[15px] mt-1">Partida {op.partida}</div>
-                      <div className="text-[12px] text-muted-foreground mt-1">{op.catastro}</div>
-                    </div>
-                  </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-slate-900 truncate">Esc. M.I. Lagos</div>
+                  <div className="text-xs text-slate-500">Escribana titular</div>
                 </div>
               </div>
-
-              {/* Right */}
-              <div className="col-span-12 lg:col-span-4 space-y-5">
-                <div className="card-surface p-5">
-                  <h3 className="font-display font-bold text-[15px] text-foreground mb-4">Partes</h3>
-                  <div className="space-y-3">
-                    <ParticipantCard rol="Vendedor" parte={op.vendedor} />
-                    <ParticipantCard rol="Comprador" parte={op.comprador} />
-                  </div>
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                    <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
-                      <Phone className="w-3.5 h-3.5" />
-                      <Mail className="w-3.5 h-3.5" />
-                      Contactar partes
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-primary">Ver detalles</Button>
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-700 grid place-items-center text-xs font-semibold">
+                  AV
                 </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-slate-900 truncate">Gestoría AVN</div>
+                  <div className="text-xs text-slate-500">Asistente del legajo</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </section>
 
-                {/* Resumen documentos */}
-                <div className="card-surface p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-display font-bold text-[15px] text-foreground">Documentación</h3>
-                    <button onClick={() => setTab('documentos')} className="text-[11px] font-semibold text-primary hover:underline">Ver todo</button>
+        {/* ============================================
+            ZONE D — Progressive disclosure tabs
+            ============================================ */}
+        <Tabs value={tab} onValueChange={setTab} data-testid="legajo-tabs">
+          <TabsList className="bg-transparent border-b border-slate-200 rounded-none p-0 h-auto w-full justify-start overflow-x-auto">
+            {[
+              { v: 'resumen', label: 'Resumen' },
+              { v: 'partes', label: 'Partes e inmueble' },
+              { v: 'documentos', label: `Documentos · ${documentos.length}` },
+              { v: 'timeline', label: 'Timeline' },
+              { v: 'pagos', label: 'Pagos' },
+            ].map((t) => (
+              <TabsTrigger
+                key={t.v}
+                value={t.v}
+                className="px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent data-[state=active]:text-[hsl(var(--primary))] data-[state=active]:border-[hsl(var(--primary))] data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none transition-colors duration-150"
+                data-testid={`tab-${t.v}`}
+              >
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {/* RESUMEN — minimal, executive */}
+          <TabsContent value="resumen" className="mt-6" data-testid="tab-content-resumen">
+            <div className="grid grid-cols-12 gap-5">
+              <div className="col-span-12 lg:col-span-8 space-y-5">
+                <Card>
+                  <div className="px-5 py-4 border-b border-slate-100">
+                    <h2 className="text-base font-semibold text-slate-900">Condición del legajo</h2>
                   </div>
-                  <div className="space-y-2">
+                  <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    <div>
+                      <SectionLabel>Título</SectionLabel>
+                      <div className="text-sm font-medium text-slate-900 mt-1">En estudio · Análisis notarial</div>
+                    </div>
+                    <div>
+                      <SectionLabel>Próxima acción</SectionLabel>
+                      <div className="text-sm font-medium text-slate-900 mt-1">Solicitar inhibición del vendedor</div>
+                    </div>
+                    <div>
+                      <SectionLabel>Responsable de la acción</SectionLabel>
+                      <div className="text-sm font-medium text-slate-900 mt-1">Gestoría AVN</div>
+                    </div>
+                    <div>
+                      <SectionLabel>Condición</SectionLabel>
+                      <div className="text-sm font-medium text-red-600 mt-1">
+                        {observado ? 'Observado · Dominio vence antes de la firma' : 'Sin observaciones'}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="col-span-12 lg:col-span-4 space-y-5">
+                <Card>
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-slate-900">Documentación</h3>
+                    <button
+                      onClick={() => setTab('documentos')}
+                      className="text-xs font-medium text-[hsl(var(--primary))] hover:underline"
+                      data-testid="resumen-ver-documentos"
+                    >
+                      Ver todo
+                    </button>
+                  </div>
+                  <div className="p-5 space-y-2.5">
                     {[
-                      { label: 'Validados', n: 6, color: 'success' },
-                      { label: 'Con alerta', n: 1, color: 'destructive' },
-                      { label: 'Pendientes', n: 1, color: 'warning' },
+                      { label: 'Validados', n: 6, v: 'success' },
+                      { label: 'Con alerta', n: 1, v: 'destructive' },
+                      { label: 'Pendientes', n: 1, v: 'warning' },
                     ].map((s) => (
-                      <div key={s.label} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40">
-                        <StatusBadge variant={s.color}>{s.label}</StatusBadge>
-                        <span className="font-display font-bold text-foreground num-tabular">{s.n}</span>
+                      <div key={s.label} className="flex items-center justify-between py-1">
+                        <StatusDot variant={s.v} label={s.label} />
+                        <span className="text-sm font-semibold text-slate-900 tabular-nums">{s.n}</span>
                       </div>
                     ))}
                   </div>
-                </div>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* PARTES E INMUEBLE */}
+          <TabsContent value="partes" className="mt-6" data-testid="tab-content-partes">
+            <div className="grid grid-cols-12 gap-5">
+              <div className="col-span-12 lg:col-span-7 space-y-5">
+                <Card>
+                  <div className="px-5 py-4 border-b border-slate-100">
+                    <h2 className="text-base font-semibold text-slate-900">Partes</h2>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {[
+                      { rol: 'Vendedor', parte: op.vendedor },
+                      { rol: 'Comprador', parte: op.comprador },
+                    ].map(({ rol, parte }) => (
+                      <div key={rol} className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors duration-150">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-700 grid place-items-center text-xs font-semibold shrink-0">
+                          {parte.avatar}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <SectionLabel>{rol}</SectionLabel>
+                          <div className="text-sm font-medium text-slate-900 mt-0.5 truncate">{parte.nombre}</div>
+                          <div className="text-xs text-slate-500 font-mono">DNI {parte.dni}</div>
+                        </div>
+                        {parte.verificado ? (
+                          <Pill variant="success">
+                            <CheckCircle2 className="w-3 h-3 mr-1" strokeWidth={2} /> Verificado
+                          </Pill>
+                        ) : (
+                          <Pill variant="warning">
+                            <AlertTriangle className="w-3 h-3 mr-1" strokeWidth={2} /> Pendiente
+                          </Pill>
+                        )}
+                        <div className="hidden sm:flex items-center gap-1.5 text-slate-400">
+                          <button className="hover:text-slate-700 transition-colors duration-150" aria-label="Llamar">
+                            <Phone className="w-4 h-4" strokeWidth={1.5} />
+                          </button>
+                          <button className="hover:text-slate-700 transition-colors duration-150" aria-label="Email">
+                            <Mail className="w-4 h-4" strokeWidth={1.5} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+
+              <div className="col-span-12 lg:col-span-5 space-y-5">
+                <Card>
+                  <div className="px-5 py-4 border-b border-slate-100">
+                    <h2 className="text-base font-semibold text-slate-900">Identificación del inmueble</h2>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <div>
+                      <SectionLabel>Matrícula registral</SectionLabel>
+                      <div className="flex items-center justify-between mt-1">
+                        <div className="font-mono text-sm text-slate-900 tracking-tight">{op.matricula}</div>
+                        <a href="#" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline inline-flex items-center gap-1">
+                          Ver en Registro <ExternalLink className="w-3 h-3" strokeWidth={1.5} />
+                        </a>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-100 pt-4">
+                      <SectionLabel>Partida catastral</SectionLabel>
+                      <div className="font-mono text-sm text-slate-900 tracking-tight mt-1">Partida {op.partida}</div>
+                      <div className="text-xs text-slate-500 mt-1">{op.catastro}</div>
+                    </div>
+                    <div className="border-t border-slate-100 pt-4 grid grid-cols-2 gap-4">
+                      <div>
+                        <SectionLabel>UC</SectionLabel>
+                        <div className="text-sm font-medium text-slate-900 mt-1 tabular-nums">{op.uc}</div>
+                      </div>
+                      <div>
+                        <SectionLabel>UF</SectionLabel>
+                        <div className="text-sm font-medium text-slate-900 mt-1">{op.uf}</div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
               </div>
             </div>
           </TabsContent>
 
           {/* DOCUMENTOS */}
-          <TabsContent value="documentos" className="mt-5">
-            <div className="card-surface overflow-hidden">
-              <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <TabsContent value="documentos" className="mt-6" data-testid="tab-content-documentos">
+            <Card>
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h2 className="font-display font-bold text-[16px] text-foreground">Checklist documental</h2>
-                  <div className="text-[12px] text-muted-foreground">8 documentos · 6 validados · 1 con alerta · 1 pendiente</div>
+                  <h2 className="text-base font-semibold text-slate-900">Checklist documental</h2>
+                  <div className="text-xs text-slate-500 mt-0.5">8 documentos · 6 validados · 1 con alerta · 1 pendiente</div>
                 </div>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <FileText className="w-4 h-4" /> Subir documento
+                <Button
+                  variant="ghost"
+                  className="text-[hsl(var(--primary))] hover:bg-sky-50 font-medium px-3 h-9"
+                  data-testid="btn-subir-documento"
+                >
+                  <FileText className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> Subir documento
                 </Button>
               </div>
-              <div className="divide-y divide-border">
-                {documentos.map(d => {
-                  const de = documentoEstado[d.estado];
-                  const DI = de.icon;
+              <div className="divide-y divide-slate-100">
+                {documentos.map((d) => {
+                  const cfg = {
+                    validado: { icon: CheckCircle2, dot: 'success', label: 'Validado', tint: 'text-emerald-600' },
+                    alerta: { icon: AlertTriangle, dot: 'destructive', label: 'Atención', tint: 'text-red-600' },
+                    pendiente: { icon: Circle, dot: 'warning', label: 'Pendiente', tint: 'text-amber-600' },
+                  }[d.estado];
+                  const I = cfg.icon;
                   return (
-                    <div key={d.id} className="px-5 py-3.5 flex items-center gap-4 hover:bg-muted/30 transition-colors">
-                      <div className={`w-10 h-10 rounded-xl ${de.bg} grid place-items-center shrink-0`}>
-                        <DI className={`w-5 h-5 ${de.color}`} />
-                      </div>
+                    <div
+                      key={d.id}
+                      className="px-5 py-3.5 flex items-center gap-4 hover:bg-slate-50 transition-colors duration-150"
+                      data-testid={`documento-${d.id}`}
+                    >
+                      <I className={`w-5 h-5 ${cfg.tint} shrink-0`} strokeWidth={1.5} />
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-[14px] text-foreground">{d.nombre}</div>
-                        <div className="text-[12px] text-muted-foreground">
+                        <div className="text-sm font-medium text-slate-900">{d.nombre}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">
                           {d.responsable} · {d.fecha}
-                          {d.nota && <span className="ml-1.5 text-destructive font-semibold">· {d.nota}</span>}
+                          {d.nota && <span className="ml-1.5 text-red-600 font-medium">· {d.nota}</span>}
                         </div>
                       </div>
-                      <StatusBadge variant={d.estado === 'validado' ? 'success' : d.estado === 'alerta' ? 'destructive' : 'warning'}>
-                        {de.label}
-                      </StatusBadge>
-                      <Button variant="ghost" size="icon" className="w-8 h-8 shrink-0">
-                        <Download className="w-4 h-4" />
-                      </Button>
+                      <Pill variant={cfg.dot}>{cfg.label}</Pill>
+                      <button
+                        className="text-slate-400 hover:text-slate-700 transition-colors duration-150 shrink-0"
+                        aria-label="Descargar"
+                      >
+                        <Download className="w-4 h-4" strokeWidth={1.5} />
+                      </button>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </Card>
           </TabsContent>
 
-          {/* EVENTOS */}
-          <TabsContent value="eventos" className="mt-5">
-            <div className="card-surface p-6">
-              <div className="flex items-center justify-between mb-5">
+          {/* TIMELINE */}
+          <TabsContent value="timeline" className="mt-6" data-testid="tab-content-timeline">
+            <Card>
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h2 className="font-display font-bold text-[18px] text-foreground">Timeline del legajo</h2>
-                  <div className="text-[12px] text-muted-foreground">{eventos.length} eventos registrados con evidencia auditable</div>
+                  <h2 className="text-base font-semibold text-slate-900">Línea de tiempo</h2>
+                  <div className="text-xs text-slate-500 mt-0.5">{eventos.length} eventos auditables</div>
                 </div>
-                <Button variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" /> Exportar log</Button>
+                <Button
+                  variant="ghost"
+                  className="text-[hsl(var(--primary))] hover:bg-sky-50 font-medium px-3 h-9"
+                  data-testid="btn-exportar-log"
+                >
+                  <Download className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> Exportar log
+                </Button>
               </div>
 
-              <ol className="relative">
-                <span className="absolute left-[19px] top-2 bottom-2 w-px bg-border" aria-hidden />
+              {/* Phase ribbon (text-based, not chunky stepper) */}
+              <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {pasos.map((p, i) => {
+                    const done = i < pasoIdx;
+                    const current = i === pasoIdx;
+                    return (
+                      <React.Fragment key={p}>
+                        <span
+                          className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                            done ? 'text-emerald-600' : current ? 'text-[hsl(var(--primary))]' : 'text-slate-400'
+                          }`}
+                        >
+                          {done ? (
+                            <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2} />
+                          ) : current ? (
+                            <CircleDot className="w-3.5 h-3.5" strokeWidth={2} />
+                          ) : (
+                            <Circle className="w-3.5 h-3.5" strokeWidth={1.5} />
+                          )}
+                          {p}
+                        </span>
+                        {i < pasos.length - 1 && <span className="text-slate-300 text-xs">—</span>}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <ol className="p-5 relative">
+                <span className="absolute left-[33px] top-7 bottom-7 w-px bg-slate-200" aria-hidden />
                 {eventos.map((ev, idx) => {
-                  const Icon = eventoIcon[ev.tipo] || FileText;
-                  const color = eventoColor[ev.tipo];
-                  const colorClass = {
-                    info: 'bg-info-soft text-info border-info/20',
-                    destructive: 'bg-destructive-soft text-destructive border-destructive/20',
-                    primary: 'bg-primary/10 text-primary border-primary/20',
-                    success: 'bg-success-soft text-success border-success/20',
-                    warning: 'bg-warning-soft text-warning-foreground border-warning/30',
-                    muted: 'bg-muted text-muted-foreground border-border',
-                  }[color];
+                  const Icon = {
+                    documento: FileText,
+                    alerta: AlertTriangle,
+                    decision: FileSignature,
+                    pago: DollarSign,
+                    gestion: Building2,
+                    apertura: CircleDot,
+                  }[ev.tipo] || FileText;
                   return (
                     <li key={idx} className="relative pl-12 pb-5 last:pb-0">
-                      <div className={`absolute left-0 top-0 w-10 h-10 rounded-xl border ${colorClass} grid place-items-center`}>
-                        <Icon className="w-4 h-4" />
+                      <div className="absolute left-0 top-0 w-9 h-9 rounded-full bg-white border border-slate-200 grid place-items-center">
+                        <Icon className="w-4 h-4 text-slate-600" strokeWidth={1.5} />
                       </div>
                       <div className="flex items-start justify-between gap-3 flex-wrap">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-[14px] text-foreground">{ev.evento}</span>
-                            <StatusBadge variant={color} dot={false} className="text-[10px] uppercase">{ev.tipo}</StatusBadge>
-                          </div>
-                          <div className="text-[12px] text-muted-foreground mt-0.5">
+                          <div className="text-sm font-medium text-slate-900">{ev.evento}</div>
+                          <div className="text-xs text-slate-500 mt-0.5">
                             {ev.fecha} · {ev.hora} hs · {ev.responsable}
                           </div>
                         </div>
-                        <button className="text-[12px] font-semibold text-primary hover:underline inline-flex items-center gap-1">
-                          Ver {ev.evidencia} <ChevronRight className="w-3 h-3" />
+                        <button className="text-xs font-medium text-[hsl(var(--primary))] hover:underline inline-flex items-center gap-1 shrink-0">
+                          Ver {ev.evidencia} <ChevronRight className="w-3 h-3" strokeWidth={1.5} />
                         </button>
                       </div>
                     </li>
                   );
                 })}
               </ol>
-            </div>
+            </Card>
           </TabsContent>
 
-          {/* PAGOS */}
-          <TabsContent value="pagos" className="mt-5">
-            <div className="card-surface p-8 text-center">
-              <DollarSign className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-              <h3 className="font-display font-bold text-foreground">Módulo de pagos</h3>
-              <p className="text-[13px] text-muted-foreground mt-1">Seña, refuerzos y saldo de escritura — disponible próximamente.</p>
-            </div>
+          {/* PAGOS — placeholder */}
+          <TabsContent value="pagos" className="mt-6" data-testid="tab-content-pagos">
+            <Card className="p-10 text-center">
+              <DollarSign className="w-10 h-10 text-slate-300 mx-auto mb-3" strokeWidth={1.5} />
+              <h3 className="text-base font-semibold text-slate-900">Módulo de pagos</h3>
+              <p className="text-sm text-slate-500 mt-1">Seña, refuerzos y saldo de escritura · disponible próximamente.</p>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
-    </>
+    </div>
   );
 };
 

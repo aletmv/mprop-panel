@@ -14,53 +14,53 @@ body {
 
 @layer base {
     :root {
-        /* ====== ESCRIBANÍA DESIGN SYSTEM ====== */
+        /* ====== ESCRIBANÍA · INSTITUTIONAL (MP) ====== */
         /* Surface */
-        --background: 230 30% 97%;
-        --foreground: 222 38% 13%;
+        --background: 210 20% 98%;
+        --foreground: 210 11% 15%;
         --card: 0 0% 100%;
-        --card-foreground: 222 38% 13%;
+        --card-foreground: 210 11% 15%;
         --popover: 0 0% 100%;
-        --popover-foreground: 222 38% 13%;
+        --popover-foreground: 210 11% 15%;
 
-        /* Brand - Notarial Navy */
-        --primary: 222 45% 17%;
+        /* Brand · MP Blue */
+        --primary: 200 100% 45%;
         --primary-foreground: 0 0% 100%;
-        --primary-glow: 222 55% 30%;
+        --primary-glow: 200 100% 45%;
 
-        /* Secondary - Soft slate */
-        --secondary: 220 20% 94%;
-        --secondary-foreground: 222 45% 17%;
+        /* Secondary · slate */
+        --secondary: 210 20% 96%;
+        --secondary-foreground: 210 11% 15%;
 
         /* Muted */
-        --muted: 220 16% 95%;
-        --muted-foreground: 220 10% 46%;
+        --muted: 210 20% 96%;
+        --muted-foreground: 210 10% 45%;
 
-        /* Accent - Coral (alertas y CTAs notariales) */
-        --accent: 13 88% 67%;
+        /* Accent · neutralized to primary (institutional) */
+        --accent: 200 100% 45%;
         --accent-foreground: 0 0% 100%;
-        --accent-soft: 13 100% 96%;
+        --accent-soft: 200 100% 95%;
 
         /* Semantic states */
-        --success: 152 56% 40%;
+        --success: 142 71% 38%;
         --success-foreground: 0 0% 100%;
-        --success-soft: 152 60% 95%;
+        --success-soft: 142 71% 95%;
 
-        --warning: 36 92% 50%;
-        --warning-foreground: 30 60% 15%;
-        --warning-soft: 42 100% 95%;
+        --warning: 38 92% 50%;
+        --warning-foreground: 38 92% 20%;
+        --warning-soft: 38 92% 95%;
 
-        --destructive: 0 72% 51%;
+        --destructive: 0 78% 52%;
         --destructive-foreground: 0 0% 100%;
-        --destructive-soft: 0 90% 96%;
+        --destructive-soft: 0 84% 96%;
 
-        --info: 210 90% 55%;
-        --info-soft: 210 100% 96%;
+        --info: 200 100% 45%;
+        --info-soft: 200 100% 95%;
 
         /* Lines */
-        --border: 220 18% 90%;
-        --input: 220 18% 90%;
-        --ring: 222 45% 17%;
+        --border: 210 14% 89%;
+        --input: 210 14% 89%;
+        --ring: 200 100% 45%;
 
         /* Charts */
         --chart-1: 222 55% 30%;
@@ -90,10 +90,6 @@ body {
     }
     body {
         @apply bg-background text-foreground;
-        background-image:
-            radial-gradient(circle at 0% 0%, hsl(222 60% 35% / 0.04) 0%, transparent 35%),
-            radial-gradient(circle at 100% 0%, hsl(13 88% 67% / 0.03) 0%, transparent 30%);
-        background-attachment: fixed;
     }
     h1, h2, h3, h4, h5 {
         font-family: 'Manrope', 'Inter', sans-serif;
@@ -103,12 +99,10 @@ body {
 
 @layer components {
     .card-surface {
-        @apply bg-card border border-border rounded-2xl;
-        box-shadow: var(--shadow-sm);
+        @apply bg-card border border-border rounded-xl;
     }
     .card-elevated {
-        @apply bg-card border border-border rounded-2xl;
-        box-shadow: var(--shadow-md);
+        @apply bg-card border border-border rounded-xl shadow-sm;
     }
     .text-balance {
         text-wrap: balance;
