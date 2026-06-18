@@ -12,6 +12,8 @@ import {
   User,
   Store,
   Trash2,
+  Pause,
+  Play,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,7 +50,7 @@ const Empty = ({ text, cta, to }) => (
 export default function Profile() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { verified, visits, offers, reservations, published, getProperty, updateOffer, removePublished } = useApp();
+  const { verified, visits, offers, reservations, published, getProperty, updateOffer, removePublished, togglePublishedPause } = useApp();
   const tab = params.get("tab") || "propiedades";
   const [counterFor, setCounterFor] = useState(null);
   const [counterAmount, setCounterAmount] = useState("");
@@ -59,6 +61,11 @@ export default function Profile() {
     removePublished(p.id);
     setUnpubConfirm(null);
     toast.success("Publicación dada de baja");
+  };
+
+  const togglePause = (p) => {
+    togglePublishedPause(p.id);
+    toast.success(p.paused ? "Publicación reanudada" : "Publicación pausada");
   };
 
   const myReservations = reservations.filter((r) => !r.buyer);
@@ -162,7 +169,17 @@ export default function Profile() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {published.map((p) => (
                 <div key={p.id}>
-                  <PropertyCard property={p} mine />
+                  <div className="relative">
+                    <PropertyCard property={p} mine />
+                    {p.paused && (
+                      <div
+                        data-testid={`paused-badge-${p.id}`}
+                        className="absolute top-3 left-3 bg-gray-900/85 text-white text-[10px] font-bold uppercase tracking-widest rounded-full px-2.5 py-1 backdrop-blur-sm"
+                      >
+                        Pausada
+                      </div>
+                    )}
+                  </div>
                   {unpubConfirm === p.id ? (
                     <div className="flex gap-2 mt-2">
                       <button
@@ -181,13 +198,30 @@ export default function Profile() {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      data-testid={`unpublish-${p.id}`}
-                      onClick={() => setUnpubConfirm(p.id)}
-                      className="w-full flex items-center justify-center gap-1.5 border border-red-200 text-red-500 text-xs font-semibold rounded-md py-2.5 mt-2 hover:bg-red-50 transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" /> Dar de baja
-                    </button>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <button
+                        data-testid={`toggle-pause-${p.id}`}
+                        onClick={() => togglePause(p)}
+                        className={`flex items-center justify-center gap-1.5 text-xs font-semibold rounded-md py-2.5 transition-colors border ${
+                          p.paused
+                            ? "border-[#3483FA] text-[#3483FA] hover:bg-blue-50"
+                            : "border-gray-300 text-[#666666] hover:bg-gray-50"
+                        }`}
+                      >
+                        {p.paused ? (
+                          <><Play className="h-3.5 w-3.5" /> Reanudar</>
+                        ) : (
+                          <><Pause className="h-3.5 w-3.5" /> Pausar</>
+                        )}
+                      </button>
+                      <button
+                        data-testid={`unpublish-${p.id}`}
+                        onClick={() => setUnpubConfirm(p.id)}
+                        className="flex items-center justify-center gap-1.5 border border-red-200 text-red-500 text-xs font-semibold rounded-md py-2.5 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Dar de baja
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}

@@ -146,10 +146,16 @@ export const AppProvider = ({ children }) => {
     }));
 
   const addPublished = (property) =>
-    setState((s) => ({ ...s, published: [{ ...property, id: `pub-${Date.now()}` }, ...s.published] }));
+    setState((s) => ({ ...s, published: [{ ...property, id: `pub-${Date.now()}`, paused: false }, ...s.published] }));
 
   const removePublished = (id) =>
     setState((s) => ({ ...s, published: s.published.filter((p) => p.id !== id) }));
+
+  const togglePublishedPause = (id) =>
+    setState((s) => ({
+      ...s,
+      published: s.published.map((p) => (p.id === id ? { ...p, paused: !p.paused } : p)),
+    }));
 
   const notaryLogin = (notaryId) => setState((s) => ({ ...s, notarySession: notaryId }));
   const notaryLogout = () => setState((s) => ({ ...s, notarySession: null }));
@@ -198,6 +204,7 @@ export const AppProvider = ({ children }) => {
         addFolderDoc,
         removeFolderDoc,
         removePublished,
+        togglePublishedPause,
       }}
     >
       {children}

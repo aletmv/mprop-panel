@@ -9,8 +9,11 @@ import {
   FileText, DollarSign, Building2, CircleDot, Circle, Clock, Copy,
 } from 'lucide-react';
 import {
-  operaciones, pasos, alertas as alertasAll, eventos, documentos, estadoLabel, riesgoLabel,
+  operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, eventos, documentos, estadoLabel, riesgoLabel,
 } from './mockData';
+import { buildNotaryOperaciones } from './operacionesAdapter';
+import { buyerCosts, sellerCosts } from '@/lib/costs';
+import { formatUSD } from '@/data/mock';
 import { useApp } from '@/context/AppContext';
 
 const StatusDot = ({ variant = 'muted', label, className = '' }) => {
@@ -56,9 +59,183 @@ const Card = ({ children, className = '', ...rest }) => (
   </div>
 );
 
+const PagosItemRow = ({ label, detail, amount, zero }) => (
+  <div className="flex items-start justify-between gap-4 py-3 border-b border-slate-100 last:border-0">
+    <div className="min-w-0">
+      <div className="text-sm font-medium text-slate-900">{label}</div>
+      <div className="text-xs text-slate-500 mt-0.5">{detail}</div>
+    </div>
+    {zero ? (
+      <span className="text-sm font-semibold text-emerald-600 whitespace-nowrap">{zero}</span>
+    ) : (
+      <span className="text-sm font-semibold text-slate-900 tabular-nums whitespace-nowrap">{formatUSD(amount)}</span>
+    )}
+  </div>
+);
+
+const PagosTab = ({ op }) => {
+  const [firstHome, setFirstHome] = useState(false);
+  const buyer = buyerCosts(op.precio, firstHome);
+  const seller = sellerCosts(op.precio, firstHome);
+  const reserva = Math.round(op.precio * 0.01);
+  const sena = Math.round(op.precio * 0.04);
+  const saldo = op.precio - reserva - sena;
+
+  const sellosState = buyer.sellos.exempt ? 'exempt' : buyer.sellos.partial ? 'partial' : 'full';
+  const sellosBadge = {
+    exempt: { label: 'Exento', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    partial: { label: 'Exención parcial', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+    full: { label: 'Sin exención', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
+  }[sellosState];
+
+  return (
+    <div className="grid grid-cols-12 gap-5" data-testid="pagos-tab">
+      <div className="col-span-12 lg:col-span-7 space-y-5">
+        <Card>
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Impuestos y sellos</h2>
+              <div className="text-xs text-slate-500 mt-0.5">
+                Liquidación calculada sobre el precio de escritura
+              </div>
+            </div>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${sellosBadge.cls}`}>
+              {sellosBadge.label}
+            </span>
+          </div>
+
+          <div className="px-5 py-4 bg-sky-50/40 border-b border-slate-100">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                data-testid="first-home-toggle"
+                checked={firstHome}
+                onChange={(e) => setFirstHome(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+              />
+              <span className="text-sm">
+                <span className="font-semibold text-slate-900">Vivienda única, familiar y de ocupación permanente</span>
+                <span className="block text-xs text-slate-600 mt-0.5">
+                  CABA · Ley tarifaria. Exención total del impuesto de sellos si el valor de escritura ≤ ARS 226.000.000
+                  al TC de referencia. Por encima de ese tope, el 1,75% se aplica sólo sobre el excedente.
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <div className="px-5 py-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">Comprador</div>
+            <div className="divide-y divide-slate-100">
+              {buyer.items.map((it, i) => (
+                <PagosItemRow
+                  key={i}
+                  label={it.label}
+                  detail={it.detail}
+                  amount={it.amount}
+                  zero={it.amount === 0 ? it.zeroLabel : null}
+                />
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-200 flex justify-between items-baseline">
+              <div className="text-sm font-semibold text-slate-900">Total gastos comprador</div>
+              <div className="text-lg font-semibold text-slate-900 tabular-nums">{formatUSD(buyer.total)}</div>
+            </div>
+          </div>
+
+          <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/40">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">Vendedor</div>
+            <div className="divide-y divide-slate-100">
+              {seller.items.map((it, i) => (
+                <PagosItemRow
+                  key={i}
+                  label={it.label}
+                  detail={it.detail}
+                  amount={it.amount}
+                  zero={it.amount === 0 ? it.zeroLabel : null}
+                />
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-200 flex justify-between items-baseline">
+              <div className="text-sm font-semibold text-slate-900">Total gastos vendedor</div>
+              <div className="text-lg font-semibold text-slate-900 tabular-nums">{formatUSD(seller.total)}</div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <div className="col-span-12 lg:col-span-5 space-y-5">
+        <Card>
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="text-base font-semibold text-slate-900">Hitos de pago</h2>
+            <div className="text-xs text-slate-500 mt-0.5">Calendario económico de la operación</div>
+          </div>
+          <div className="divide-y divide-slate-100">
+            <div className="px-5 py-4 flex items-center justify-between gap-3" data-testid="hito-reserva">
+              <div>
+                <div className="text-sm font-medium text-slate-900">Reserva</div>
+                <div className="text-xs text-slate-500 mt-0.5">1% · acreditada al inicio del legajo</div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(reserva)}</div>
+                <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 mt-1 inline-block">
+                  Acreditada
+                </span>
+              </div>
+            </div>
+            <div className="px-5 py-4 flex items-center justify-between gap-3" data-testid="hito-sena">
+              <div>
+                <div className="text-sm font-medium text-slate-900">Seña</div>
+                <div className="text-xs text-slate-500 mt-0.5">4% · 72 hs tras revisión sin observaciones</div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(sena)}</div>
+                <span className="text-[10px] uppercase tracking-widest font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 mt-1 inline-block">
+                  Pendiente
+                </span>
+              </div>
+            </div>
+            <div className="px-5 py-4 flex items-center justify-between gap-3" data-testid="hito-saldo">
+              <div>
+                <div className="text-sm font-medium text-slate-900">Saldo a escriturar</div>
+                <div className="text-xs text-slate-500 mt-0.5">95% · ante escribano el día de la firma</div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(saldo)}</div>
+                <span className="text-[10px] uppercase tracking-widest font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5 mt-1 inline-block">
+                  Programado
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="px-5 py-4 border-t border-slate-100 flex justify-between items-baseline">
+            <div className="text-sm font-semibold text-slate-900">Precio de escritura</div>
+            <div className="text-lg font-semibold text-slate-900 tabular-nums">{formatUSD(op.precio)}</div>
+          </div>
+        </Card>
+
+        <Card className="p-5 bg-gradient-to-br from-sky-50 to-white">
+          <div className="flex items-start gap-3">
+            <DollarSign className="w-5 h-5 text-primary shrink-0 mt-0.5" strokeWidth={1.5} />
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">¿Cómo se aplica la exención?</h3>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Si la propiedad será vivienda única, familiar y permanente del adquirente, la mitad del impuesto de
+                sellos del comprador puede estar exenta total o parcialmente. Activá el switch para ver el cálculo
+                actualizado.
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
 const OperacionDetail = () => {
   const { id } = useParams();
-  const { notarySession } = useApp();
+  const ctx = useApp();
+  const { notarySession } = ctx;
+  const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
   const op = operaciones.find((o) => o.id === id) || operaciones[0];
   const e = estadoLabel[op.estado];
   const r = riesgoLabel[op.riesgo];
@@ -540,13 +717,7 @@ const OperacionDetail = () => {
             </TabsContent>
 
             <TabsContent value="pagos" className="mt-6" data-testid="tab-content-pagos">
-              <Card className="p-10 text-center">
-                <DollarSign className="w-10 h-10 text-slate-300 mx-auto mb-3" strokeWidth={1.5} />
-                <h3 className="text-base font-semibold text-slate-900">Módulo de pagos</h3>
-                <p className="text-sm text-slate-500 mt-1">
-                  Seña, refuerzos y saldo de escritura · disponible próximamente.
-                </p>
-              </Card>
+              <PagosTab op={op} />
             </TabsContent>
           </Tabs>
         </div>

@@ -8,20 +8,31 @@ import {
   Search, SlidersHorizontal, Plus, MapPin, Calendar, ArrowUpDown,
   CheckCircle2, ChevronRight, Download,
 } from 'lucide-react';
-import { operaciones, estadoLabel, riesgoLabel } from './mockData';
+import { operaciones as MOCK_OPERACIONES, estadoLabel, riesgoLabel } from './mockData';
+import { buildNotaryOperaciones } from './operacionesAdapter';
 import { useApp } from '@/context/AppContext';
 
-const filtros = [
-  { id: 'todos', label: 'Todas', count: 47 },
-  { id: 'apertura', label: 'Apertura', count: 6 },
-  { id: 'documentos', label: 'Documentos', count: 14 },
-  { id: 'analisis', label: 'Análisis', count: 18 },
-  { id: 'observado', label: 'Observadas', count: 4 },
-  { id: 'en-firma', label: 'En firma', count: 5 },
+const filtrosBase = [
+  { id: 'todos', label: 'Todas' },
+  { id: 'apertura', label: 'Apertura' },
+  { id: 'documentos', label: 'Documentos' },
+  { id: 'analisis', label: 'Análisis' },
+  { id: 'observado', label: 'Observadas' },
+  { id: 'en-firma', label: 'En firma' },
 ];
 
 const OperacionesList = () => {
-  const { notarySession } = useApp();
+  const ctx = useApp();
+  const { notarySession } = ctx;
+  const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
+  const filtros = useMemo(
+    () =>
+      filtrosBase.map((f) => ({
+        ...f,
+        count: f.id === 'todos' ? operaciones.length : operaciones.filter((o) => o.estado === f.id).length,
+      })),
+    [operaciones]
+  );
   const [filtro, setFiltro] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
 
@@ -37,7 +48,7 @@ const OperacionesList = () => {
         o.comprador.nombre.toLowerCase().includes(q);
       return matchEstado && matchQ;
     });
-  }, [filtro, busqueda]);
+  }, [filtro, busqueda, operaciones]);
 
   if (!notarySession) return <Navigate to="/escribanos" replace />;
 

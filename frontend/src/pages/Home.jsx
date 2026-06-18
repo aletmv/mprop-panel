@@ -19,6 +19,7 @@ export default function Home() {
   const [filter, setFilter] = useState("Todos");
 
   const results = allProperties.filter((p) => {
+    if (p.paused) return false;
     const matchType = filter === "Todos" || p.type === filter;
     const q = query.toLowerCase();
     const matchQuery =

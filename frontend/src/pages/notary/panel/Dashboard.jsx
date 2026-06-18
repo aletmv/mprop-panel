@@ -8,8 +8,9 @@ import {
   CalendarDays, ChevronRight, Sparkles, FileText, ShieldAlert,
 } from 'lucide-react';
 import {
-  kpis, alertas, proximasFirmas, cargaMensual, estadoLabel,
+  kpis as MOCK_KPIS, alertas, proximasFirmas, cargaMensual, estadoLabel, operaciones as MOCK_OPERACIONES,
 } from './mockData';
+import { buildNotaryOperaciones } from './operacionesAdapter';
 import {
   AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
@@ -47,8 +48,22 @@ const KpiCard = ({ kpi }) => {
 };
 
 const Dashboard = () => {
-  const { notarySession } = useApp();
+  const ctx = useApp();
+  const { notarySession } = ctx;
   if (!notarySession) return <Navigate to="/escribanos" replace />;
+  const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
+  // KPIs: actualizamos "Legajos activos" con el total real (mock + reservas asignadas).
+  const kpis = MOCK_KPIS.map((k) =>
+    k.id === 'activos' ? { ...k, value: operaciones.length } : k
+  );
+  const distribucion = [
+    { k: 'apertura', n: operaciones.filter((o) => o.estado === 'apertura').length || 6 },
+    { k: 'documentos', n: operaciones.filter((o) => o.estado === 'documentos').length || 14 },
+    { k: 'analisis', n: operaciones.filter((o) => o.estado === 'analisis').length || 18 },
+    { k: 'observado', n: operaciones.filter((o) => o.estado === 'observado').length || 4 },
+    { k: 'en-firma', n: operaciones.filter((o) => o.estado === 'en-firma').length || 5 },
+  ];
+  const totalDist = distribucion.reduce((s, x) => s + x.n, 0) || 1;
 
   return (
     <PanelShell>
@@ -228,15 +243,9 @@ const Dashboard = () => {
             <div className="card-surface p-5">
               <h3 className="font-display font-bold text-[15px] text-foreground mb-3">Por estado</h3>
               <div className="space-y-2.5">
-                {[
-                  { k: 'apertura', n: 6 },
-                  { k: 'documentos', n: 14 },
-                  { k: 'analisis', n: 18 },
-                  { k: 'observado', n: 4 },
-                  { k: 'en-firma', n: 5 },
-                ].map(({ k, n }) => {
+                {distribucion.map(({ k, n }) => {
                   const e = estadoLabel[k];
-                  const pct = Math.round((n / 47) * 100);
+                  const pct = Math.round((n / totalDist) * 100);
                   const barClass = {
                     info: 'bg-info',
                     warning: 'bg-warning',
