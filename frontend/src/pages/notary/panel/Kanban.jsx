@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, Clock, ChevronRight, ArrowRight, Plus, Check,
+  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, Clock, ChevronRight, ArrowRight, Plus,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { alertas as ALERTAS_MOCK } from './mockData';
 import { DND_TYPE } from './dndTypes';
 import { dayTasks, useDayTasks } from './dayTasksStore';
+import { HourglassFalling } from './HourglassFalling';
 
 // 5 hitos con progresión cromática lógica:
 // neutro-frío (Inicio) → fresco (Expediente) → análisis (Due diligence) → transición (Pre-cierre) → final/éxito (Cierre).
@@ -193,11 +194,15 @@ const KanbanCard = ({ op }) => {
             title={isInBoard ? 'Ya está en tu día' : 'Agregar a mi día'}
             className={`shrink-0 w-7 h-7 grid place-items-center rounded-md transition-colors ${
               isInBoard
-                ? 'bg-emerald-50 text-emerald-600 cursor-default'
+                ? 'bg-slate-100 text-slate-700 cursor-default'
                 : 'bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5'
             }`}
           >
-            {isInBoard ? <Check className="w-3.5 h-3.5" strokeWidth={2.4} /> : <Plus className="w-3.5 h-3.5" strokeWidth={2.2} />}
+            {isInBoard ? (
+              <HourglassFalling className="w-3.5 h-3.5" title="Ya está en tu día" />
+            ) : (
+              <Plus className="w-3.5 h-3.5" strokeWidth={2.2} />
+            )}
           </button>
         </div>
       )}
