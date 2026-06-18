@@ -1,0 +1,127 @@
+{
+  "theme": "light",
+  "archetype": "Swiss & High-Contrast (Mercado Pago Institutional Reference)",
+  "design_philosophy": "Focused, executive, calm institutional design. Optimize for clarity, progressive disclosure, and task completion. High signal-to-noise ratio. Emulate Mercado Pago's clean layout, crisp borders, and purposeful use of blue.",
+  "colors": {
+    "background": "0 0% 96%",
+    "foreground": "210 11% 15%",
+    "card": "0 0% 100%",
+    "card_foreground": "210 11% 15%",
+    "popover": "0 0% 100%",
+    "popover_foreground": "210 11% 15%",
+    "primary": "200 100% 45%",
+    "primary_foreground": "0 0% 100%",
+    "secondary": "210 20% 96%",
+    "secondary_foreground": "210 11% 15%",
+    "muted": "210 20% 96%",
+    "muted_foreground": "210 10% 45%",
+    "accent": "210 20% 96%",
+    "accent_foreground": "210 11% 15%",
+    "border": "210 14% 89%",
+    "input": "210 14% 89%",
+    "ring": "200 100% 45%",
+    "success": "142 71% 45%",
+    "success_soft": "142 71% 95%",
+    "success_foreground": "142 76% 20%",
+    "warning": "38 92% 50%",
+    "warning_soft": "38 92% 95%",
+    "warning_foreground": "38 92% 20%",
+    "destructive": "0 84% 60%",
+    "destructive_soft": "0 84% 95%",
+    "destructive_foreground": "0 84% 20%",
+    "info": "200 100% 45%",
+    "info_soft": "200 100% 95%",
+    "info_foreground": "200 100% 25%"
+  },
+  "typography": {
+    "font_family": {
+      "heading": "Inter, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+    },
+    "scale": {
+      "h1": "text-2xl font-semibold tracking-tight text-slate-900",
+      "h2": "text-lg font-medium tracking-tight text-slate-900",
+      "h3": "text-base font-medium text-slate-800",
+      "body": "text-sm text-slate-600 leading-relaxed",
+      "label": "text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500",
+      "data_value": "text-sm font-medium text-slate-900",
+      "mono_data": "font-mono text-sm tracking-tight text-slate-700"
+    }
+  },
+  "spacing_and_radii": {
+    "container_padding": "p-6 md:p-8",
+    "section_gap": "gap-6",
+    "item_gap": "gap-4",
+    "radius_card": "rounded-xl",
+    "radius_button": "rounded-lg",
+    "radius_badge": "rounded-full"
+  },
+  "components": {
+    "cards": {
+      "style": "bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden",
+      "header": "px-5 py-4 border-b border-slate-100 flex items-center justify-between",
+      "body": "p-5"
+    },
+    "buttons": {
+      "primary": "bg-[#009EE3] text-white hover:bg-[#008CC9] font-medium px-4 py-2 rounded-lg shadow-sm transition-colors",
+      "secondary": "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium px-4 py-2 rounded-lg transition-colors",
+      "ghost": "text-[#009EE3] hover:bg-[#009EE3]/10 font-medium px-4 py-2 rounded-lg transition-colors"
+    },
+    "status_badges": {
+      "dot_pattern": "flex items-center gap-2 text-sm font-medium text-slate-700",
+      "dot_element": "w-2 h-2 rounded-full",
+      "pill_pattern": "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+    },
+    "alerts": {
+      "critical": "bg-red-50 border-l-4 border-red-500 p-4 flex gap-3 rounded-r-lg",
+      "warning": "bg-amber-50 border-l-4 border-amber-500 p-4 flex gap-3 rounded-r-lg",
+      "info": "bg-blue-50 border-l-4 border-[#009EE3] p-4 flex gap-3 rounded-r-lg"
+    },
+    "tabs": {
+      "list": "flex border-b border-slate-200 w-full overflow-x-auto hide-scrollbar",
+      "trigger": "px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-colors whitespace-nowrap",
+      "trigger_active": "text-[#009EE3] border-[#009EE3]"
+    }
+  },
+  "layout_zones_mapping": {
+    "A_Header_Sticky": {
+      "content": "Legajo ID (a), Property Type (a), Status Badge (b), Top Actions (k)",
+      "instructions": "Keep it ultra-compact. ID in mono font. 'Programar firma' as the only solid blue CTA. Sticky top so actions are always available."
+    },
+    "B_Alerts_Banner": {
+      "content": "Active Alerts (e)",
+      "instructions": "Render ONLY if there are pending alerts. Do not show empty states. Use full-width banners just below the header. Include the 'Resolver' action explicitly."
+    },
+    "C_Executive_Snapshot": {
+      "content": "KPIs (c), Condensed Status (f), Address (a)",
+      "instructions": "A grid of 3-4 clean cards. Card 1: Address & Precio. Card 2: Estado Actual (dot pattern) & Próxima Acción. Card 3: Firma Tentativa. Card 4: Responsables. Demote complex stepper, use a text-based phase indicator (e.g., 'Fase 3 de 5: Análisis')."
+    },
+    "D_Main_Content_Tabs": {
+      "content": "Resumen, Partes (h), Inmueble (g), Documentos (i, j), Timeline (j)",
+      "instructions": "This is the progressive disclosure engine. Hide the heavy data here. Default tab is 'Resumen'. Move the exhaustive lists (Matrícula, Partida, full DNI details) to the 'Inmueble & Partes' tab. Move the 5-phase visual stepper to the 'Timeline' tab."
+    }
+  },
+  "micro_interactions": {
+    "hover": "Subtle background color shifts (e.g., hover:bg-slate-50 for table rows), text color darkening.",
+    "focus": "Clear ring using the primary blue (focus-visible:ring-2 focus-visible:ring-[#009EE3] focus-visible:ring-offset-1).",
+    "transitions": "Fast and crisp. duration-150 ease-in-out."
+  },
+  "implementation_notes": {
+    "demote_hide": "Demoted the visual 5-step progress bar from the hero section (moved to Timeline/Detalle). Hid full party details (DNI, contact) behind a tab. Removed repetitive status blocks (Estado is shown once in header, detailed once in Snapshot).",
+    "icons": "Use lucide-react. Stroke width 1.5. Sizes 16px to 20px.",
+    "testing": "All interactive elements must include data-testid (e.g., data-testid='tab-documentos', data-testid='btn-programar-firma')."
+  },
+  "do_not_list": [
+    "DO NOT use purple, violet, or teal anywhere. Rely on MP Blue (#009EE3), white, and slate grays.",
+    "DO NOT use heavy gradients or glassmorphism. Keep cards solid white with thin 1px #e2e8f0 borders.",
+    "DO NOT center-align data. Use left-alignment for forms and details, tabular numbers for currency.",
+    "DO NOT dump all property identifiers (Matrícula, Partida) in the hero. They belong in a dedicated tab/card.",
+    "DO NOT use large text shadows or box-shadows. Stick to Tailwind's shadow-sm for cards.",
+    "DO NOT use standard HTML inputs/selects; use Shadcn styled versions with strict 1px borders."
+  ],
+  "media_urls": {
+    "placeholder_user": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+    "placeholder_property": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=400&q=80"
+  }
+}
