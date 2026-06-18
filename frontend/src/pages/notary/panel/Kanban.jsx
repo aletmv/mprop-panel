@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, Clock, ChevronRight, ArrowRight,
+  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, Clock, ChevronRight, ArrowRight, Plus, Check,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { alertas as ALERTAS_MOCK } from './mockData';
-import { DND_TYPE } from './TasksBoard';
+import { DND_TYPE } from './dndTypes';
+import { dayTasks, useDayTasks } from './dayTasksStore';
 
 // 5 hitos con progresión cromática lógica:
 // neutro-frío (Inicio) → fresco (Expediente) → análisis (Due diligence) → transición (Pre-cierre) → final/éxito (Cierre).
@@ -58,29 +59,35 @@ const NIVEL_CFG = {
   info: { label: 'Info', tone: 'sky', priority: 'Baja', barClass: 'bg-sky-500', textClass: 'text-sky-700', softBg: 'bg-sky-50', softBorder: 'border-sky-200' },
 };
 
-const pickWorstAlert = (opId) => {
+export const pickWorstAlert = (opId) => {
   const list = ALERTAS_MOCK.filter((a) => a.operacionId === opId);
   if (list.length === 0) return null;
   const order = { critica: 0, media: 1, info: 2 };
   return [...list].sort((a, b) => order[a.nivel] - order[b.nivel])[0];
 };
 
-const AlertChip = ({ op }) => {
+export const getOpAlert = (op) => {
   const alert = pickWorstAlert(op.id);
-  // Fallback genérico cuando no hay alert detallada en mock pero el legajo tiene alerta visual.
-  const fallback = !alert && (op.riesgo === 'alto' || op.estado === 'observado')
-    ? {
-        nivel: op.estado === 'observado' ? 'critica' : 'media',
-        titulo: op.estado === 'observado' ? 'Legajo observado' : 'Riesgo alto detectado',
-        impacto: op.estado === 'observado' ? 'No apto para avanzar sin resolver' : 'Requiere validación adicional',
-        accion: 'Revisar observaciones en el detalle del legajo',
-        responsable: 'Esc. Lagos',
-        prioridad: op.estado === 'observado' ? 'Alta' : 'Media',
-      }
-    : null;
-  const data = alert || fallback;
+  if (alert) return alert;
+  if (op.riesgo === 'alto' || op.estado === 'observado') {
+    return {
+      nivel: op.estado === 'observado' ? 'critica' : 'media',
+      titulo: op.estado === 'observado' ? 'Legajo observado' : 'Riesgo alto detectado',
+      impacto: op.estado === 'observado' ? 'No apto para avanzar sin resolver' : 'Requiere validación adicional',
+      accion: 'Revisar observaciones en el detalle del legajo',
+      responsable: 'Esc. Lagos',
+      prioridad: op.estado === 'observado' ? 'Alta' : 'Media',
+    };
+  }
+  return null;
+};
+
+export const AlertChip = ({ op, size = 'sm' }) => {
+  const data = getOpAlert(op);
   if (!data) return null;
   const cfg = NIVEL_CFG[data.nivel];
+  const iconSize = size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5';
+  const textSize = size === 'sm' ? 'text-[10px]' : 'text-[11px]';
 
   return (
     <HoverCard openDelay={120} closeDelay={80}>
@@ -88,10 +95,10 @@ const AlertChip = ({ op }) => {
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          data-testid={`kanban-alert-${op.id}`}
-          className={`inline-flex items-center gap-1 text-[10px] font-semibold ${cfg.textClass} hover:underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-300 rounded`}
+          data-testid={`alert-chip-${op.id}`}
+          className={`inline-flex items-center gap-1 ${textSize} font-semibold ${cfg.textClass} hover:underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-300 rounded`}
         >
-          <AlertTriangle className="w-3 h-3" /> Alerta
+          <AlertTriangle className={iconSize} /> Alerta
         </button>
       </HoverCardTrigger>
       <HoverCardContent
@@ -134,11 +141,19 @@ const AlertChip = ({ op }) => {
 
 const KanbanCard = ({ op }) => {
   const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
+  const tasksState = useDayTasks();
+  const isInBoard = tasksState.pending.includes(op.id) || tasksState.done.includes(op.id);
 
   const onDragStart = (e) => {
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData(DND_TYPE, op.id);
     e.dataTransfer.setData('text/plain', op.id);
+  };
+
+  const onAddClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isInBoard) dayTasks.addPending(op.id);
   };
 
   return (
@@ -160,7 +175,7 @@ const KanbanCard = ({ op }) => {
 
       {op.tareaEnCurso && (
         <div
-          className="mt-2.5 flex items-start gap-1.5 text-[11px] text-slate-700 bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5"
+          className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-700 bg-slate-50 border border-slate-200 rounded-md pl-2 pr-1 py-1"
           data-testid={`kanban-task-${op.id}`}
         >
           <span className="mt-0.5 inline-block w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" aria-hidden />
@@ -168,8 +183,22 @@ const KanbanCard = ({ op }) => {
             <span className="block text-[9.5px] uppercase tracking-[0.08em] text-slate-500 font-semibold">
               Tarea en curso
             </span>
-            <span className="block font-medium truncate" title={op.tareaEnCurso}>{op.tareaEnCurso}</span>
+            <span className="block font-medium truncate" title={op.tareaEnCursoFull || op.tareaEnCurso}>{op.tareaEnCurso}</span>
           </span>
+          <button
+            type="button"
+            onClick={onAddClick}
+            disabled={isInBoard}
+            data-testid={`kanban-add-task-${op.id}`}
+            title={isInBoard ? 'Ya está en tu día' : 'Agregar a mi día'}
+            className={`shrink-0 w-7 h-7 grid place-items-center rounded-md transition-colors ${
+              isInBoard
+                ? 'bg-emerald-50 text-emerald-600 cursor-default'
+                : 'bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5'
+            }`}
+          >
+            {isInBoard ? <Check className="w-3.5 h-3.5" strokeWidth={2.4} /> : <Plus className="w-3.5 h-3.5" strokeWidth={2.2} />}
+          </button>
         </div>
       )}
 

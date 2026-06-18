@@ -60,6 +60,7 @@ export const reservationToOperacion = (reservation, property) => {
     progreso: 10,
     pasoActual: 'Apertura',
     tareaEnCurso: 'Validar partes',
+    tareaEnCursoFull: 'Validar partes y solicitar documentación inicial',
     firma,
     diasFirma,
     vendedor: {
