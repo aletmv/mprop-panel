@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FolderOpen, CalendarClock, FileSignature,
   Users, Settings, LogOut, Search, Bell, ChevronsUpDown, ShieldCheck, HelpCircle, Store,
+  PanelLeftClose, PanelLeftOpen, Handshake,
 } from 'lucide-react';
 import { escribania } from './mockData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
+
+const STORAGE_KEY = 'mp_notary_sidebar_collapsed';
+const NAVY = '#2D3277';
 
 const nav = [
   { to: '/escribanos/panel', label: 'Inicio', icon: LayoutDashboard, end: true },
@@ -23,103 +27,205 @@ const secondary = [
   { to: '/escribanos/ayuda', label: 'Ayuda', icon: HelpCircle, soon: true },
 ];
 
-const Sidebar = () => {
+const useCollapsed = () => {
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(STORAGE_KEY) === '1';
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+  }, [collapsed]);
+  return [collapsed, setCollapsed];
+};
+
+const BrandLogo = ({ collapsed }) => (
+  <span className="flex items-center gap-2.5 min-w-0">
+    <span
+      className="flex items-center justify-center rounded-full h-9 w-9 shrink-0 border-2 bg-[#FFE600]"
+      style={{ borderColor: NAVY }}
+      data-testid="brand-mark"
+    >
+      <Handshake className="h-4.5 w-4.5" style={{ color: NAVY }} strokeWidth={2.4} />
+    </span>
+    {!collapsed && (
+      <span className="leading-none min-w-0">
+        <span
+          className="block font-display font-bold text-[16px] tracking-tight lowercase truncate"
+          style={{ color: NAVY }}
+        >
+          mercadoprop
+        </span>
+        <span className="block text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 text-[#666666] truncate">
+          Escribanías
+        </span>
+      </span>
+    )}
+  </span>
+);
+
+const NavItem = ({ item, collapsed }) => {
+  const link = (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      data-testid={`sidebar-link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+      className={({ isActive }) =>
+        `relative flex items-center rounded-lg text-[13.5px] font-medium transition-colors ${
+          collapsed ? 'justify-center w-10 h-10 mx-auto' : 'gap-3 px-3 py-2'
+        } ${
+          isActive
+            ? 'bg-primary text-primary-foreground'
+            : 'text-foreground/75 hover:text-foreground hover:bg-muted'
+        }`
+      }
+      title={collapsed ? item.label : undefined}
+    >
+      <item.icon className="w-[18px] h-[18px] shrink-0" />
+      {!collapsed && <span className="flex-1">{item.label}</span>}
+      {!collapsed && item.badge && (
+        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-card text-muted-foreground border border-border font-semibold">
+          {item.badge}
+        </span>
+      )}
+      {!collapsed && item.soon && (
+        <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Pronto</span>
+      )}
+      {collapsed && item.badge && (
+        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-accent text-accent-foreground text-[9px] font-bold grid place-items-center">
+          {item.badge}
+        </span>
+      )}
+    </NavLink>
+  );
+  return link;
+};
+
+const Sidebar = ({ collapsed, setCollapsed }) => {
   const navigate = useNavigate();
   const { notaryLogout } = useApp();
+  const width = collapsed ? 'w-[68px]' : 'w-64';
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 shrink-0 h-screen sticky top-0 border-r border-border bg-card">
-      <div className="h-16 px-5 flex items-center gap-2.5 border-b border-border">
-        <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground grid place-items-center font-display font-bold">
-          mp
-        </div>
-        <div className="leading-tight">
-          <div className="font-display font-bold text-[15px] text-foreground">mercadoprop</div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-accent font-semibold">Escribanías</div>
-        </div>
+    <aside
+      data-testid="notary-sidebar"
+      data-collapsed={collapsed ? 'true' : 'false'}
+      className={`hidden lg:flex flex-col ${width} shrink-0 h-screen sticky top-0 border-r border-border bg-card transition-[width] duration-200`}
+    >
+      <div className={`h-16 flex items-center border-b border-border ${collapsed ? 'justify-center px-2' : 'px-4'}`}>
+        <BrandLogo collapsed={collapsed} />
       </div>
 
-      <button
-        data-testid="sidebar-escribania-switcher"
-        className="mx-3 mt-4 mb-2 flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-muted transition-colors"
-      >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground grid place-items-center text-xs font-bold">
+      {!collapsed && (
+        <button
+          data-testid="sidebar-escribania-switcher"
+          className="mx-3 mt-4 mb-2 flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-muted transition-colors"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground grid place-items-center text-xs font-bold">
+            {escribania.iniciales}
+          </div>
+          <div className="flex-1 text-left leading-tight min-w-0">
+            <div className="text-[13px] font-semibold text-foreground truncate">{escribania.nombre}</div>
+            <div className="text-[11px] text-muted-foreground truncate">{escribania.registro}</div>
+          </div>
+          <ChevronsUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
+        </button>
+      )}
+
+      {collapsed && (
+        <div
+          className="mx-auto mt-4 mb-2 w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground grid place-items-center text-[11px] font-bold"
+          title={escribania.nombre}
+          data-testid="sidebar-escribania-switcher"
+        >
           {escribania.iniciales}
         </div>
-        <div className="flex-1 text-left leading-tight min-w-0">
-          <div className="text-[13px] font-semibold text-foreground truncate">{escribania.nombre}</div>
-          <div className="text-[11px] text-muted-foreground truncate">{escribania.registro}</div>
-        </div>
-        <ChevronsUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
-      </button>
+      )}
 
-      <nav className="px-3 mt-3 space-y-0.5">
-        <div className="px-3 pb-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">Workspace</div>
+      <nav className={`mt-3 space-y-0.5 ${collapsed ? 'px-1.5' : 'px-3'}`}>
+        {!collapsed && (
+          <div className="px-3 pb-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+            Workspace
+          </div>
+        )}
         {nav.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            data-testid={`sidebar-link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] font-medium transition-colors ${
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground/75 hover:text-foreground hover:bg-muted'
-              }`
-            }
-          >
-            <item.icon className="w-[18px] h-[18px]" />
-            <span className="flex-1">{item.label}</span>
-            {item.badge && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-card text-muted-foreground border border-border font-semibold">
-                {item.badge}
-              </span>
-            )}
-            {item.soon && (
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Pronto</span>
-            )}
-          </NavLink>
+          <NavItem key={item.to} item={item} collapsed={collapsed} />
         ))}
       </nav>
 
-      <nav className="px-3 mt-6 space-y-0.5">
-        <div className="px-3 pb-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">Sistema</div>
+      <nav className={`mt-6 space-y-0.5 ${collapsed ? 'px-1.5' : 'px-3'}`}>
+        {!collapsed && (
+          <div className="px-3 pb-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+            Sistema
+          </div>
+        )}
         {secondary.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            data-testid={`sidebar-link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] font-medium transition-colors ${
-                isActive ? 'bg-primary text-primary-foreground' : 'text-foreground/75 hover:text-foreground hover:bg-muted'
-              }`
-            }
-          >
-            <item.icon className="w-[18px] h-[18px]" />
-            <span className="flex-1">{item.label}</span>
-            {item.soon && <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Pronto</span>}
-          </NavLink>
+          <NavItem key={item.to} item={item} collapsed={collapsed} />
         ))}
       </nav>
 
-      <div className="mt-auto m-3 space-y-2">
-        <Link
-          to="/"
-          data-testid="sidebar-link-marketplace"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium text-foreground/75 hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <Store className="w-4 h-4" /> Volver al marketplace
-        </Link>
+      <div className={`mt-auto space-y-1 ${collapsed ? 'p-1.5' : 'p-3'}`}>
+        {!collapsed ? (
+          <>
+            <Link
+              to="/"
+              data-testid="sidebar-link-marketplace"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium text-foreground/75 hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <Store className="w-4 h-4" /> Volver al marketplace
+            </Link>
+            <button
+              data-testid="sidebar-logout"
+              onClick={() => {
+                notaryLogout();
+                navigate('/escribanos');
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium text-foreground/75 hover:text-destructive hover:bg-destructive-soft transition-colors"
+            >
+              <LogOut className="w-4 h-4" /> Cerrar sesión
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              to="/"
+              title="Volver al marketplace"
+              data-testid="sidebar-link-marketplace"
+              className="flex items-center justify-center w-10 h-10 mx-auto rounded-lg text-foreground/75 hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <Store className="w-4 h-4" />
+            </Link>
+            <button
+              title="Cerrar sesión"
+              data-testid="sidebar-logout"
+              onClick={() => {
+                notaryLogout();
+                navigate('/escribanos');
+              }}
+              className="flex items-center justify-center w-10 h-10 mx-auto rounded-lg text-foreground/75 hover:text-destructive hover:bg-destructive-soft transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </>
+        )}
+
         <button
-          data-testid="sidebar-logout"
-          onClick={() => {
-            notaryLogout();
-            navigate('/escribanos');
-          }}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium text-foreground/75 hover:text-destructive hover:bg-destructive-soft transition-colors"
+          data-testid="sidebar-toggle"
+          onClick={() => setCollapsed((c) => !c)}
+          title={collapsed ? 'Expandir' : 'Colapsar'}
+          className={`mt-1 ${
+            collapsed
+              ? 'w-10 h-10 mx-auto'
+              : 'w-full px-3 py-2 justify-start'
+          } flex items-center gap-2 rounded-lg text-[12.5px] font-medium text-foreground/75 hover:text-foreground hover:bg-muted transition-colors`}
         >
-          <LogOut className="w-4 h-4" /> Cerrar sesión
+          {collapsed ? (
+            <PanelLeftOpen className="w-4 h-4 mx-auto" />
+          ) : (
+            <>
+              <PanelLeftClose className="w-4 h-4" /> Colapsar
+            </>
+          )}
         </button>
       </div>
     </aside>
@@ -172,9 +278,10 @@ export const Topbar = ({ title, subtitle, actions }) => {
 };
 
 export const PanelShell = ({ children }) => {
+  const [collapsed, setCollapsed] = useCollapsed();
   return (
     <div className="escribania-panel min-h-screen flex bg-background text-foreground">
-      <Sidebar />
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       <main className="flex-1 min-w-0">{children}</main>
     </div>
   );

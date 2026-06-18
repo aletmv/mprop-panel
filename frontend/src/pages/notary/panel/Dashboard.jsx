@@ -11,6 +11,7 @@ import {
   kpis as MOCK_KPIS, alertas, proximasFirmas, estadoLabel, operaciones as MOCK_OPERACIONES,
 } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
+import { LegajosKanban } from './Kanban';
 import { useApp } from '@/context/AppContext';
 
 const iconMap = { folder: FolderOpen, pen: PenLine, alert: AlertTriangle, clock: Clock };
@@ -68,6 +69,8 @@ const Dashboard = () => {
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {kpis.map((k) => <KpiCard key={k.id} kpi={k} />)}
         </section>
+
+        <LegajosKanban operaciones={operaciones} />
 
         <section className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8 space-y-6">
