@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap');
+
 body {
     margin: 0;
     font-family: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
@@ -109,4 +111,89 @@ code {
         border-top-color: inherit;
         border-bottom-color: inherit;
     }
+}
+
+/* ====== ESCRIBANÍAS PANEL · scoped theme ====== */
+.escribania-panel {
+    /* Surface */
+    --background: 210 20% 98%;
+    --foreground: 210 11% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 11% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 11% 15%;
+
+    /* Brand · MP Blue */
+    --primary: 200 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 200 100% 45%;
+
+    /* Secondary · slate */
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 210 11% 15%;
+
+    /* Muted */
+    --muted: 210 20% 96%;
+    --muted-foreground: 210 10% 45%;
+
+    /* Accent */
+    --accent: 200 100% 45%;
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 200 100% 95%;
+
+    /* Semantic */
+    --success: 142 71% 38%;
+    --success-foreground: 0 0% 100%;
+    --success-soft: 142 71% 95%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 20%;
+    --warning-soft: 38 92% 95%;
+
+    --destructive: 0 78% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-soft: 0 84% 96%;
+
+    --info: 200 100% 45%;
+    --info-soft: 200 100% 95%;
+
+    --border: 210 14% 89%;
+    --input: 210 14% 89%;
+    --ring: 200 100% 45%;
+
+    --radius: 0.75rem;
+
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+}
+
+.escribania-panel h1,
+.escribania-panel h2,
+.escribania-panel h3,
+.escribania-panel h4,
+.escribania-panel h5,
+.escribania-panel .font-display {
+    font-family: 'Manrope', 'Inter', sans-serif;
+    letter-spacing: -0.02em;
+}
+
+.escribania-panel .card-surface {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.75rem;
+}
+
+.escribania-panel .num-tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+.escribania-panel .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.escribania-panel .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 99px;
 }

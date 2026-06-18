@@ -29,7 +29,7 @@ export default function NotaryLogin() {
         </span>
         <h1 className="font-heading font-extrabold text-2xl tracking-tight mt-4">Portal de Escribanías</h1>
         <p className="text-sm text-[#666666] mt-1">
-          Gestioná tu agenda, tus carpetas y trabajá con tu Asistente IA.
+          Gestioná tu agenda, tus legajos y operaciones desde un solo lugar.
         </p>
       </div>
 

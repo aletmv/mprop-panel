@@ -23,11 +23,20 @@ export const Layout = ({ children }) => {
   const { verified } = useApp();
   const { pathname } = useLocation();
 
-  if (pathname.startsWith("/escribanos")) {
+  if (pathname === "/escribanos") {
     return (
       <>
         <ScrollToTop />
         <NotaryShell>{children}</NotaryShell>
+      </>
+    );
+  }
+
+  if (pathname.startsWith("/escribanos/")) {
+    return (
+      <>
+        <ScrollToTop />
+        {children}
       </>
     );
   }

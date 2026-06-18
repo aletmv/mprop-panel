@@ -13,8 +13,10 @@ import EscrowCheckout from "@/pages/EscrowCheckout";
 import NotarySelection from "@/pages/NotarySelection";
 import Profile from "@/pages/Profile";
 import NotaryLogin from "@/pages/notary/NotaryLogin";
-import NotaryPanel from "@/pages/notary/NotaryPanel";
-import NotaryFolder from "@/pages/notary/NotaryFolder";
+import NotaryDashboard from "@/pages/notary/panel/Dashboard";
+import NotaryOperacionesList from "@/pages/notary/panel/OperacionesList";
+import NotaryOperacionDetail from "@/pages/notary/panel/OperacionDetail";
+import NotaryAgenda from "@/pages/notary/panel/Agenda";
 
 function App() {
   return (
@@ -32,8 +34,11 @@ function App() {
             <Route path="/escribania/:resId" element={<NotarySelection />} />
             <Route path="/perfil" element={<Profile />} />
             <Route path="/escribanos" element={<NotaryLogin />} />
-            <Route path="/escribanos/panel" element={<NotaryPanel />} />
-            <Route path="/escribanos/carpeta/:resId" element={<NotaryFolder />} />
+            <Route path="/escribanos/panel" element={<NotaryDashboard />} />
+            <Route path="/escribanos/operaciones" element={<NotaryOperacionesList />} />
+            <Route path="/escribanos/operaciones/:id" element={<NotaryOperacionDetail />} />
+            <Route path="/escribanos/agenda" element={<NotaryAgenda />} />
+            <Route path="/escribanos/carpeta/:resId" element={<NotaryDashboard />} />
           </Routes>
         </Layout>
       </BrowserRouter>
