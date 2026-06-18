@@ -317,7 +317,7 @@ const OperacionDetail = () => {
                   const isCrit = a.nivel === 'critica';
                   const cfg = isCrit
                     ? { wrap: 'bg-red-50 border-l-4 border-red-500', icon: 'text-red-600', label: 'Crítica', pill: 'destructive' }
-                    : { wrap: 'bg-amber-50 border-l-4 border-amber-500', icon: 'text-amber-600', label: 'Media', pill: 'warning' };
+                    : { wrap: 'bg-white border border-slate-200 border-l-4 border-l-amber-500', icon: 'text-amber-600', label: 'Media', pill: 'warning' };
                   return (
                     <div key={a.id} className={`${cfg.wrap} p-4 rounded-r-lg flex gap-3`} data-testid={`alert-${a.id}`}>
                       <AlertTriangle className={`w-5 h-5 ${cfg.icon} shrink-0 mt-0.5`} strokeWidth={1.5} />

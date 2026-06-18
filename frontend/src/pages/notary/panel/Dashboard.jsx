@@ -69,8 +69,13 @@ const Dashboard = () => {
                 {alertas.map((a) => {
                   const colorMap = {
                     critica: { bg: 'bg-destructive-soft', border: 'border-destructive/15', text: 'text-destructive', icon: ShieldAlert, badge: 'destructive', label: 'Crítica' },
-                    media: { bg: 'bg-warning-soft', border: 'border-warning/20', text: 'text-warning-foreground', icon: AlertTriangle, badge: 'warning', label: 'Media' },
-                    info: { bg: 'bg-info-soft', border: 'border-info/20', text: 'text-info', icon: FileText, badge: 'info', label: 'Info' },
+                    media: { bg: 'bg-card', border: 'border-border', text: 'text-warning-foreground', icon: AlertTriangle, badge: 'warning', label: 'Media' },
+                    info: { bg: 'bg-card', border: 'border-border', text: 'text-info', icon: FileText, badge: 'info', label: 'Info' },
+                  }[a.nivel];
+                  const iconContainerBorder = {
+                    critica: 'border-destructive/30',
+                    media: 'border-warning/40',
+                    info: 'border-info/30',
                   }[a.nivel];
                   const Icon = colorMap.icon;
                   return (
@@ -80,7 +85,7 @@ const Dashboard = () => {
                       data-testid={`alert-${a.id}`}
                       className={`flex items-start gap-2.5 p-2.5 rounded-lg border ${colorMap.bg} ${colorMap.border} hover:shadow-sm transition-shadow group`}
                     >
-                      <div className={`w-7 h-7 rounded-md bg-card grid place-items-center shrink-0 border ${colorMap.border}`}>
+                      <div className={`w-7 h-7 rounded-md bg-card grid place-items-center shrink-0 border ${iconContainerBorder}`}>
                         <Icon className={`w-3.5 h-3.5 ${colorMap.text}`} />
                       </div>
                       <div className="flex-1 min-w-0">
