@@ -198,10 +198,6 @@ code {
     border-radius: 99px;
 }
 
-.escribania-panel .hg-icon {
-    color: hsl(215 18% 32%); /* slate-700 aprox */
-}
-
 .escribania-panel .hg-icon .hg-grain {
     animation: hg-fall 1.6s linear infinite;
     transform-origin: center;

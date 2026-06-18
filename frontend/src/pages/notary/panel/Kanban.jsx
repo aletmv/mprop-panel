@@ -194,7 +194,7 @@ const KanbanCard = ({ op }) => {
             title={isInBoard ? 'Ya está en tu día' : 'Agregar a mi día'}
             className={`shrink-0 w-7 h-7 grid place-items-center rounded-md transition-colors ${
               isInBoard
-                ? 'bg-slate-100 text-slate-700 cursor-default'
+                ? 'bg-foreground text-white cursor-default shadow-sm'
                 : 'bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5'
             }`}
           >
