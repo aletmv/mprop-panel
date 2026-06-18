@@ -75,7 +75,7 @@ const NavItem = ({ item, collapsed }) => {
           collapsed ? 'justify-center w-10 h-10 mx-auto' : 'gap-3 px-3 py-2'
         } ${
           isActive
-            ? 'bg-primary text-primary-foreground'
+            ? 'text-primary font-semibold'
             : 'text-foreground/75 hover:text-foreground hover:bg-muted'
         }`
       }

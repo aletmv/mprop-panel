@@ -11,8 +11,6 @@ const HITOS = [
     label: 'Inicio de operación',
     sub: 'Apertura del legajo',
     icon: PlayCircle,
-    accent: 'text-sky-700 bg-sky-50 border-sky-200',
-    bar: 'bg-sky-500',
     states: ['apertura'],
   },
   {
@@ -20,8 +18,6 @@ const HITOS = [
     label: 'Expediente documental',
     sub: 'Carga y revisión inicial',
     icon: FolderOpen,
-    accent: 'text-indigo-700 bg-indigo-50 border-indigo-200',
-    bar: 'bg-indigo-500',
     states: ['documentos'],
   },
   {
@@ -29,8 +25,6 @@ const HITOS = [
     label: 'Due diligence',
     sub: 'Análisis registral y dominial',
     icon: Search,
-    accent: 'text-amber-700 bg-amber-50 border-amber-200',
-    bar: 'bg-amber-500',
     states: ['analisis', 'observado'],
   },
   {
@@ -38,8 +32,6 @@ const HITOS = [
     label: 'Pre-cierre',
     sub: 'Listos para firma',
     icon: FileSignature,
-    accent: 'text-violet-700 bg-violet-50 border-violet-200',
-    bar: 'bg-violet-500',
     states: ['en-firma'],
   },
   {
@@ -47,8 +39,6 @@ const HITOS = [
     label: 'Cierre y post-cierre',
     sub: 'Inscripción y archivado',
     icon: CheckCircle2,
-    accent: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-    bar: 'bg-emerald-500',
     states: ['cerrado'],
   },
 ];
@@ -76,7 +66,22 @@ const KanbanCard = ({ op }) => {
       </div>
       <div className="text-[11px] text-slate-500 mt-0.5 truncate">{op.barrio}</div>
 
-      <div className="mt-3 h-1 rounded-full bg-slate-100 overflow-hidden">
+      {op.tareaEnCurso && (
+        <div
+          className="mt-2.5 flex items-start gap-1.5 text-[11px] text-slate-700 bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5"
+          data-testid={`kanban-task-${op.id}`}
+        >
+          <span className="mt-0.5 inline-block w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" aria-hidden />
+          <span className="leading-snug flex-1 min-w-0">
+            <span className="block text-[9.5px] uppercase tracking-[0.08em] text-slate-500 font-semibold">
+              Tarea en curso
+            </span>
+            <span className="block font-medium truncate" title={op.tareaEnCurso}>{op.tareaEnCurso}</span>
+          </span>
+        </div>
+      )}
+
+      <div className="mt-2.5 h-1 rounded-full bg-slate-100 overflow-hidden">
         <div
           className={`h-full ${op.estado === 'observado' ? 'bg-red-500' : op.estado === 'cerrado' ? 'bg-emerald-500' : 'bg-sky-500'}`}
           style={{ width: `${op.progreso}%` }}
@@ -118,7 +123,7 @@ const Column = ({ hito, items }) => {
       className="flex flex-col rounded-xl border border-slate-200 bg-slate-50/60 overflow-hidden"
     >
       <div className="px-3.5 py-3 flex items-center gap-2.5 border-b border-slate-200 bg-white">
-        <span className={`w-8 h-8 rounded-lg grid place-items-center border ${hito.accent}`}>
+        <span className="w-8 h-8 rounded-lg grid place-items-center border bg-slate-50 border-slate-200 text-slate-600">
           <Icon className="w-4 h-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -132,7 +137,6 @@ const Column = ({ hito, items }) => {
           {items.length}
         </span>
       </div>
-      <div className={`h-1 ${hito.bar}`} />
       <div className="p-2.5 flex flex-col gap-2 min-h-[260px] max-h-[460px] overflow-y-auto">
         {items.length === 0 ? (
           <div className="flex-1 grid place-items-center text-[11.5px] text-slate-400 py-8">
