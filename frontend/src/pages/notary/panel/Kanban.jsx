@@ -8,6 +8,7 @@ import { alertas as ALERTAS_MOCK } from './mockData';
 import { DND_TYPE } from './dndTypes';
 import { dayTasks, useDayTasks } from './dayTasksStore';
 import { HourglassFalling } from './HourglassFalling';
+import { PartiesPair } from './PartiesPair';
 
 // 5 hitos con progresión cromática lógica:
 // neutro-frío (Inicio) → fresco (Expediente) → análisis (Due diligence) → transición (Pre-cierre) → final/éxito (Cierre).
@@ -215,17 +216,7 @@ const KanbanCard = ({ op }) => {
       </div>
 
       <div className="mt-2.5 flex items-center justify-between gap-2">
-        <div className="flex -space-x-2">
-          {[op.vendedor, op.comprador].map((p, i) => (
-            <span
-              key={i}
-              className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 border border-white grid place-items-center text-[9px] font-bold text-slate-700"
-              title={p.nombre}
-            >
-              {p.avatar}
-            </span>
-          ))}
-        </div>
+        <PartiesPair vendedor={op.vendedor} comprador={op.comprador} size="sm" />
         <span
           className={`inline-flex items-center gap-1 text-[10.5px] ${
             urgente ? 'text-red-600 font-bold' : 'text-slate-500 font-medium'

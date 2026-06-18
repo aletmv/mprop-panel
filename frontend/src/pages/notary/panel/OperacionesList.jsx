@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Search, SlidersHorizontal, Plus, MapPin, Calendar, ArrowUpDown,
-  CheckCircle2, ChevronRight, Download, X,
+  ChevronRight, Download, X,
 } from 'lucide-react';
 import { operaciones as MOCK_OPERACIONES, estadoLabel, riesgoLabel } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
 import { HITO_MAP } from './Kanban';
+import { PartiesPair } from './PartiesPair';
 import { useApp } from '@/context/AppContext';
 
 const filtrosBase = [
@@ -207,18 +208,7 @@ const OperacionesList = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="flex -space-x-2">
-                          {[op.vendedor, op.comprador].map((p, i) => (
-                            <div key={i} className="relative">
-                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/80 to-primary-glow text-primary-foreground grid place-items-center text-[10px] font-bold border-2 border-card">
-                                {p.avatar}
-                              </div>
-                              {p.verificado && (
-                                <CheckCircle2 className="w-3 h-3 text-success absolute -bottom-0.5 -right-0.5 bg-card rounded-full" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                        <PartiesPair vendedor={op.vendedor} comprador={op.comprador} size="sm" />
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
