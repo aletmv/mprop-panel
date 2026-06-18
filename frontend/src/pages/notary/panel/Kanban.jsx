@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { alertas as ALERTAS_MOCK } from './mockData';
+import { DND_TYPE } from './TasksBoard';
 
 // 5 hitos con progresión cromática lógica:
 // neutro-frío (Inicio) → fresco (Expediente) → análisis (Due diligence) → transición (Pre-cierre) → final/éxito (Cierre).
@@ -134,11 +135,19 @@ const AlertChip = ({ op }) => {
 const KanbanCard = ({ op }) => {
   const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
 
+  const onDragStart = (e) => {
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData(DND_TYPE, op.id);
+    e.dataTransfer.setData('text/plain', op.id);
+  };
+
   return (
     <Link
       to={`/escribanos/operaciones/${op.id}`}
+      draggable
+      onDragStart={onDragStart}
       data-testid={`kanban-card-${op.id}`}
-      className="block bg-white border border-slate-200 rounded-lg p-3 hover:shadow-md hover:border-slate-300 transition-all group"
+      className="block bg-white border border-slate-200 rounded-lg p-3 hover:shadow-md hover:border-slate-300 transition-all group cursor-grab active:cursor-grabbing"
     >
       <div className="flex items-center justify-between mb-1.5">
         <span className="font-mono text-[10.5px] text-slate-500 tracking-tight">{op.id}</span>

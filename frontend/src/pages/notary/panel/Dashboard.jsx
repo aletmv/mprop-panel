@@ -2,49 +2,23 @@ import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { PanelShell, Topbar } from './PanelShell';
 import { StatusBadge } from './StatusBadge';
-import { Button } from '@/components/ui/button';
 import {
-  FolderOpen, PenLine, AlertTriangle, Clock,
-  CalendarDays, ChevronRight, Sparkles, FileText, ShieldAlert,
+  AlertTriangle, Clock, CalendarDays, ChevronRight, Sparkles, FileText, ShieldAlert,
 } from 'lucide-react';
 import {
-  kpis as MOCK_KPIS, alertas, proximasFirmas, estadoLabel, operaciones as MOCK_OPERACIONES,
+  alertas, proximasFirmas, estadoLabel, operaciones as MOCK_OPERACIONES,
 } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
 import { LegajosKanban } from './Kanban';
+import { TasksBoard } from './TasksBoard';
 import { useApp } from '@/context/AppContext';
-
-const iconMap = { folder: FolderOpen, pen: PenLine, alert: AlertTriangle, clock: Clock };
-
-const KpiCard = ({ kpi }) => {
-  const Icon = iconMap[kpi.icon];
-  return (
-    <div
-      data-testid={`kpi-${kpi.id}`}
-      className="card-surface p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
-    >
-      <div className="w-9 h-9 rounded-lg bg-muted grid place-items-center">
-        <Icon className="w-[18px] h-[18px] text-primary" />
-      </div>
-      <div>
-        <div className="font-display font-bold text-[28px] text-foreground leading-none num-tabular">{kpi.value}</div>
-        <div className="text-[12px] text-muted-foreground mt-1">{kpi.label}</div>
-      </div>
-    </div>
-  );
-};
 
 const Dashboard = () => {
   const ctx = useApp();
   const { notarySession } = ctx;
-  // Agenda toggle: "hoy" (firmas del primer día con eventos) vs "proximas" (próximas 5).
   const [agendaTab, setAgendaTab] = useState('proximas');
   if (!notarySession) return <Navigate to="/escribanos" replace />;
   const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
-  // KPIs: actualizamos "Legajos activos" con el total real (mock + reservas asignadas).
-  const kpis = MOCK_KPIS.map((k) =>
-    k.id === 'activos' ? { ...k, value: operaciones.length } : k
-  );
   const distribucion = [
     { k: 'apertura', n: operaciones.filter((o) => o.estado === 'apertura').length || 6 },
     { k: 'documentos', n: operaciones.filter((o) => o.estado === 'documentos').length || 14 },
@@ -66,8 +40,66 @@ const Dashboard = () => {
         subtitle="Tenés 4 alertas críticas y 12 firmas en los próximos 7 días."
       />
       <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-6" data-testid="notary-dashboard">
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpis.map((k) => <KpiCard key={k.id} kpi={k} />)}
+        <section className="grid grid-cols-12 gap-6">
+          <div className="col-span-12 lg:col-span-8">
+            <TasksBoard operaciones={operaciones} />
+          </div>
+          <aside className="col-span-12 lg:col-span-4">
+            <div className="card-surface p-5 h-full flex flex-col" data-testid="alerts-card-top">
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-9 h-9 rounded-lg bg-destructive/10 text-destructive grid place-items-center shrink-0">
+                    <ShieldAlert className="w-5 h-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="font-display font-bold text-[16px] text-foreground leading-tight flex items-center gap-1.5">
+                      Alertas
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-destructive text-destructive-foreground">
+                        {alertas.length}
+                      </span>
+                    </h2>
+                    <div className="text-[11.5px] text-muted-foreground">Ordenadas por prioridad e impacto</div>
+                  </div>
+                </div>
+                <Link to="/escribanos/operaciones" className="text-[11px] font-semibold text-primary hover:underline shrink-0">
+                  Ver todas
+                </Link>
+              </div>
+              <div className="space-y-2 overflow-y-auto pr-1 flex-1 max-h-[420px]">
+                {alertas.map((a) => {
+                  const colorMap = {
+                    critica: { bg: 'bg-destructive-soft', border: 'border-destructive/15', text: 'text-destructive', icon: ShieldAlert, badge: 'destructive', label: 'Crítica' },
+                    media: { bg: 'bg-warning-soft', border: 'border-warning/20', text: 'text-warning-foreground', icon: AlertTriangle, badge: 'warning', label: 'Media' },
+                    info: { bg: 'bg-info-soft', border: 'border-info/20', text: 'text-info', icon: FileText, badge: 'info', label: 'Info' },
+                  }[a.nivel];
+                  const Icon = colorMap.icon;
+                  return (
+                    <Link
+                      to={`/escribanos/operaciones/${a.operacionId}`}
+                      key={a.id}
+                      data-testid={`alert-${a.id}`}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-lg border ${colorMap.bg} ${colorMap.border} hover:shadow-sm transition-shadow group`}
+                    >
+                      <div className={`w-7 h-7 rounded-md bg-card grid place-items-center shrink-0 border ${colorMap.border}`}>
+                        <Icon className={`w-3.5 h-3.5 ${colorMap.text}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[12px] font-semibold text-foreground leading-snug">{a.titulo}</span>
+                          <StatusBadge variant={colorMap.badge} dot={false} className="text-[9.5px]">{colorMap.label}</StatusBadge>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-1 leading-snug line-clamp-2">{a.descripcion}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1">
+                          <span className="font-mono">{a.operacionId}</span> · {a.responsable}
+                        </div>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
         </section>
 
         <LegajosKanban operaciones={operaciones} />
@@ -167,56 +199,6 @@ const Dashboard = () => {
                 >
                   Ver agenda completa →
                 </Link>
-              </div>
-            </div>
-
-            <div className="card-surface p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="font-display font-bold text-[18px] text-foreground flex items-center gap-2">
-                    Alertas que requieren tu atención
-                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-destructive text-destructive-foreground">
-                      3
-                    </span>
-                  </h2>
-                  <div className="text-[12px] text-muted-foreground">Ordenadas por prioridad e impacto sobre la firma</div>
-                </div>
-                <Link to="/escribanos/operaciones" className="text-[12px] font-semibold text-primary hover:underline">
-                  Ver todas →
-                </Link>
-              </div>
-              <div className="space-y-2.5">
-                {alertas.map((a) => {
-                  const colorMap = {
-                    critica: { bg: 'bg-destructive-soft', border: 'border-destructive/15', text: 'text-destructive', icon: ShieldAlert, badge: 'destructive', label: 'Crítica' },
-                    media: { bg: 'bg-warning-soft', border: 'border-warning/20', text: 'text-warning-foreground', icon: AlertTriangle, badge: 'warning', label: 'Media' },
-                    info: { bg: 'bg-info-soft', border: 'border-info/20', text: 'text-info', icon: FileText, badge: 'info', label: 'Info' },
-                  }[a.nivel];
-                  const Icon = colorMap.icon;
-                  return (
-                    <Link
-                      to={`/escribanos/operaciones/${a.operacionId}`}
-                      key={a.id}
-                      data-testid={`alert-${a.id}`}
-                      className={`flex items-start gap-3 p-3.5 rounded-xl border ${colorMap.bg} ${colorMap.border} hover:shadow-sm transition-shadow group`}
-                    >
-                      <div className={`w-9 h-9 rounded-lg bg-card grid place-items-center shrink-0 border ${colorMap.border}`}>
-                        <Icon className={`w-4 h-4 ${colorMap.text}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[13px] font-semibold text-foreground">{a.titulo}</span>
-                          <StatusBadge variant={colorMap.badge} dot={false}>{colorMap.label}</StatusBadge>
-                        </div>
-                        <div className="text-[12px] text-muted-foreground mt-0.5 leading-snug">{a.descripcion}</div>
-                        <div className="text-[11px] text-muted-foreground mt-1.5">
-                          <span className="font-mono">{a.operacionId}</span> · {a.responsable}
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0 mt-1" />
-                    </Link>
-                  );
-                })}
               </div>
             </div>
           </div>
