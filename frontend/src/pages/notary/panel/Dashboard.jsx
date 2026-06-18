@@ -1,43 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { PanelShell, Topbar } from './PanelShell';
 import { StatusBadge } from './StatusBadge';
 import { Button } from '@/components/ui/button';
 import {
-  FolderOpen, PenLine, AlertTriangle, Clock, ArrowUpRight, ArrowDownRight,
+  FolderOpen, PenLine, AlertTriangle, Clock,
   CalendarDays, ChevronRight, Sparkles, FileText, ShieldAlert,
 } from 'lucide-react';
 import {
-  kpis as MOCK_KPIS, alertas, proximasFirmas, cargaMensual, estadoLabel, operaciones as MOCK_OPERACIONES,
+  kpis as MOCK_KPIS, alertas, proximasFirmas, estadoLabel, operaciones as MOCK_OPERACIONES,
 } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
-import {
-  AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
-} from 'recharts';
 import { useApp } from '@/context/AppContext';
 
 const iconMap = { folder: FolderOpen, pen: PenLine, alert: AlertTriangle, clock: Clock };
 
 const KpiCard = ({ kpi }) => {
   const Icon = iconMap[kpi.icon];
-  const positive = kpi.trend === 'up';
   return (
     <div
       data-testid={`kpi-${kpi.id}`}
       className="card-surface p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
     >
-      <div className="flex items-center justify-between">
-        <div className="w-9 h-9 rounded-lg bg-muted grid place-items-center">
-          <Icon className="w-[18px] h-[18px] text-primary" />
-        </div>
-        <span
-          className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
-            positive ? 'text-success' : 'text-muted-foreground'
-          }`}
-        >
-          {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-          {kpi.delta}
-        </span>
+      <div className="w-9 h-9 rounded-lg bg-muted grid place-items-center">
+        <Icon className="w-[18px] h-[18px] text-primary" />
       </div>
       <div>
         <div className="font-display font-bold text-[28px] text-foreground leading-none num-tabular">{kpi.value}</div>
@@ -50,6 +36,8 @@ const KpiCard = ({ kpi }) => {
 const Dashboard = () => {
   const ctx = useApp();
   const { notarySession } = ctx;
+  // Agenda toggle: "hoy" (firmas del primer día con eventos) vs "proximas" (próximas 5).
+  const [agendaTab, setAgendaTab] = useState('proximas');
   if (!notarySession) return <Navigate to="/escribanos" replace />;
   const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
   // KPIs: actualizamos "Legajos activos" con el total real (mock + reservas asignadas).
@@ -65,6 +53,11 @@ const Dashboard = () => {
   ];
   const totalDist = distribucion.reduce((s, x) => s + x.n, 0) || 1;
 
+  const firmasOrdenadas = proximasFirmas;
+  const fechaHoy = firmasOrdenadas[0]?.fecha;
+  const firmasHoy = firmasOrdenadas.filter((f) => f.fecha === fechaHoy);
+  const firmasAMostrar = agendaTab === 'hoy' ? firmasHoy : firmasOrdenadas.slice(0, 5);
+
   return (
     <PanelShell>
       <Topbar
@@ -78,50 +71,99 @@ const Dashboard = () => {
 
         <section className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8 space-y-6">
-            <div className="card-surface p-6">
-              <div className="flex items-start justify-between mb-6">
+            <div className="card-surface p-6" data-testid="agenda-card">
+              <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
                 <div>
-                  <h2 className="font-display font-bold text-[18px] text-foreground">Volumen operativo</h2>
-                  <div className="text-[12px] text-muted-foreground">Aperturas y firmas concretadas — últimos 6 meses</div>
+                  <h2 className="font-display font-bold text-[18px] text-foreground flex items-center gap-2">
+                    <CalendarDays className="w-[18px] h-[18px] text-primary" />
+                    {agendaTab === 'hoy' ? 'Agenda del día' : 'Próximas firmas'}
+                  </h2>
+                  <div className="text-[12px] text-muted-foreground mt-0.5">
+                    {agendaTab === 'hoy'
+                      ? `${firmasHoy.length} firma${firmasHoy.length === 1 ? '' : 's'} programada${firmasHoy.length === 1 ? '' : 's'} para hoy`
+                      : 'Próximos 5 actos notariales agendados'}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-[11px]">
-                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-primary" />Aperturas
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-accent" />Firmas
-                  </span>
+                <div
+                  className="inline-flex bg-muted rounded-lg p-1"
+                  data-testid="agenda-toggle"
+                  role="tablist"
+                >
+                  <button
+                    role="tab"
+                    aria-selected={agendaTab === 'hoy'}
+                    data-testid="agenda-tab-hoy"
+                    onClick={() => setAgendaTab('hoy')}
+                    className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
+                      agendaTab === 'hoy' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Hoy
+                  </button>
+                  <button
+                    role="tab"
+                    aria-selected={agendaTab === 'proximas'}
+                    data-testid="agenda-tab-proximas"
+                    onClick={() => setAgendaTab('proximas')}
+                    className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
+                      agendaTab === 'proximas' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Próximas firmas
+                  </button>
                 </div>
               </div>
-              <div className="h-[220px] -ml-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={cargaMensual}>
-                    <defs>
-                      <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                    <XAxis dataKey="mes" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} width={28} />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        boxShadow: '0 8px 24px hsl(222 45% 17% / 0.08)',
-                      }}
-                    />
-                    <Area type="monotone" dataKey="aperturas" stroke="hsl(var(--primary))" fill="url(#g1)" strokeWidth={2} />
-                    <Area type="monotone" dataKey="firmas" stroke="hsl(var(--accent))" fill="url(#g2)" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
+
+              {firmasAMostrar.length === 0 ? (
+                <div className="py-10 text-center text-[13px] text-muted-foreground">
+                  No hay firmas programadas para hoy.
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {firmasAMostrar.map((f) => {
+                    const colorByState = { confirmada: 'success', observada: 'destructive', tentativa: 'warning' }[f.estado];
+                    const labelByState = { confirmada: 'Confirmada', observada: 'Observada', tentativa: 'Tentativa' }[f.estado];
+                    return (
+                      <Link
+                        to={`/escribanos/operaciones/${f.operacion}`}
+                        key={f.operacion}
+                        data-testid={`agenda-item-${f.operacion}`}
+                        className="flex items-center gap-4 py-3.5 group hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors"
+                      >
+                        <div className="w-14 text-center shrink-0">
+                          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            {f.fecha.split('/')[1] === '06' ? 'Jun' : 'Jul'}
+                          </div>
+                          <div className="font-display font-bold text-[20px] text-foreground leading-none num-tabular">
+                            {f.fecha.split('/')[0]}
+                          </div>
+                        </div>
+                        <div className="w-px self-stretch bg-border" />
+                        <div className="flex items-center gap-2 shrink-0 text-foreground font-semibold num-tabular text-[14px]">
+                          <Clock className="w-3.5 h-3.5 text-muted-foreground" /> {f.hora}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[14px] font-semibold text-foreground truncate">{f.direccion}</div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            <span className="font-mono">{f.operacion}</span> · {f.escribano}
+                          </div>
+                        </div>
+                        <StatusBadge variant={colorByState}>{labelByState}</StatusBadge>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-4 flex justify-end">
+                <Link
+                  to="/escribanos/agenda"
+                  className="text-[12px] font-semibold text-primary hover:underline"
+                  data-testid="agenda-card-link-agenda"
+                >
+                  Ver agenda completa →
+                </Link>
               </div>
             </div>
 
@@ -193,50 +235,6 @@ const Dashboard = () => {
                 <button className="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-card/15 hover:bg-card/25 text-[12px] font-semibold backdrop-blur-sm transition-colors">
                   Ver sugerencias <ChevronRight className="w-4 h-4" />
                 </button>
-              </div>
-            </div>
-
-            <div className="card-surface p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="w-4 h-4 text-primary" />
-                  <h3 className="font-display font-bold text-[15px] text-foreground">Próximas firmas</h3>
-                </div>
-                <Link to="/escribanos/agenda" className="text-[11px] font-semibold text-primary hover:underline">
-                  Agenda
-                </Link>
-              </div>
-              <div className="space-y-2">
-                {proximasFirmas.slice(0, 5).map((f) => {
-                  const colorByState = { confirmada: 'success', observada: 'destructive', tentativa: 'warning' }[f.estado];
-                  return (
-                    <Link
-                      to={`/escribanos/operaciones/${f.operacion}`}
-                      key={f.operacion}
-                      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted transition-colors"
-                    >
-                      <div className="w-11 text-center shrink-0">
-                        <div className="text-[10px] font-bold text-muted-foreground uppercase">
-                          {f.fecha.split('/')[1] === '06' ? 'Jun' : 'Jul'}
-                        </div>
-                        <div className="font-display font-bold text-[18px] text-foreground leading-none">
-                          {f.fecha.split('/')[0]}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-semibold text-foreground truncate">{f.direccion}</div>
-                        <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                          <span>{f.hora}</span>
-                          <span>·</span>
-                          <span className="font-mono">{f.operacion}</span>
-                        </div>
-                      </div>
-                      <StatusBadge variant={colorByState} className="text-[10px]">
-                        {f.estado === 'confirmada' ? 'Conf.' : f.estado === 'observada' ? 'Obs.' : 'Tent.'}
-                      </StatusBadge>
-                    </Link>
-                  );
-                })}
               </div>
             </div>
 

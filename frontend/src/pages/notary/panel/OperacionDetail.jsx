@@ -261,7 +261,7 @@ const OperacionDetail = () => {
               data-testid="back-to-operaciones-link"
             >
               <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
-              <span className="hidden sm:inline">Operaciones</span>
+              <span className="hidden sm:inline">Legajos</span>
             </Link>
             <span className="text-slate-300">/</span>
             <div className="flex items-center gap-2 min-w-0">

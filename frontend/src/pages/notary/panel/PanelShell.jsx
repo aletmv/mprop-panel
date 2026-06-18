@@ -7,12 +7,11 @@ import {
 import { escribania } from './mockData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useApp } from '@/context/AppContext';
 
 const nav = [
   { to: '/escribanos/panel', label: 'Inicio', icon: LayoutDashboard, end: true },
-  { to: '/escribanos/operaciones', label: 'Operaciones', icon: FolderOpen, badge: '47' },
+  { to: '/escribanos/operaciones', label: 'Legajos', icon: FolderOpen, badge: '47' },
   { to: '/escribanos/agenda', label: 'Agenda de firmas', icon: CalendarClock },
   { to: '/escribanos/firmas', label: 'Firmas digitales', icon: FileSignature, soon: true },
   { to: '/escribanos/partes', label: 'Partes', icon: Users, soon: true },
@@ -122,16 +121,6 @@ const Sidebar = () => {
         >
           <LogOut className="w-4 h-4" /> Cerrar sesión
         </button>
-
-        <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-accent/20 blur-xl" />
-          <div className="relative">
-            <Badge className="bg-accent text-accent-foreground hover:bg-accent text-[10px] mb-2">Nuevo</Badge>
-            <div className="text-[13px] font-semibold leading-tight">Marketplace de servicios</div>
-            <div className="text-[11px] opacity-80 mt-1 leading-snug">Gestoría, tasaciones y certificaciones en un solo lugar.</div>
-            <button className="mt-2.5 text-[11px] font-semibold underline underline-offset-2">Explorar →</button>
-          </div>
-        </div>
       </div>
     </aside>
   );
@@ -152,7 +141,7 @@ export const Topbar = ({ title, subtitle, actions }) => {
         <div className="hidden md:flex relative">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
-            placeholder="Buscar operación, parte o documento…"
+            placeholder="Buscar legajo, parte o documento…"
             className="pl-9 w-[320px] h-9 bg-muted border-transparent focus-visible:bg-card focus-visible:border-border"
           />
           <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-card border border-border text-muted-foreground">⌘K</kbd>

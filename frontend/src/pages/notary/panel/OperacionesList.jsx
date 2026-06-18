@@ -54,7 +54,7 @@ const OperacionesList = () => {
 
   return (
     <PanelShell>
-      <Topbar title="Operaciones" subtitle="Todos los legajos en gestión por tu escribanía" />
+      <Topbar title="Legajos" subtitle="Todos los legajos en gestión por tu escribanía" />
 
       <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-5" data-testid="operaciones-list">
         <div className="flex flex-wrap items-center gap-3">
@@ -65,7 +65,7 @@ const OperacionesList = () => {
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar por dirección, MP-ID, parte…"
               className="pl-9 h-10 bg-card"
-              data-testid="operaciones-search-input"
+              data-testid="legajos-search-input"
             />
           </div>
           <Button variant="outline" className="gap-2 h-10">
@@ -76,7 +76,7 @@ const OperacionesList = () => {
           </Button>
           <div className="flex-1" />
           <Button className="gap-2 h-10 bg-primary hover:bg-primary-glow text-primary-foreground">
-            <Plus className="w-4 h-4" /> Nueva operación
+            <Plus className="w-4 h-4" /> Nuevo legajo
           </Button>
         </div>
 
