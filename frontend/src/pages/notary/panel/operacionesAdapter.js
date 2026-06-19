@@ -1,6 +1,12 @@
 // Adapter: convierte una reserva del marketplace en formato "operación" del panel.
 // La idea es que cada reserva con escribanía asignada aparezca como un legajo nuevo en estado "Apertura".
 
+import {
+  vaultIdFromOpId,
+  DEFAULT_VAULT_LABEL,
+  buildInitialVaultFromReservation,
+} from './vault';
+
 const dniDemoFromName = (name) => {
   if (!name) return '—';
   // Generar DNI estable a partir del nombre (mock).
@@ -45,6 +51,24 @@ export const reservationToOperacion = (reservation, property) => {
   const { firma, diasFirma } = tentativeFirma(reservation.date);
   const opId = (reservation.paymentId || `RES-${reservation.id}`).replace(/^MP-/, 'MP-');
 
+  // Si la reserva ya trae datos de Bóveda (caso normal cuando viene del seed
+  // o de un flujo de checkout), los respetamos. Si no, los construimos en el aire
+  // para mantener consistencia y permitir que la pestaña "Bóveda" siempre tenga datos.
+  const vault =
+    reservation.vaultId && reservation.economicEvents
+      ? {
+          vaultId: reservation.vaultId,
+          vaultLabel: reservation.vaultLabel || DEFAULT_VAULT_LABEL,
+          economicStatus: reservation.economicStatus || 'reserva_acreditada',
+          economicEvents: reservation.economicEvents,
+        }
+      : buildInitialVaultFromReservation(reservation) || {
+          vaultId: vaultIdFromOpId(opId),
+          vaultLabel: DEFAULT_VAULT_LABEL,
+          economicStatus: 'reserva_acreditada',
+          economicEvents: [],
+        };
+
   return {
     id: opId,
     _isFromReservation: true,
@@ -81,6 +105,7 @@ export const reservationToOperacion = (reservation, property) => {
     matricula: matriculaFromId(opId),
     partida: String(1000000 + (opId.length * 53217)).slice(0, 7),
     catastro: 'Pendiente de carga',
+    ...vault,
   };
 };
 

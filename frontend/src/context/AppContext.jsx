@@ -1,5 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { PROPERTIES } from "@/data/mock";
+import {
+  vaultIdFromOpId,
+  DEFAULT_VAULT_LABEL,
+  buildInitialVaultFromReservation,
+} from "@/pages/notary/panel/vault";
 
 const AppContext = createContext(null);
 
@@ -45,12 +50,19 @@ const seedState = {
   folderDocs: {},
 };
 
-const DEMO_RESERVATIONS = [
+const DEMO_RESERVATIONS_BASE = [
   { id: "res-demo-1", propertyId: "p2", amount: 2480, paymentId: "MP-734120985", date: "05/06/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Valentina Ríos" },
   { id: "res-demo-2", propertyId: "p3", amount: 1000, paymentId: "MP-712098344", date: "29/05/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Marcos Gutiérrez" },
   { id: "res-demo-3", propertyId: "p5", amount: 1560, paymentId: "MP-698455201", date: "21/05/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Camila Funes" },
   { id: "res-demo-4", propertyId: "p6", amount: 3200, paymentId: "MP-687014772", date: "12/05/2026", status: "escribania_asignada", notaryId: "n2", buyer: "Federico Paz" },
 ];
+
+// Cada reserva del seed lleva su Bóveda inicializada (eventos económicos
+// generados automáticamente por MercadoPago/MercadoProp). Ver vault.js.
+const DEMO_RESERVATIONS = DEMO_RESERVATIONS_BASE.map((r) => ({
+  ...r,
+  ...buildInitialVaultFromReservation(r),
+}));
 
 const DEMO_FOLDER_TASKS = {
   "res-demo-1": { s0t0: true },
@@ -134,7 +146,15 @@ export const AppProvider = ({ children }) => {
     setState((s) => ({ ...s, offers: s.offers.map((o) => (o.id === id ? { ...o, ...patch } : o)) }));
 
   const addReservation = (reservation) => {
-    const res = { id: `res-${Date.now()}`, status: "fondos_retenidos", notaryId: null, ...reservation };
+    const base = {
+      id: `res-${Date.now()}`,
+      status: "pago_registrado",
+      notaryId: null,
+      ...reservation,
+    };
+    // Sembramos la Bóveda apenas se registra la reserva. Cada reserva nace con
+    // los eventos económicos automáticos (vault_created + reservation_accredited).
+    const res = { ...base, ...buildInitialVaultFromReservation(base) };
     setState((s) => ({ ...s, reservations: [res, ...s.reservations] }));
     return res.id;
   };
@@ -142,7 +162,35 @@ export const AppProvider = ({ children }) => {
   const setReservationNotary = (resId, notaryId) =>
     setState((s) => ({
       ...s,
-      reservations: s.reservations.map((r) => (r.id === resId ? { ...r, notaryId, status: "escribania_asignada" } : r)),
+      reservations: s.reservations.map((r) => {
+        if (r.id !== resId) return r;
+        const hasNotaryEvent = (r.economicEvents || []).some((e) => e.type === "notary_assigned");
+        const paymentId = r.paymentId;
+        const vaultId = r.vaultId || vaultIdFromOpId(paymentId);
+        const notaryEvent = hasNotaryEvent
+          ? null
+          : {
+              id: `${paymentId}-ev-notary`,
+              type: "notary_assigned",
+              label: "Escribanía asignada a la operación",
+              source: "mercadopago",
+              status: "confirmado",
+              amount: null,
+              currency: "USD",
+              paymentId,
+              vaultId,
+              occurredAt: new Date().toISOString(),
+            };
+        return {
+          ...r,
+          notaryId,
+          status: "escribania_asignada",
+          vaultId,
+          vaultLabel: r.vaultLabel || DEFAULT_VAULT_LABEL,
+          economicStatus: r.economicStatus || "reserva_acreditada",
+          economicEvents: notaryEvent ? [...(r.economicEvents || []), notaryEvent] : r.economicEvents,
+        };
+      }),
     }));
 
   const addPublished = (property) =>

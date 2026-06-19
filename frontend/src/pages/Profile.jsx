@@ -29,7 +29,8 @@ const statusChip = {
   aceptada: { label: "Aceptada", cls: "bg-green-50 text-[#00A650]" },
   rechazada: { label: "Rechazada", cls: "bg-red-50 text-red-600" },
   confirmada: { label: "Confirmada", cls: "bg-green-50 text-[#00A650]" },
-  fondos_retenidos: { label: "Fondos en custodia", cls: "bg-blue-50 text-[#3483FA]" },
+  fondos_retenidos: { label: "Pago registrado", cls: "bg-blue-50 text-[#3483FA]" },
+  pago_registrado: { label: "Pago registrado", cls: "bg-blue-50 text-[#3483FA]" },
   escribania_asignada: { label: "Escribanía asignada", cls: "bg-green-50 text-[#00A650]" },
 };
 
