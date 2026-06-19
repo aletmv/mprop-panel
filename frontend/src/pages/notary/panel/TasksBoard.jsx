@@ -50,6 +50,7 @@ const TaskItem = ({ op, idx, dragIdx, onDragStart, onDragOver, onDragEnd, onOpen
           onClick={() => dayTasks.complete(op.id)}
           data-testid={`task-complete-${op.id}`}
           title="Marcar como completada"
+          aria-label="Marcar como completada"
           className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
         >
           <Check className="w-3.5 h-3.5" strokeWidth={2.4} />
@@ -58,6 +59,7 @@ const TaskItem = ({ op, idx, dragIdx, onDragStart, onDragOver, onDragEnd, onOpen
           onClick={() => dayTasks.removePending(op.id)}
           data-testid={`task-remove-${op.id}`}
           title="Quitar de mi día"
+          aria-label="Quitar de mi día"
           className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-destructive hover:bg-destructive-soft transition-colors"
         >
           <X className="w-3.5 h-3.5" />
@@ -88,6 +90,7 @@ const DoneItem = ({ op }) => {
           onClick={() => dayTasks.uncomplete(op.id)}
           data-testid={`task-restore-${op.id}`}
           title="Restaurar"
+          aria-label="Restaurar"
           className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -96,6 +99,7 @@ const DoneItem = ({ op }) => {
           onClick={() => dayTasks.removeDone(op.id)}
           data-testid={`done-remove-${op.id}`}
           title="Eliminar"
+          aria-label="Eliminar"
           className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-destructive hover:bg-destructive-soft transition-colors"
         >
           <X className="w-3.5 h-3.5" />

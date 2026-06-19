@@ -194,6 +194,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
             </Link>
             <button
               title="Cerrar sesión"
+              aria-label="Cerrar sesión"
               data-testid="sidebar-logout"
               onClick={() => {
                 notaryLogout();
@@ -210,6 +211,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
           data-testid="sidebar-toggle"
           onClick={() => setCollapsed((c) => !c)}
           title={collapsed ? 'Expandir' : 'Colapsar'}
+          aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
           className={`mt-1 ${
             collapsed
               ? 'w-10 h-10 mx-auto'
@@ -250,7 +252,7 @@ export const Topbar = ({ title, subtitle, actions }) => {
           <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-card border border-border text-muted-foreground">⌘K</kbd>
         </div>
 
-        <Button variant="ghost" size="icon" className="relative" data-testid="topbar-notif-btn">
+        <Button variant="ghost" size="icon" className="relative" aria-label="Notificaciones" data-testid="topbar-notif-btn">
           <Bell className="w-[18px] h-[18px]" />
           <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-accent" />
         </Button>
@@ -259,6 +261,7 @@ export const Topbar = ({ title, subtitle, actions }) => {
           variant="ghost"
           size="sm"
           className="gap-2"
+          aria-label="Cerrar sesión"
           data-testid="topbar-logout-btn"
           onClick={() => {
             notaryLogout();

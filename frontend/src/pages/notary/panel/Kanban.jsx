@@ -421,6 +421,7 @@ const KanbanCard = ({ op }) => {
             disabled={isInBoard}
             data-testid={`kanban-add-task-${op.id}`}
             title={isInBoard ? 'Ya está en tu día' : 'Agregar a mi día'}
+            aria-label={isInBoard ? 'Ya está en tu día' : 'Agregar a mi día'}
             className={`shrink-0 w-7 h-7 grid place-items-center rounded-md transition-colors ${
               isInBoard
                 ? 'bg-foreground text-white cursor-default shadow-sm'
