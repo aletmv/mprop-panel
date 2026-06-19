@@ -25,7 +25,7 @@ import {
 import { formatUSD } from '@/data/mock';
 import { useApp } from '@/context/AppContext';
 import { StatusDot, Pill, SectionLabel, Card } from './OperacionDetailPrimitives';
-import { PagosItemRow } from './BovedaPrimitives';
+import { PagosItemRow, HitoRow } from './BovedaPrimitives';
 
 // ─── Bóveda de la operación ──────────────────────────────────────────────
 // Calendario económico completo: hitos MercadoPago/MercadoProp + liquidación
@@ -33,33 +33,6 @@ import { PagosItemRow } from './BovedaPrimitives';
 // escribanía (visualmente diferenciado, NO marcado como pago registrado).
 //
 // Fuente de verdad: /app/DEMO_MOCK_MAP.md §2.6, §2.7 y §2.8.
-
-const HitoRow = ({ label, subtitle, amount, pill, accent = 'mp', testid }) => {
-  // accent="mp" → hito procesado por MercadoPago (azul sutil)
-  // accent="notary" → hito programado ante escribanía (slate, diferenciado)
-  const tone = accent === 'notary'
-    ? 'border-l-slate-400 bg-slate-50/50'
-    : 'border-l-sky-400 bg-sky-50/40';
-  return (
-    <div
-      data-testid={testid}
-      className={`px-5 py-4 flex items-start justify-between gap-3 border-l-2 ${tone}`}
-    >
-      <div className="min-w-0">
-        <div className="text-sm font-semibold text-slate-900">{label}</div>
-        <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>
-      </div>
-      <div className="text-right shrink-0">
-        <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(amount)}</div>
-        {pill && (
-          <div className="mt-1">
-            <Pill variant={pill.variant}>{pill.label}</Pill>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 const BovedaTab = ({ op }) => {
   const [firstHome, setFirstHome] = useState(false);
