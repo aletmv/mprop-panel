@@ -121,36 +121,37 @@ export const BloqueoNameOnly = ({ actor, opId, className = '', iconClassName = '
   );
 };
 
-// Popover "Línea de pases": historia de traspasos del legajo + próximo paso a destrabar.
-// Se monta como contenido del PopoverTrigger en KanbanCard.
-const ACTOR_DOT = {
-  comprador:  'bg-amber-400',
-  vendedor:   'bg-amber-500',
-  escribania: 'bg-sky-500',
-  gestoria:   'bg-violet-500',
-  tercero:    'bg-slate-400',
-  bloqueado:  'bg-red-500',
-};
-
-const PaseRow = ({ pase }) => {
+// Popover "Línea de pases": muestra paso previo + paso actual + próximo paso,
+// todos conectados al mismo timeline. Lo único que diferencia visualmente al
+// estado actual son: punto verde titilante, tipografía oscura y sin sombreado.
+// Previo y próximo: tipografía y sombreado grises.
+const PaseRow = ({ pase, variant }) => {
+  const isCurrent = variant === 'current';
   const meta = bloqueoLabel[pase.actor];
-  const dot = ACTOR_DOT[pase.actor] || 'bg-slate-300';
   const when = pase.desde
     ? pase.desde
     : `${pase.fecha || ''}${pase.hora ? ` · ${pase.hora}` : ''}`;
+
+  const rowBg = isCurrent ? 'bg-transparent' : 'bg-slate-100/70';
+  const actorClass = isCurrent ? 'text-slate-900 font-semibold' : 'text-slate-400 font-semibold';
+  const actionClass = isCurrent ? 'text-slate-700' : 'text-slate-400';
+  const whenClass = isCurrent ? 'text-slate-500' : 'text-slate-400';
+
   return (
-    <li className="relative pl-5">
-      <span className={`absolute left-0 top-1.5 w-2 h-2 rounded-full ${dot} ring-2 ring-white`} aria-hidden />
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[12.5px] font-semibold text-slate-900">{meta?.short || pase.actor}</span>
-        {pase.current && (
-          <span className="text-[9.5px] uppercase tracking-wider font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-[1px]">
-            Ahora
+    <li className={`relative pl-7 pr-3 py-2 rounded-md ${rowBg}`}>
+      <span className="absolute left-1.5 top-3.5 -translate-y-1/2">
+        {isCurrent ? (
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 ring-2 ring-white" />
           </span>
+        ) : (
+          <span className="block w-2 h-2 rounded-full bg-slate-300 ring-2 ring-white" />
         )}
-      </div>
-      <div className="text-[11.5px] text-slate-600 leading-snug">{pase.accion}</div>
-      <div className="text-[10.5px] text-slate-400 mt-0.5">{when}</div>
+      </span>
+      <div className={`text-[12.5px] leading-snug ${actorClass}`}>{meta?.short || pase.actor}</div>
+      <div className={`text-[11.5px] leading-snug ${actionClass}`}>{pase.accion}</div>
+      {when && <div className={`text-[10.5px] mt-0.5 ${whenClass}`}>{when}</div>}
     </li>
   );
 };
@@ -158,8 +159,21 @@ const PaseRow = ({ pase }) => {
 const LineaDePasesContent = ({ op, onNavigate }) => {
   const pases = op.lineaDePases || [];
   const next = op.proximoPaso;
+
+  // Tomamos sólo penúltimo (previo) + último (actual). Si hay menos entradas
+  // mostramos lo que haya. El próximo se deriva de proximoPaso.
+  const currentPase = pases[pases.length - 1];
+  const previousPase = pases.length >= 2 ? pases[pases.length - 2] : null;
+  const nextPase = next
+    ? {
+        actor: next.responsable,
+        accion: next.descripcion,
+        desde: next.vence ? `Vence ${next.vence}` : null,
+      }
+    : null;
+
   return (
-    <div className="w-[320px]" data-testid={`linea-pases-${op.id}`}>
+    <div className="w-[300px]" data-testid={`linea-pases-${op.id}`}>
       <div className="px-4 pt-4 pb-3 border-b border-slate-100">
         <h3 className="text-sm font-semibold text-slate-900">Línea de pases</h3>
         <p className="text-[11.5px] text-slate-500 mt-0.5 leading-snug">
@@ -167,47 +181,18 @@ const LineaDePasesContent = ({ op, onNavigate }) => {
         </p>
       </div>
 
-      {pases.length > 0 && (
-        <div className="px-4 py-3 border-b border-slate-100">
-          <ol className="relative space-y-3">
-            <span className="absolute left-[3px] top-2 bottom-2 w-px bg-slate-200" aria-hidden />
-            {pases.map((p, i) => (
-              <PaseRow key={i} pase={p} />
-            ))}
-          </ol>
-        </div>
-      )}
-
-      {next && (
-        <div className="px-4 py-3 bg-slate-50/70 border-b border-slate-100">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Próximo paso</div>
-          <div className="text-[13px] font-semibold text-slate-900 mt-1 leading-snug">
-            {next.descripcion}
-          </div>
-
-          <dl className="mt-3 space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <dt className="text-[11px] text-slate-500">Responsable actual</dt>
-              <dd>
-                <BloqueoNameOnly actor={next.responsable} iconClassName="w-3.5 h-3.5" textClassName="text-[11.5px]" />
-              </dd>
-            </div>
-            {next.vence && (
-              <div className="flex items-center justify-between gap-2">
-                <dt className="text-[11px] text-slate-500">Vence</dt>
-                <dd className="text-[11.5px] font-semibold text-slate-900 tabular-nums">{next.vence}</dd>
-              </div>
-            )}
-          </dl>
-
-          {next.impacto && (
-            <div className="mt-2.5 p-2 rounded-md bg-amber-50 border border-amber-200">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Impacto</div>
-              <div className="text-[11.5px] text-amber-800 leading-snug mt-0.5">{next.impacto}</div>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="px-3 py-3">
+        <ol className="relative space-y-1">
+          {/* línea de tiempo continua que conecta los 3 pasos */}
+          <span
+            className="absolute left-[10px] top-3 bottom-3 w-px bg-slate-200"
+            aria-hidden
+          />
+          {previousPase && <PaseRow pase={previousPase} variant="previous" />}
+          {currentPase && <PaseRow pase={currentPase} variant="current" />}
+          {nextPase && <PaseRow pase={nextPase} variant="next" />}
+        </ol>
+      </div>
 
       <button
         type="button"
@@ -217,7 +202,7 @@ const LineaDePasesContent = ({ op, onNavigate }) => {
           onNavigate?.();
         }}
         data-testid={`linea-pases-cta-${op.id}`}
-        className="w-full px-4 py-2.5 text-[12px] font-semibold text-sky-700 hover:bg-sky-50 transition-colors flex items-center justify-center gap-1.5"
+        className="w-full px-4 py-2.5 text-[12px] font-semibold text-sky-700 hover:bg-sky-50 transition-colors border-t border-slate-100 flex items-center justify-center gap-1.5"
       >
         Ver timeline completo
         <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
