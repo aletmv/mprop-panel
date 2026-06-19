@@ -139,7 +139,10 @@ const Dashboard = () => {
               </div>
 
               {firmasAMostrar.length === 0 ? (
-                <div className="py-10 text-center text-[13px] text-muted-foreground">
+                <div className="py-10 flex flex-col items-center text-center text-[13px] text-muted-foreground">
+                  <div className="w-10 h-10 rounded-full bg-muted grid place-items-center mb-3">
+                    <CalendarDays className="w-5 h-5 text-muted-foreground" />
+                  </div>
                   No hay firmas programadas para hoy.
                 </div>
               ) : (
