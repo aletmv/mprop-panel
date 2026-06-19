@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { operaciones as MOCK_OPERACIONES, estadoLabel, riesgoLabel } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
-import { HITO_MAP } from './Kanban';
+import { HITO_MAP, BloqueoBadge } from './Kanban';
 import { PartiesPair } from './PartiesPair';
 import { useApp } from '@/context/AppContext';
 
@@ -145,7 +145,7 @@ const OperacionesList = () => {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-muted/50 border-b border-border">
-                  {['Operación', 'Estado', 'Progreso', 'Partes', 'Firma tentativa', 'Riesgo', ''].map((h) => (
+                  {['Acción', 'Operación', 'Estado', 'Progreso', 'Partes', 'Firma tentativa', 'Riesgo', ''].map((h) => (
                     <th
                       key={h}
                       className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
@@ -162,12 +162,16 @@ const OperacionesList = () => {
                 {lista.map((op) => {
                   const e = estadoLabel[op.estado];
                   const r = riesgoLabel[op.riesgo];
+                  const riesgoShort = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }[op.riesgo] || op.riesgo;
                   return (
                     <tr
                       key={op.id}
                       data-testid={`operacion-row-${op.id}`}
                       className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors"
                     >
+                      <td className="px-4 py-3.5">
+                        <BloqueoBadge op={op} />
+                      </td>
                       <td className="px-4 py-3.5">
                         <Link to={`/escribanos/operaciones/${op.id}`} className="block">
                           <div className="flex items-center gap-3">
@@ -230,7 +234,7 @@ const OperacionesList = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        <StatusBadge variant={r.color}>{r.label}</StatusBadge>
+                        <StatusBadge variant={r.color}>{riesgoShort}</StatusBadge>
                       </td>
                       <td className="px-4 py-3.5">
                         <Link

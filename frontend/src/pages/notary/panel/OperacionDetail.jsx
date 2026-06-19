@@ -12,6 +12,7 @@ import {
   operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, eventos, documentos, estadoLabel, riesgoLabel,
 } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
+import { BloqueoBadge } from './Kanban';
 import { buyerCosts, sellerCosts } from '@/lib/costs';
 import { formatUSD } from '@/data/mock';
 import { useApp } from '@/context/AppContext';
@@ -297,6 +298,7 @@ const OperacionDetail = () => {
             </div>
             <div className="hidden md:flex items-center gap-2">
               <StatusDot variant={e.color} label={e.label} />
+              <BloqueoBadge op={op} size="md" />
               {observado && <Pill variant="destructive">Atención requerida</Pill>}
             </div>
 

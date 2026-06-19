@@ -390,11 +390,28 @@ const InlineList = ({ operaciones }) => (
 
 export const LegajosKanban = ({ operaciones }) => {
   const [view, setView] = useState('kanban');
+  const [actor, setActor] = useState('todos');
+
+  // Conteo por actor (sólo legajos activos).
+  const activas = operaciones.filter((o) => o.estado !== 'cerrado');
+  const actorCounts = activas.reduce((acc, o) => {
+    if (!o.bloqueoActor) return acc;
+    acc[o.bloqueoActor] = (acc[o.bloqueoActor] || 0) + 1;
+    return acc;
+  }, {});
+  const actorChips = [
+    { id: 'todos', label: 'Todos', count: activas.length },
+    ...Object.entries(bloqueoLabel)
+      .map(([id, meta]) => ({ id, label: meta.short, count: actorCounts[id] || 0 }))
+      .filter((c) => c.count > 0),
+  ];
+
+  const filtradas = actor === 'todos' ? operaciones : operaciones.filter((o) => o.bloqueoActor === actor);
   const columnas = HITOS.map((h) => ({
     hito: h,
-    items: operaciones.filter((o) => h.states.includes(o.estado)),
+    items: filtradas.filter((o) => h.states.includes(o.estado)),
   }));
-  const totalActivos = operaciones.filter((o) => o.estado !== 'cerrado').length;
+  const totalActivos = filtradas.filter((o) => o.estado !== 'cerrado').length;
 
   return (
     <div className="card-surface p-5" data-testid="legajos-kanban">
@@ -405,7 +422,7 @@ export const LegajosKanban = ({ operaciones }) => {
             <span className="font-semibold text-foreground" data-testid="kanban-activos-count">
               {totalActivos}
             </span>{' '}
-            activos
+            {actor === 'todos' ? 'activos' : `con acción de ${bloqueoLabel[actor]?.short.toLowerCase() || actor}`}
           </div>
         </div>
         <div className="inline-flex bg-muted rounded-lg p-1" data-testid="legajos-view-toggle" role="tablist">
@@ -434,6 +451,35 @@ export const LegajosKanban = ({ operaciones }) => {
         </div>
       </div>
 
+      <div className="mb-4 -mx-1 px-1 overflow-x-auto" data-testid="legajos-actor-filter">
+        <div className="inline-flex items-center gap-1.5">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground pr-1.5 whitespace-nowrap">
+            ¿Quién tiene la pelota?
+          </span>
+          {actorChips.map((c) => {
+            const isActive = actor === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                data-testid={`actor-chip-${c.id}`}
+                onClick={() => setActor(c.id)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11.5px] font-semibold transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-card text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {c.label}
+                <span className={`text-[10.5px] font-bold ${isActive ? 'opacity-80' : 'text-slate-500'}`}>
+                  {c.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {view === 'kanban' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {columnas.map(({ hito, items }) => (
@@ -441,7 +487,7 @@ export const LegajosKanban = ({ operaciones }) => {
           ))}
         </div>
       ) : (
-        <InlineList operaciones={operaciones} />
+        <InlineList operaciones={filtradas} />
       )}
     </div>
   );
