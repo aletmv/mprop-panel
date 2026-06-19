@@ -208,7 +208,7 @@ const OperacionesList = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        <PartiesPair vendedor={op.vendedor} comprador={op.comprador} size="sm" />
+                        <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" />
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">

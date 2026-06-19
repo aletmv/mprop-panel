@@ -1,9 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Representa las dos partes de un legajo (vendedor + comprador) como
- * dos círculos azules NO solapados conectados por una línea fina en el medio
+ * dos círculos NO solapados conectados por una línea fina en el medio
  * que no llega a tocar el contorno de los círculos.
+ *
+ * Idle:  gris neutro
+ * Hover: azul primario
+ * Click: navega al perfil de la parte (tab "Partes e inmueble" del legajo)
+ *
+ * Usa <button> + useNavigate para evitar anidar <a> dentro de <a>
+ * cuando el contenedor (ej. KanbanCard) ya es un Link.
  *
  * Variantes:
  *   sm  → 24px (tablas, kanban)
@@ -16,19 +24,50 @@ const SIZE_MAP = {
   lg: { box: 'w-10 h-10', text: 'text-[12px]', line: 'w-4', gap: 'gap-2' },
 };
 
-export const PartiesPair = ({ vendedor, comprador, size = 'sm', className = '' }) => {
+const Circle = ({ size, parte, rol, opId, navigate }) => {
   const s = SIZE_MAP[size] || SIZE_MAP.sm;
-  const circle = `${s.box} rounded-full bg-primary text-white grid place-items-center ${s.text} font-bold shrink-0`;
-  const line = `${s.line} h-px bg-slate-300 shrink-0`;
+  const base = `${s.box} rounded-full grid place-items-center ${s.text} font-bold shrink-0 transition-colors`;
+  const idle = 'bg-slate-200 text-slate-700';
+  const hover = 'hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white focus:outline-none';
+  const content = parte?.avatar || '—';
+  const title = `${rol}: ${parte?.nombre || '—'}`;
+
+  if (!opId) {
+    return (
+      <span className={`${base} ${idle}`} title={title}>
+        {content}
+      </span>
+    );
+  }
+  const onClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/escribanos/operaciones/${opId}?tab=partes#${rol.toLowerCase()}`);
+  };
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseDown={(e) => e.stopPropagation()}
+      onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      title={title}
+      aria-label={title}
+      data-testid={`party-circle-${rol.toLowerCase()}-${opId}`}
+      className={`${base} ${idle} ${hover} cursor-pointer`}
+    >
+      {content}
+    </button>
+  );
+};
+
+export const PartiesPair = ({ vendedor, comprador, opId, size = 'sm', className = '' }) => {
+  const s = SIZE_MAP[size] || SIZE_MAP.sm;
+  const navigate = useNavigate();
   return (
     <div className={`inline-flex items-center ${s.gap} ${className}`} data-testid="parties-pair">
-      <span className={circle} title={vendedor?.nombre || 'Vendedor'}>
-        {vendedor?.avatar || '—'}
-      </span>
-      <span className={line} aria-hidden />
-      <span className={circle} title={comprador?.nombre || 'Comprador'}>
-        {comprador?.avatar || '—'}
-      </span>
+      <Circle size={size} parte={vendedor} rol="Vendedor" opId={opId} navigate={navigate} />
+      <span className={`${s.line} h-px bg-slate-300 shrink-0`} aria-hidden />
+      <Circle size={size} parte={comprador} rol="Comprador" opId={opId} navigate={navigate} />
     </div>
   );
 };

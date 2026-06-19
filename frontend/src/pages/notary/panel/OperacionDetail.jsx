@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, Navigate, useSearchParams, useLocation } from 'react-router-dom';
 import { PanelShell } from './PanelShell';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -243,7 +243,26 @@ const OperacionDetail = () => {
   const opAlertas = alertasAll.filter((a) => a.operacionId === op.id);
   const pasoIdx = pasos.findIndex((p) => p === op.pasoActual);
   const fase = pasoIdx >= 0 ? pasoIdx + 1 : 1;
-  const [tab, setTab] = useState('resumen');
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const initialTab = searchParams.get('tab') || 'resumen';
+  const [tab, setTab] = useState(initialTab);
+
+  // Scroll suave al rol pedido (ej. #vendedor / #comprador) si el tab es "partes".
+  useEffect(() => {
+    if (tab !== 'partes') return;
+    const hash = (location.hash || '').replace('#', '').toLowerCase();
+    if (!hash) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(`party-${hash}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-primary', 'ring-offset-2'), 1800);
+      }
+    }, 120);
+    return () => clearTimeout(t);
+  }, [tab, location.hash]);
 
   if (!notarySession) return <Navigate to="/escribanos" replace />;
 
@@ -517,7 +536,11 @@ const OperacionDetail = () => {
                         { rol: 'Vendedor', parte: op.vendedor },
                         { rol: 'Comprador', parte: op.comprador },
                       ].map(({ rol, parte }) => (
-                        <div key={rol} className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                        <div
+                          key={rol}
+                          id={`party-${rol.toLowerCase()}`}
+                          className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors rounded-lg"
+                        >
                           <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-700 grid place-items-center text-xs font-semibold shrink-0">
                             {parte.avatar}
                           </div>

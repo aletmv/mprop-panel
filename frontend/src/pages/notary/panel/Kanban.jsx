@@ -63,12 +63,10 @@ const NIVEL_CFG = {
 };
 
 // Tono cromático del badge "Acción / Esperando / Bloqueado".
+// Por defecto usamos gris neutro para todos los actores; sólo "bloqueado" usa rojo.
 const BLOQUEO_TONE = {
-  amber:  { dot: 'bg-amber-500',  bg: 'bg-amber-50',  text: 'text-amber-800',  border: 'border-amber-200'  },
-  sky:    { dot: 'bg-sky-500',    bg: 'bg-sky-50',    text: 'text-sky-800',    border: 'border-sky-200'    },
-  violet: { dot: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-800', border: 'border-violet-200' },
-  slate:  { dot: 'bg-slate-500',  bg: 'bg-slate-50',  text: 'text-slate-700',  border: 'border-slate-200'  },
-  red:    { dot: 'bg-red-500',    bg: 'bg-red-50',    text: 'text-red-800',    border: 'border-red-200'    },
+  neutral: { dot: 'bg-slate-400', bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' },
+  red:     { dot: 'bg-red-500',   bg: 'bg-red-50',    text: 'text-red-800',   border: 'border-red-200'   },
 };
 
 // Extrae sólo la jurisdicción (último segmento de "Recoleta, CABA").
@@ -83,15 +81,15 @@ export const BloqueoBadge = ({ op, size = 'sm' }) => {
   if (!actor) return null;
   const meta = bloqueoLabel[actor];
   if (!meta) return null;
-  const tone = BLOQUEO_TONE[meta.tone] || BLOQUEO_TONE.slate;
-  const padding = size === 'sm' ? 'px-1.5 py-0.5' : 'px-2 py-1';
-  const fontSize = size === 'sm' ? 'text-[10px]' : 'text-[11px]';
+  const tone = actor === 'bloqueado' ? BLOQUEO_TONE.red : BLOQUEO_TONE.neutral;
+  const padding = size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-1';
+  const fontSize = size === 'sm' ? 'text-[10.5px]' : 'text-[11.5px]';
 
   return (
     <span
       data-testid={`bloqueo-badge-${op.id}`}
       title={op.bloqueoMotivo || meta.label}
-      className={`inline-flex items-center gap-1 ${padding} rounded-full border ${tone.bg} ${tone.text} ${tone.border} ${fontSize} font-semibold whitespace-nowrap`}
+      className={`inline-flex items-center gap-1.5 ${padding} rounded-full border ${tone.bg} ${tone.text} ${tone.border} ${fontSize} font-semibold whitespace-nowrap`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} aria-hidden />
       {meta.label}
@@ -204,6 +202,11 @@ const KanbanCard = ({ op }) => {
       data-testid={`kanban-card-${op.id}`}
       className="block bg-white border border-slate-200 rounded-lg p-3 hover:shadow-md hover:border-slate-300 transition-all group cursor-grab active:cursor-grabbing"
     >
+      {op.bloqueoActor && (
+        <div className="mb-2">
+          <BloqueoBadge op={op} />
+        </div>
+      )}
       <div className="flex items-center justify-between mb-1.5">
         <span className="font-mono text-[10.5px] text-slate-500 tracking-tight">{op.id}</span>
         <AlertChip op={op} />
@@ -211,10 +214,7 @@ const KanbanCard = ({ op }) => {
       <div className="text-[13px] font-semibold text-slate-900 leading-snug truncate" title={op.direccion}>
         {op.direccion}
       </div>
-      <div className="mt-1 flex items-center justify-between gap-2">
-        <span className="text-[11px] text-slate-500 truncate">{jurisdiccionDe(op.barrio)}</span>
-        <BloqueoBadge op={op} />
-      </div>
+      <div className="text-[11px] text-slate-500 mt-0.5 truncate">{jurisdiccionDe(op.barrio)}</div>
 
       {op.tareaEnCurso && (
         <div
@@ -257,7 +257,7 @@ const KanbanCard = ({ op }) => {
       </div>
 
       <div className="mt-2.5 flex items-center justify-between gap-2">
-        <PartiesPair vendedor={op.vendedor} comprador={op.comprador} size="sm" />
+        <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" />
         <span
           className={`inline-flex items-center gap-1 text-[10.5px] ${
             urgente ? 'text-red-600 font-bold' : 'text-slate-500 font-medium'
@@ -319,7 +319,7 @@ const InlineList = ({ operaciones }) => (
       <table className="w-full text-[13px]" data-testid="legajos-inline-list">
         <thead>
           <tr className="bg-slate-50/70 border-b border-slate-200">
-            {['Legajo', 'Estado', 'Acción', 'Tarea en curso', 'Partes', 'Firma', 'Riesgo', ''].map((h) => (
+            {['Acción', 'Legajo', 'Estado', 'Tarea en curso', 'Partes', 'Firma', 'Riesgo', ''].map((h) => (
               <th key={h} className="px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                 {h}
               </th>
@@ -330,6 +330,7 @@ const InlineList = ({ operaciones }) => (
           {operaciones.map((op) => {
             const e = estadoLabel[op.estado];
             const r = riesgoLabel[op.riesgo];
+            const riesgoShort = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }[op.riesgo] || op.riesgo;
             const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
             return (
               <tr
@@ -337,6 +338,9 @@ const InlineList = ({ operaciones }) => (
                 data-testid={`inline-row-${op.id}`}
                 className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition-colors"
               >
+                <td className="px-3.5 py-3 align-top">
+                  <BloqueoBadge op={op} />
+                </td>
                 <td className="px-3.5 py-3 align-top">
                   <Link to={`/escribanos/operaciones/${op.id}`} className="block">
                     <div className="font-mono text-[10.5px] text-slate-500">{op.id}</div>
@@ -348,15 +352,12 @@ const InlineList = ({ operaciones }) => (
                   <StatusBadge variant={e.color}>{e.label}</StatusBadge>
                 </td>
                 <td className="px-3.5 py-3 align-top">
-                  <BloqueoBadge op={op} />
-                </td>
-                <td className="px-3.5 py-3 align-top">
                   <div className="text-[12px] text-slate-700 max-w-[220px] truncate">
                     {op.tareaEnCursoFull || op.tareaEnCurso || '—'}
                   </div>
                 </td>
                 <td className="px-3.5 py-3 align-top">
-                  <PartiesPair vendedor={op.vendedor} comprador={op.comprador} size="sm" />
+                  <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" />
                 </td>
                 <td className="px-3.5 py-3 align-top">
                   <div className="flex items-center gap-1.5 text-[12px]">
@@ -368,7 +369,7 @@ const InlineList = ({ operaciones }) => (
                   </div>
                 </td>
                 <td className="px-3.5 py-3 align-top">
-                  <StatusBadge variant={r.color}>{r.label}</StatusBadge>
+                  <StatusBadge variant={r.color}>{riesgoShort}</StatusBadge>
                 </td>
                 <td className="px-3.5 py-3 align-top text-right">
                   <Link

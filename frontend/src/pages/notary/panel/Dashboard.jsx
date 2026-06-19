@@ -204,9 +204,9 @@ const Dashboard = () => {
             <div className="rounded-2xl p-5 bg-gradient-to-br from-primary to-primary-glow text-primary-foreground relative overflow-hidden">
               <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-accent/25 blur-2xl" />
               <div className="relative">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-accent" />
+                <div className="flex items-center justify-between mb-3">
                   <span className="text-[11px] uppercase tracking-[0.14em] font-bold opacity-80">Resumen del día</span>
+                  <Sparkles className="w-4 h-4 text-accent shrink-0" />
                 </div>
                 <div className="font-display font-bold text-[16px] leading-snug">
                   3 legajos pueden pasar a pre-cierre esta semana

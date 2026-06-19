@@ -248,11 +248,12 @@ export const riesgoLabel = {
 
 // Próximo responsable de desbloqueo: ¿quién tiene la pelota?
 // Esto suele ser la causa principal de demoras en operaciones inmobiliarias.
+// Todos los badges usan tono neutro (slate) para no competir con estado/alertas.
 export const bloqueoLabel = {
-  comprador:  { label: 'Acción: comprador',  short: 'Comprador',  tone: 'amber' },
-  vendedor:   { label: 'Acción: vendedor',   short: 'Vendedor',   tone: 'amber' },
-  escribania: { label: 'Acción: escribanía', short: 'Escribanía', tone: 'sky'   },
-  gestoria:   { label: 'Requiere gestoría',  short: 'Gestoría',   tone: 'violet'},
-  tercero:    { label: 'Esperando tercero',  short: 'Tercero',    tone: 'slate' },
-  bloqueado:  { label: 'Bloqueado',          short: 'Bloqueado',  tone: 'red'   },
+  comprador:  { label: 'Acción: Comprador',  short: 'Comprador'  },
+  vendedor:   { label: 'Acción: Vendedor',   short: 'Vendedor'   },
+  escribania: { label: 'Acción: Escribanía', short: 'Escribanía' },
+  gestoria:   { label: 'Acción: Gestoría',   short: 'Gestoría'   },
+  tercero:    { label: 'Acción: Tercero',    short: 'Tercero'    },
+  bloqueado:  { label: 'Bloqueado',          short: 'Bloqueado'  },
 };
