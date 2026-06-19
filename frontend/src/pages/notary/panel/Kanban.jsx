@@ -69,6 +69,29 @@ const BLOQUEO_TONE = {
   red:     { dot: 'bg-red-500',   bg: 'bg-red-50',    text: 'text-red-800',   border: 'border-red-200'   },
 };
 
+// Pelota de fútbol estilizada (SVG inline) para identificar al responsable
+// del próximo desbloqueo en el Kanban: "quién tiene la pelota".
+const SoccerBallIcon = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="9.5" />
+    <polygon points="12,7.4 15.6,10 14.2,14.4 9.8,14.4 8.4,10" fill="currentColor" stroke="none" />
+    <line x1="12" y1="2.5" x2="12" y2="7.4" />
+    <line x1="15.6" y1="10" x2="21.2" y2="10" />
+    <line x1="8.4" y1="10" x2="2.8" y2="10" />
+    <line x1="9.8" y1="14.4" x2="6.6" y2="19.6" />
+    <line x1="14.2" y1="14.4" x2="17.4" y2="19.6" />
+  </svg>
+);
+
 // Extrae sólo la jurisdicción (último segmento de "Recoleta, CABA").
 const jurisdiccionDe = (barrio) => {
   if (!barrio) return '—';
@@ -76,11 +99,29 @@ const jurisdiccionDe = (barrio) => {
   return parts[parts.length - 1] || barrio;
 };
 
-export const BloqueoBadge = ({ op, size = 'sm' }) => {
+export const BloqueoBadge = ({ op, size = 'sm', variant = 'default' }) => {
   const actor = op.bloqueoActor;
   if (!actor) return null;
   const meta = bloqueoLabel[actor];
   if (!meta) return null;
+
+  // Variante "soccer": cápsula outline con icono de pelota + responsable, sin texto "Acción:".
+  if (variant === 'soccer') {
+    const textColor = actor === 'bloqueado' ? 'text-red-700' : 'text-slate-800';
+    const borderColor = actor === 'bloqueado' ? 'border-red-200' : 'border-slate-300';
+    const iconColor = actor === 'bloqueado' ? 'text-red-600' : 'text-slate-700';
+    return (
+      <span
+        data-testid={`bloqueo-badge-${op.id}`}
+        title={op.bloqueoMotivo || meta.label}
+        className={`inline-flex items-center gap-1.5 px-2 py-[3px] rounded-full border ${borderColor} ${textColor} text-[11px] font-semibold whitespace-nowrap bg-transparent`}
+      >
+        <SoccerBallIcon className={`w-3.5 h-3.5 ${iconColor}`} />
+        {meta.short}
+      </span>
+    );
+  }
+
   const tone = actor === 'bloqueado' ? BLOQUEO_TONE.red : BLOQUEO_TONE.neutral;
   const padding = size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-1';
   const fontSize = size === 'sm' ? 'text-[10.5px]' : 'text-[11.5px]';
@@ -204,7 +245,7 @@ const KanbanCard = ({ op }) => {
     >
       {op.bloqueoActor && (
         <div className="mb-2">
-          <BloqueoBadge op={op} />
+          <BloqueoBadge op={op} variant="soccer" />
         </div>
       )}
       <div className="flex items-center justify-between mb-1.5">
