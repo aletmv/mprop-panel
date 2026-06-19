@@ -284,7 +284,7 @@ export const eventos = [
   { fecha: '23/06', hora: '10:31', tipo: 'documento', evento: 'Se recibió certificado de dominio', responsable: 'Gestoría', evidencia: 'archivo' },
   { fecha: '22/06', hora: '10:45', tipo: 'alerta', evento: 'Vencimiento previo a firma marcado por la gestoría', responsable: 'Gestoría', evidencia: 'alerta' },
   { fecha: '19/06', hora: '11:05', tipo: 'decision', evento: 'Esc. Lagos marcó título como "En estudio"', responsable: 'Esc. Lagos', evidencia: 'cambio' },
-  { fecha: '11/06', hora: '09:13', tipo: 'boveda', evento: 'Seña pendiente de habilitación · USD 5.200 · Registrada por MercadoPago', responsable: 'MercadoPago', evidencia: 'evento Bóveda' },
+  { fecha: '11/06', hora: '09:13', tipo: 'boveda', evento: 'Seña pendiente de habilitación · USD 5.200 · Evento económico en Bóveda', responsable: 'MercadoPago', evidencia: 'evento Bóveda' },
   { fecha: '09/06', hora: '11:17', tipo: 'gestion', evento: 'Comprador solicitó libre deuda de expensas', responsable: 'Comprador', evidencia: 'solicitud' },
   { fecha: '06/06', hora: '15:48', tipo: 'documento', evento: 'Vendedor cargó título de propiedad escaneado', responsable: 'Vendedor', evidencia: 'archivo' },
   { fecha: '04/06', hora: '10:12', tipo: 'boveda', evento: 'Pago registrado · Reserva USD 1.300 · Trazado por MercadoPago', responsable: 'MercadoPago', evidencia: 'evento Bóveda' },
@@ -297,7 +297,7 @@ export const documentos = [
   { id: 3, nombre: 'Certificado de inhibición', estado: 'pendiente', responsable: 'Gestoría', fecha: '—' },
   { id: 4, nombre: 'Libre deuda expensas', estado: 'revisado', responsable: 'Comprador', fecha: '14/06' },
   { id: 5, nombre: 'Libre deuda ABL', estado: 'revisado', responsable: 'Comprador', fecha: '12/06' },
-  { id: 6, nombre: 'Comprobante de seña', estado: 'revisado', responsable: 'Comprador', fecha: '11/06' },
+  { id: 6, nombre: 'Trazabilidad de seña en Bóveda', estado: 'revisado', responsable: 'MercadoPago', fecha: '11/06' },
   { id: 7, nombre: 'Boleto de compraventa', estado: 'revisado', responsable: 'Esc. Lagos', fecha: '10/06' },
   { id: 8, nombre: 'DNI partes', estado: 'revisado', responsable: 'Esc. Lagos', fecha: '04/06' },
 ];
