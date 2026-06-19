@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import {
   PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2,
   ChevronRight, AlertCircle, Wallet, Database, User, Store, Landmark,
-  Building2, ShieldCheck, Clock, Lock,
+  Building2, ShieldCheck, Clock, Lock, FileText, ListChecks, ClipboardList,
 } from 'lucide-react';
 import { buildTimelineChecklist } from './timelineChecklist';
 
@@ -22,6 +22,34 @@ const STATUS_META = {
   pendiente:  { label: 'Pendiente',  dot: 'bg-slate-300',   text: 'text-slate-600',   bg: 'bg-slate-50',    border: 'border-slate-200'   },
   observado:  { label: 'Observado',  dot: 'bg-red-500',     text: 'text-red-700',     bg: 'bg-red-50',      border: 'border-red-200'     },
   automatico: { label: 'Automático', dot: 'bg-sky-500',     text: 'text-sky-700',     bg: 'bg-sky-50',      border: 'border-sky-200'     },
+  no_aplica:  { label: 'No aplica',  dot: 'bg-slate-200',   text: 'text-slate-400',   bg: 'bg-slate-50',    border: 'border-slate-200'   },
+};
+
+const EVIDENCE_STATUS_META = {
+  disponible: { label: 'Disponible', tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  pendiente:  { label: 'Pendiente',  tone: 'bg-slate-50   text-slate-600   border-slate-200'   },
+  observado:  { label: 'Observado',  tone: 'bg-red-50     text-red-700     border-red-200'     },
+  validado:   { label: 'Validado',   tone: 'bg-sky-50     text-sky-700     border-sky-200'     },
+  no_aplica:  { label: 'No aplica',  tone: 'bg-slate-50   text-slate-400   border-slate-200'   },
+};
+
+const EVIDENCE_TYPE_ICON = {
+  archivo:       FileText,
+  base_externa:  Database,
+  evento_boveda: Wallet,
+  accion:        ListChecks,
+  declaracion:   ClipboardList,
+};
+
+const SOURCE_LABEL = {
+  comprador: 'Comprador',
+  vendedor: 'Vendedor',
+  plataforma: 'Plataforma',
+  boveda: 'MercadoPago',
+  base_externa: 'Base externa',
+  escribania: 'Escribanía',
+  gestoria: 'Gestoría',
+  banco: 'Banco',
 };
 
 const ORIGIN_META = {
@@ -90,17 +118,63 @@ const ItemRow = ({ item }) => {
       </button>
 
       {open && (
-        <div className="mt-2.5 pt-2.5 border-t border-slate-200 space-y-2 text-[11.5px]">
+        <div className="mt-2.5 pt-2.5 border-t border-slate-200 space-y-3 text-[11.5px]">
           {item.note && (
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Nota</div>
               <div className={isObs ? 'text-red-800' : 'text-slate-700'}>{item.note}</div>
             </div>
           )}
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Evidencia</div>
-            <div className="text-slate-700">{item.evidencia}</div>
-          </div>
+
+          {item.evidence && item.evidence.length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Evidencia
+              </div>
+              <div className="space-y-1.5">
+                {item.evidence.map((ev, i) => {
+                  const TypeIcon = EVIDENCE_TYPE_ICON[ev.type] || ClipboardList;
+                  const stm = EVIDENCE_STATUS_META[ev.status] || EVIDENCE_STATUS_META.pendiente;
+                  const isObsEv = ev.status === 'observado';
+                  return (
+                    <div
+                      key={i}
+                      data-testid={`tl-evidence-${item.id}-${i}`}
+                      className={`flex items-start gap-2.5 px-2.5 py-2 rounded-md border ${
+                        isObsEv ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-white'
+                      }`}
+                    >
+                      <span className={`w-6 h-6 rounded-md grid place-items-center shrink-0 ${
+                        isObsEv ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        <TypeIcon className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className={`font-medium leading-snug ${isObsEv ? 'text-red-800' : 'text-slate-800'}`}>
+                            {ev.label}
+                          </div>
+                          <span className={`inline-flex items-center px-1.5 py-[1px] rounded-full text-[9.5px] font-semibold border whitespace-nowrap ${stm.tone}`}>
+                            {stm.label}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 text-[10.5px] text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          <span>{SOURCE_LABEL[ev.source] || ev.source}</span>
+                          {ev.date && (<><span className="text-slate-300">·</span><span>{ev.date}</span></>)}
+                          {ev.fileName && (<><span className="text-slate-300">·</span><span className="font-mono text-[10px]">{ev.fileName}</span></>)}
+                          {ev.result && (<><span className="text-slate-300">·</span><span className="italic">{ev.result}</span></>)}
+                        </div>
+                        {ev.note && (
+                          <div className="mt-1 text-[10.5px] text-slate-500">{ev.note}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {item.accion && (
             <div className="p-2 rounded-md bg-amber-50 border border-amber-200">
               <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Acción sugerida</div>
@@ -129,10 +203,12 @@ const StageBlock = ({ stage, defaultOpen }) => {
     },
     {},
   );
-  const total = stage.items.length;
+  const noAplica = summary.no_aplica || 0;
+  const total = stage.items.length - noAplica;
   const completos = summary.completo || 0;
   const pendientes = summary.pendiente || 0;
   const observados = summary.observado || 0;
+  const automaticos = summary.automatico || 0;
   const hasObs = observados > 0;
 
   return (
@@ -155,9 +231,10 @@ const StageBlock = ({ stage, defaultOpen }) => {
         <div className="flex-1 min-w-0">
           <div className="text-[13.5px] font-semibold text-slate-900 leading-tight">{stage.label}</div>
           <div className="text-[11px] text-slate-500 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
-            <span><span className="font-semibold text-slate-900">{completos}</span> / {total} completos</span>
+            <span><span className="font-semibold text-slate-900">{completos + automaticos}</span> / {total} completos</span>
             {pendientes > 0 && <span><span className="font-semibold text-slate-700">{pendientes}</span> pendientes</span>}
             {observados > 0 && <span className="text-red-700"><span className="font-semibold">{observados}</span> observados</span>}
+            {noAplica > 0 && <span className="text-slate-400"><span className="font-semibold">{noAplica}</span> no aplica</span>}
           </div>
         </div>
         <ChevronRight className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
@@ -180,10 +257,11 @@ const StageBlock = ({ stage, defaultOpen }) => {
 const TimelineProceso = ({ op }) => {
   const stages = buildTimelineChecklist(op);
 
-  // Stage actual: el primero que tiene items no completos. Lo abrimos por default.
+  // Stage actual: el primero que tiene items con trabajo pendiente real (excluye
+  // los completos y los que no aplican). Lo abrimos por default.
   const currentStageIdx = (() => {
     for (let i = 0; i < stages.length; i++) {
-      if (stages[i].items.some((it) => it.status !== 'completo')) return i;
+      if (stages[i].items.some((it) => it.status !== 'completo' && it.status !== 'no_aplica')) return i;
     }
     return stages.length - 1;
   })();

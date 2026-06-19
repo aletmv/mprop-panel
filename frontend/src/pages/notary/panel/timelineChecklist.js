@@ -143,18 +143,6 @@ const OP_OVERRIDES = {
   },
 };
 
-// Evidencia mock estándar por tipo de origin.
-const EVIDENCIA_POR_ORIGIN = {
-  plataforma:   'Evento registrado en el legajo MercadoProp',
-  boveda:       'Evento económico en Bóveda — trazado por MercadoPago',
-  base_externa: 'Consulta automática a base oficial',
-  comprador:    'Carga del comprador via portal MercadoProp',
-  vendedor:     'Carga del vendedor via portal MercadoProp',
-  banco:        'Documentación remitida por la entidad financiera',
-  gestoria:     'Trámite gestionado por la gestoría asignada',
-  escribania:   'Acto registrado por la escribanía interviniente',
-};
-
 // Próximo responsable sugerido cuando el item NO está completo.
 const PROXIMO_RESPONSABLE_POR_ORIGIN = {
   plataforma:   'Plataforma',
@@ -167,6 +155,177 @@ const PROXIMO_RESPONSABLE_POR_ORIGIN = {
   escribania:   'Escribanía',
 };
 
+// Evidencia mock por item: cada item devuelve un array de rows {type, label, status, source, date?, fileName?, result?, note?}.
+// Para los items sin builder explícito, se construye una evidencia genérica derivada del origin.
+const EVIDENCE_BUILDERS = {
+  // ─── Inicio ────────────────────────────────────────────────────────────
+  apertura: (op) => [
+    { type: 'accion', label: `Legajo ${op.id} creado`, status: 'disponible', source: 'plataforma', date: '04/06' },
+  ],
+  carga_inmueble: (op) => [
+    { type: 'declaracion', label: `Dirección · ${op.direccion}`, status: 'disponible', source: 'plataforma' },
+    { type: 'declaracion', label: `Tipo · ${op.tipo}`, status: 'disponible', source: 'plataforma' },
+  ],
+  carga_partes: (op) => [
+    { type: 'declaracion', label: `Comprador · ${op.comprador?.nombre || '—'}`, status: 'disponible', source: 'comprador' },
+    { type: 'declaracion', label: `Vendedor · ${op.vendedor?.nombre || '—'}`, status: 'disponible', source: 'vendedor' },
+  ],
+  precio: (op) => [
+    { type: 'declaracion', label: `Precio · USD ${(op.precio || 0).toLocaleString('es-AR')}`, status: 'disponible', source: 'plataforma' },
+    { type: 'declaracion', label: 'Moneda · USD', status: 'disponible', source: 'plataforma' },
+  ],
+  reserva: () => [
+    { type: 'evento_boveda', label: 'Reserva acreditada en Bóveda', status: 'validado', source: 'boveda', result: 'Pago registrado' },
+  ],
+  responsables: () => [
+    { type: 'accion', label: 'Escribanía asignada · Esc. M. I. Lagos', status: 'disponible', source: 'plataforma' },
+    { type: 'accion', label: 'Gestoría asignada al legajo', status: 'disponible', source: 'plataforma' },
+  ],
+  intervencion: (op, s) => [
+    { type: 'accion', label: 'Aceptación de intervención registrada', status: s === 'completo' ? 'disponible' : 'pendiente', source: 'escribania' },
+  ],
+
+  // ─── Expediente ────────────────────────────────────────────────────────
+  dni_partes: (op) => {
+    const bV = op.comprador?.verificado;
+    const sV = op.vendedor?.verificado;
+    return [
+      { type: 'archivo',      label: 'DNI comprador · frente',                status: bV ? 'disponible' : 'pendiente', source: 'comprador', fileName: 'dni_comp_frente.jpg' },
+      { type: 'archivo',      label: 'DNI comprador · dorso',                 status: bV ? 'disponible' : 'pendiente', source: 'comprador', fileName: 'dni_comp_dorso.jpg' },
+      { type: 'archivo',      label: 'DNI vendedor · frente',                 status: sV ? 'disponible' : 'observado', source: 'vendedor',  fileName: 'dni_vend_frente.jpg' },
+      { type: 'archivo',      label: 'DNI vendedor · dorso',                  status: sV ? 'disponible' : 'observado', source: 'vendedor',  fileName: 'dni_vend_dorso.jpg' },
+      { type: 'base_externa', label: 'CUIT/CUIL validado · Padrón AFIP',       status: 'validado',                     source: 'base_externa', result: 'Coincide' },
+      { type: 'base_externa', label: 'Validación biométrica · comprador',     status: bV ? 'validado' : 'pendiente',   source: 'plataforma',  result: bV ? 'OK · score 0.94' : null },
+      { type: 'base_externa', label: 'Validación biométrica · vendedor',      status: sV ? 'validado' : 'pendiente',   source: 'plataforma',  result: sV ? 'OK · score 0.91' : null },
+    ];
+  },
+  estado_civil: () => [
+    { type: 'declaracion', label: 'Estado civil comprador', status: 'pendiente',  source: 'comprador' },
+    { type: 'declaracion', label: 'Estado civil vendedor',  status: 'disponible', source: 'vendedor'  },
+  ],
+  poderes: () => [
+    { type: 'declaracion', label: 'No se invocan poderes ni representaciones', status: 'no_aplica', source: 'escribania' },
+  ],
+  titulo: (op, s) => [
+    { type: 'archivo', label: 'Título de propiedad escaneado', status: s === 'completo' ? 'disponible' : 'pendiente', source: 'vendedor', fileName: 'titulo_propiedad.pdf', date: '06/06' },
+  ],
+  rph: (op) => {
+    const aplica = /Departamento|PH|Duplex/i.test(op.tipo || '');
+    return aplica
+      ? [{ type: 'archivo', label: 'Reglamento de Propiedad Horizontal', status: 'disponible', source: 'vendedor', fileName: 'reglamento_PH.pdf' }]
+      : [{ type: 'declaracion', label: 'No aplica · inmueble no sometido a PH', status: 'no_aplica', source: 'vendedor' }];
+  },
+  libre_deuda: (op, s) => [
+    { type: 'archivo', label: 'Libre deuda de expensas', status: s === 'completo' ? 'disponible' : 'pendiente', source: 'vendedor', fileName: 'libre_deuda_expensas.pdf' },
+  ],
+  deudas_fiscales: () => [
+    { type: 'base_externa', label: 'ABL · CABA',         status: 'validado', source: 'base_externa', result: 'Al día' },
+    { type: 'base_externa', label: 'AGIP · sellos/tasas', status: 'validado', source: 'base_externa', result: 'Sin deuda' },
+    { type: 'base_externa', label: 'Servicios (luz, gas, agua)', status: 'pendiente', source: 'base_externa' },
+  ],
+  catastro: () => [
+    { type: 'base_externa', label: 'Plancheta catastral · CABA', status: 'validado', source: 'base_externa', result: 'Coincide con título' },
+    { type: 'base_externa', label: 'Nomenclatura', status: 'validado', source: 'base_externa', result: 'Circ. 18 · Sec. 23 · Manz. 45 · Parc. 12' },
+  ],
+  credito: () => [
+    { type: 'declaracion', label: 'Operación sin crédito hipotecario', status: 'no_aplica', source: 'banco' },
+  ],
+
+  // ─── Due diligence ─────────────────────────────────────────────────────
+  analisis_titulo: (op, s) => [
+    { type: 'accion', label: 'Estudio del título por la escribanía', status: s === 'completo' ? 'validado' : 'pendiente', source: 'escribania' },
+  ],
+  titularidad: () => [
+    { type: 'base_externa', label: 'Titular registral coincide con vendedor', status: 'validado', source: 'base_externa', result: 'Folio FR 12-3456' },
+  ],
+  cert_dominio: (op, s) => [
+    { type: 'archivo',      label: 'Certificado de dominio anterior',                  status: 'disponible',                source: 'gestoria',     fileName: 'cert_dominio_03_06.pdf', date: '03/06' },
+    { type: 'base_externa', label: 'Vigencia · Registro de la Propiedad',              status: s === 'observado' ? 'observado' : 'validado', source: 'base_externa', result: 'Vence 24/06' },
+    { type: 'accion',       label: 'Solicitud de nuevo certificado · Gestoría',        status: 'pendiente',                 source: 'gestoria' },
+  ],
+  cert_inhibicion: (op, s) => [
+    { type: 'archivo', label: 'Certificado de inhibición vendedor', status: s === 'completo' ? 'disponible' : 'pendiente', source: 'gestoria', fileName: 'cert_inhibicion_vend.pdf' },
+  ],
+  gravamenes: () => [
+    { type: 'base_externa', label: 'Consulta de gravámenes · Registro de la Propiedad', status: 'validado', source: 'base_externa', result: 'Sin gravámenes' },
+    { type: 'base_externa', label: 'Embargos vigentes',                                  status: 'validado', source: 'base_externa', result: 'Ninguno' },
+    { type: 'base_externa', label: 'Hipotecas previas',                                  status: 'validado', source: 'base_externa', result: 'Canceladas' },
+  ],
+  personeria: () => [
+    { type: 'accion', label: 'Revisión de personería y capacidad de obrar', status: 'pendiente', source: 'escribania' },
+  ],
+  catastral: () => [
+    { type: 'base_externa', label: 'Plancheta catastral verificada · CABA', status: 'validado', source: 'base_externa', result: 'Coincide' },
+  ],
+  deudas: () => [
+    { type: 'base_externa', label: 'Resumen consolidado de deudas', status: 'validado', source: 'base_externa', result: 'Sin deuda' },
+  ],
+  uif: (op) => {
+    const aplica = (op.precio || 0) >= 250000;
+    return aplica
+      ? [{ type: 'declaracion', label: 'Declaración UIF · origen de fondos', status: 'pendiente', source: 'escribania' }]
+      : [{ type: 'declaracion', label: 'No alcanza umbral UIF', status: 'no_aplica', source: 'escribania' }];
+  },
+
+  // ─── Pre-cierre ────────────────────────────────────────────────────────
+  doc_completa: (op, s) => [
+    { type: 'accion', label: 'Checklist documental cerrado', status: s === 'completo' ? 'validado' : 'pendiente', source: 'escribania' },
+  ],
+  subsanaciones: (op, s) => [
+    { type: 'accion', label: 'Observaciones resueltas', status: s === 'completo' ? 'validado' : 'pendiente', source: 'escribania' },
+  ],
+  liquidacion: () => [
+    { type: 'evento_boveda', label: 'Liquidación comprador',  status: 'disponible', source: 'boveda', result: 'Calculada · ver Bóveda' },
+    { type: 'evento_boveda', label: 'Liquidación vendedor',   status: 'disponible', source: 'boveda', result: 'Calculada · ver Bóveda' },
+    { type: 'evento_boveda', label: 'Honorarios y gastos',    status: 'disponible', source: 'boveda', result: 'Programados' },
+  ],
+  pagos_registrados: () => [
+    { type: 'evento_boveda', label: 'Reserva 1%', status: 'validado',  source: 'boveda', result: 'Pago registrado' },
+    { type: 'evento_boveda', label: 'Seña 4%',   status: 'pendiente', source: 'boveda', result: 'Pendiente de habilitación' },
+  ],
+  proyecto: (op, s) => [
+    { type: 'archivo', label: 'Proyecto de escritura', status: s === 'completo' ? 'disponible' : 'pendiente', source: 'escribania', fileName: 'proyecto_escritura.pdf' },
+  ],
+  coordinacion: () => [
+    { type: 'accion', label: 'Coordinación con partes, inmobiliaria y gestoría', status: 'pendiente', source: 'escribania' },
+  ],
+  fecha_lugar: (op, s) => [
+    { type: 'accion', label: 'Confirmación de fecha y lugar de firma', status: s === 'completo' ? 'validado' : 'pendiente', source: 'escribania', result: s === 'completo' ? op.firma : null },
+  ],
+  apto_firma: (op, s) => [
+    { type: 'accion', label: 'Marcado "Apto para firma"', status: s === 'completo' ? 'validado' : 'pendiente', source: 'escribania' },
+  ],
+
+  // ─── Cierre y post-cierre ──────────────────────────────────────────────
+  firma: (op, s) => [
+    { type: 'accion', label: 'Firma de escritura ejecutada', status: s === 'completo' ? 'validado' : 'pendiente', source: 'escribania', date: s === 'completo' ? op.firma : null },
+  ],
+  control_pagos: () => [
+    { type: 'evento_boveda', label: 'Control final de movimientos en Bóveda', status: 'validado', source: 'boveda' },
+  ],
+  posesion: () => [
+    { type: 'accion', label: 'Entrega de posesión o llaves', status: 'pendiente', source: 'vendedor' },
+  ],
+  testimonio: () => [
+    { type: 'archivo', label: 'Testimonio de la escritura', status: 'pendiente', source: 'escribania' },
+  ],
+  presentacion: () => [
+    { type: 'accion', label: 'Presentación registral', status: 'pendiente', source: 'escribania' },
+  ],
+  seguimiento: () => [
+    { type: 'accion', label: 'Seguimiento de inscripción', status: 'pendiente', source: 'gestoria' },
+  ],
+  subsanacion_reg: () => [
+    { type: 'declaracion', label: 'Sin observaciones registrales registradas', status: 'no_aplica', source: 'gestoria' },
+  ],
+  entrega_doc: () => [
+    { type: 'accion', label: 'Entrega de documentación final', status: 'pendiente', source: 'escribania' },
+  ],
+  archivo: () => [
+    { type: 'accion', label: 'Archivo y cierre del legajo', status: 'pendiente', source: 'escribania' },
+  ],
+};
+
 // Construye el checklist completo de la operación, aplicando reglas de stage actual
 // + overrides puntuales por id de item.
 export const buildTimelineChecklist = (op) => {
@@ -177,17 +336,10 @@ export const buildTimelineChecklist = (op) => {
     const items = stage.items.map((it) => {
       const ovr = overrides[it.id] || {};
 
-      // Status por defecto según posición en el flujo:
-      //   - stages anteriores al actual → completo
-      //   - stage actual → mezcla coherente (automatico para items boveda/base_externa
-      //     "registrados" automáticamente; completo para apertura/registrados de Bóveda;
-      //     pendiente para los del stage actual en adelante)
-      //   - stages futuros → pendiente
       let status;
       if (stageIdx < currentStage) {
         status = 'completo';
       } else if (stageIdx === currentStage) {
-        // Items de plataforma del primer stage o de Bóveda → completo / automático
         if (it.origin === 'plataforma' && stage.id === 'inicio') status = 'completo';
         else if (it.origin === 'boveda') status = 'automatico';
         else if (it.origin === 'base_externa' && stage.id !== 'due_diligence') status = 'automatico';
@@ -197,8 +349,23 @@ export const buildTimelineChecklist = (op) => {
       }
 
       const merged = { ...it, status, ...ovr };
-      merged.evidencia = EVIDENCIA_POR_ORIGIN[it.origin] || '—';
-      merged.proximoResponsable = merged.status === 'completo'
+
+      // Evidencia mock: si hay builder definido para este item, ejecutarlo.
+      // Si no, devolver una evidencia genérica derivada del origin.
+      const builder = EVIDENCE_BUILDERS[it.id];
+      let evidence = builder ? builder(op, merged.status) : [{
+        type: 'declaracion',
+        label: 'Sin evidencias adicionales',
+        status: merged.status === 'completo' ? 'disponible' : 'pendiente',
+        source: it.origin,
+      }];
+
+      // Si todas las evidencias son no_aplica, el item se considera no_aplica.
+      const allNoAplica = evidence.length > 0 && evidence.every((e) => e.status === 'no_aplica');
+      if (allNoAplica) merged.status = 'no_aplica';
+
+      merged.evidence = evidence;
+      merged.proximoResponsable = merged.status === 'completo' || merged.status === 'no_aplica'
         ? null
         : (PROXIMO_RESPONSABLE_POR_ORIGIN[it.origin] || it.responsible);
       if (!merged.note) merged.note = '';
