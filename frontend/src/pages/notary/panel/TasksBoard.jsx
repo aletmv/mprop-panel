@@ -29,12 +29,12 @@ const TaskItem = ({ op, idx, dragIdx, onDragStart, onDragOver, onDragEnd, onOpen
           <span className="text-[13.5px] font-semibold text-slate-900 leading-snug">{titulo}</span>
           <AlertChip op={op} size="md" />
         </div>
-        <div className="text-[11.5px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
-          <span className="font-mono">{op.id}</span>
-          <span>·</span>
-          <span className="truncate">{op.direccion}, {op.barrio}</span>
+        <div className="text-[11.5px] text-slate-500 mt-1 truncate">
+          {op.direccion}, {op.barrio}
         </div>
         <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+          <span className="font-mono">{op.id}</span>
+          <span className="text-slate-300">·</span>
           <Clock className="w-3 h-3" />
           <span className={urgente ? 'text-red-600 font-semibold' : ''}>
             {op.diasFirma > 0

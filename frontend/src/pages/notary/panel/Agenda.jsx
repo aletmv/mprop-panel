@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { PanelShell, Topbar } from './PanelShell';
-import { StatusBadge } from './StatusBadge';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalIcon, Clock, MapPin } from 'lucide-react';
 import { proximasFirmas } from './mockData';
@@ -124,30 +123,39 @@ const Agenda = () => {
           </div>
 
           <div className="col-span-12 lg:col-span-4 space-y-3">
-            <div className="card-surface p-5">
+            <div className="card-surface p-5 flex flex-col">
               <div className="flex items-center gap-2 mb-4">
                 <CalIcon className="w-4 h-4 text-primary" />
                 <h3 className="font-display font-bold text-[15px] text-foreground">Próximas firmas</h3>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3 flex-1">
                 {proximasFirmas.map((f) => {
-                  const c = { confirmada: 'success', observada: 'destructive', tentativa: 'warning' }[f.estado];
+                  const dotCls = {
+                    confirmada: 'bg-success',
+                    observada:  'bg-destructive',
+                    tentativa:  'bg-warning',
+                  }[f.estado];
+                  const stateLabel = {
+                    confirmada: 'Confirmada',
+                    observada:  'Observada',
+                    tentativa:  'Tentativa',
+                  }[f.estado];
                   return (
                     <Link
                       to={`/escribanos/operaciones/${f.operacion}`}
                       key={f.operacion}
                       className="block p-3 rounded-xl border border-border hover:border-primary/30 hover:shadow-sm transition-all bg-muted/20"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <CalIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span className="font-semibold text-[13px] text-foreground">{f.fecha}</span>
-                          <Clock className="w-3 h-3 text-muted-foreground ml-1" />
-                          <span className="text-[12px] text-muted-foreground">{f.hora}</span>
-                        </div>
-                        <StatusBadge variant={c} className="text-[10px]">
-                          {f.estado === 'confirmada' ? 'Conf.' : f.estado === 'observada' ? 'Obs.' : 'Tent.'}
-                        </StatusBadge>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className={`inline-block w-2 h-2 rounded-full ${dotCls} shrink-0`}
+                          title={stateLabel}
+                          aria-label={stateLabel}
+                        />
+                        <CalIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="font-semibold text-[13px] text-foreground">{f.fecha}</span>
+                        <Clock className="w-3 h-3 text-muted-foreground ml-1" />
+                        <span className="text-[12px] text-muted-foreground">{f.hora}</span>
                       </div>
                       <div className="font-semibold text-[13px] text-foreground leading-tight">{f.direccion}</div>
                       <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
@@ -157,6 +165,23 @@ const Agenda = () => {
                     </Link>
                   );
                 })}
+              </div>
+
+              {/* Referencia de estado · alineada a la margen inferior izquierda,
+                  sólo punto de color + texto correspondiente en color. */}
+              <div className="mt-4 pt-3 border-t border-border flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-success" />
+                  <span className="font-medium text-success">Confirmada</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-destructive" />
+                  <span className="font-medium text-destructive">Observada</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-warning" />
+                  <span className="font-medium text-warning-foreground">Tentativa</span>
+                </span>
               </div>
             </div>
 

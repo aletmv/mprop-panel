@@ -445,6 +445,10 @@ const KanbanCard = ({ op }) => {
 
       <div className="mt-2.5 flex items-center justify-between gap-2">
         <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" />
+        <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
+      </div>
+
+      <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
         <span
           className={`inline-flex items-center gap-1 text-[10.5px] ${
             urgente ? 'text-red-600 font-bold' : 'text-slate-500 font-medium'
@@ -454,10 +458,6 @@ const KanbanCard = ({ op }) => {
           <Clock className="w-3 h-3" />
           {op.diasFirma > 0 ? `${op.diasFirma}d` : op.diasFirma === 0 ? 'hoy' : `${Math.abs(op.diasFirma)}d`}
         </span>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
-      </div>
-
-      <div className="mt-2 pt-2 border-t border-slate-100 text-right">
         <span className="font-mono text-[10px] text-slate-400 tracking-tight">{op.id}</span>
       </div>
     </Link>
