@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, Clock, ChevronRight, Plus, Calendar,
+  ArrowRight, ExternalLink,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { alertas as ALERTAS_MOCK, estadoLabel, riesgoLabel, bloqueoLabel } from './mockData';
 import { DND_TYPE } from './dndTypes';
 import { dayTasks, useDayTasks } from './dayTasksStore';
@@ -99,27 +101,186 @@ const jurisdiccionDe = (barrio) => {
   return parts[parts.length - 1] || barrio;
 };
 
-export const BloqueoBadge = ({ op, size = 'sm', variant = 'default' }) => {
-  const actor = op.bloqueoActor;
+// "Pelota: Responsable" sin pill — solo el icono de fútbol y el nombre del responsable.
+// Se usa tanto en el Kanban (variante clickeable que abre el popover) como dentro
+// del popover mismo en el bloque "Responsable actual".
+export const BloqueoNameOnly = ({ actor, opId, className = '', iconClassName = 'w-3.5 h-3.5', textClassName = 'text-[12px]' }) => {
   if (!actor) return null;
   const meta = bloqueoLabel[actor];
   if (!meta) return null;
+  const colorText = actor === 'bloqueado' ? 'text-red-700' : 'text-slate-800';
+  const colorIcon = actor === 'bloqueado' ? 'text-red-600' : 'text-slate-700';
+  return (
+    <span
+      data-testid={opId ? `bloqueo-name-${opId}` : `bloqueo-name-${actor}`}
+      className={`inline-flex items-center gap-1.5 ${colorText} ${textClassName} font-semibold whitespace-nowrap ${className}`}
+    >
+      <SoccerBallIcon className={`${iconClassName} ${colorIcon}`} />
+      {meta.short}
+    </span>
+  );
+};
 
-  // Variante "soccer": cápsula outline con icono de pelota + responsable, sin texto "Acción:".
-  if (variant === 'soccer') {
-    const textColor = actor === 'bloqueado' ? 'text-red-700' : 'text-slate-800';
-    const borderColor = actor === 'bloqueado' ? 'border-red-200' : 'border-slate-300';
-    const iconColor = actor === 'bloqueado' ? 'text-red-600' : 'text-slate-700';
-    return (
-      <span
-        data-testid={`bloqueo-badge-${op.id}`}
-        title={op.bloqueoMotivo || meta.label}
-        className={`inline-flex items-center gap-1.5 px-2 py-[3px] rounded-full border ${borderColor} ${textColor} text-[11px] font-semibold whitespace-nowrap bg-transparent`}
+// Popover "Línea de pases": historia de traspasos del legajo + próximo paso a destrabar.
+// Se monta como contenido del PopoverTrigger en KanbanCard.
+const ACTOR_DOT = {
+  comprador:  'bg-amber-400',
+  vendedor:   'bg-amber-500',
+  escribania: 'bg-sky-500',
+  gestoria:   'bg-violet-500',
+  tercero:    'bg-slate-400',
+  bloqueado:  'bg-red-500',
+};
+
+const PaseRow = ({ pase }) => {
+  const meta = bloqueoLabel[pase.actor];
+  const dot = ACTOR_DOT[pase.actor] || 'bg-slate-300';
+  const when = pase.desde
+    ? pase.desde
+    : `${pase.fecha || ''}${pase.hora ? ` · ${pase.hora}` : ''}`;
+  return (
+    <li className="relative pl-5">
+      <span className={`absolute left-0 top-1.5 w-2 h-2 rounded-full ${dot} ring-2 ring-white`} aria-hidden />
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[12.5px] font-semibold text-slate-900">{meta?.short || pase.actor}</span>
+        {pase.current && (
+          <span className="text-[9.5px] uppercase tracking-wider font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-[1px]">
+            Ahora
+          </span>
+        )}
+      </div>
+      <div className="text-[11.5px] text-slate-600 leading-snug">{pase.accion}</div>
+      <div className="text-[10.5px] text-slate-400 mt-0.5">{when}</div>
+    </li>
+  );
+};
+
+const LineaDePasesContent = ({ op, onNavigate }) => {
+  const pases = op.lineaDePases || [];
+  const next = op.proximoPaso;
+  return (
+    <div className="w-[320px]" data-testid={`linea-pases-${op.id}`}>
+      <div className="px-4 pt-4 pb-3 border-b border-slate-100">
+        <h3 className="text-sm font-semibold text-slate-900">Línea de pases</h3>
+        <p className="text-[11.5px] text-slate-500 mt-0.5 leading-snug">
+          Últimos traspasos de responsabilidad del legajo.
+        </p>
+      </div>
+
+      {pases.length > 0 && (
+        <div className="px-4 py-3 border-b border-slate-100">
+          <ol className="relative space-y-3">
+            <span className="absolute left-[3px] top-2 bottom-2 w-px bg-slate-200" aria-hidden />
+            {pases.map((p, i) => (
+              <PaseRow key={i} pase={p} />
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {next && (
+        <div className="px-4 py-3 bg-slate-50/70 border-b border-slate-100">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Próximo paso</div>
+          <div className="text-[13px] font-semibold text-slate-900 mt-1 leading-snug">
+            {next.descripcion}
+          </div>
+
+          <dl className="mt-3 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <dt className="text-[11px] text-slate-500">Responsable actual</dt>
+              <dd>
+                <BloqueoNameOnly actor={next.responsable} iconClassName="w-3.5 h-3.5" textClassName="text-[11.5px]" />
+              </dd>
+            </div>
+            {next.vence && (
+              <div className="flex items-center justify-between gap-2">
+                <dt className="text-[11px] text-slate-500">Vence</dt>
+                <dd className="text-[11.5px] font-semibold text-slate-900 tabular-nums">{next.vence}</dd>
+              </div>
+            )}
+          </dl>
+
+          {next.impacto && (
+            <div className="mt-2.5 p-2 rounded-md bg-amber-50 border border-amber-200">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Impacto</div>
+              <div className="text-[11.5px] text-amber-800 leading-snug mt-0.5">{next.impacto}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onNavigate?.();
+        }}
+        data-testid={`linea-pases-cta-${op.id}`}
+        className="w-full px-4 py-2.5 text-[12px] font-semibold text-sky-700 hover:bg-sky-50 transition-colors flex items-center justify-center gap-1.5"
       >
-        <SoccerBallIcon className={`w-3.5 h-3.5 ${iconColor}`} />
-        {meta.short}
-      </span>
-    );
+        Ver timeline completo
+        <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+      </button>
+    </div>
+  );
+};
+
+// Trigger soccer del Kanban: badge sin pill clickeable que abre el popover
+// "Línea de pases". Popover controlado con useState para evitar conflictos
+// con el Link envolvente del KanbanCard.
+const SoccerBloqueoTrigger = ({ op, navigate }) => {
+  const [open, setOpen] = useState(false);
+  const handleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpen((v) => !v);
+  };
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          data-testid={`bloqueo-badge-${op.id}`}
+          title="Ver línea de pases"
+          onClick={handleClick}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          className="inline-flex items-center gap-1.5 cursor-pointer rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-1"
+        >
+          <BloqueoNameOnly actor={op.bloqueoActor} opId={op.id} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        side="bottom"
+        sideOffset={6}
+        className="p-0 w-auto border-slate-200 shadow-lg z-50"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <LineaDePasesContent
+          op={op}
+          onNavigate={() => {
+            setOpen(false);
+            navigate(`/escribanos/operaciones/${op.id}?tab=timeline`);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+export const BloqueoBadge = ({ op, size = 'sm', variant = 'default' }) => {
+  const actor = op.bloqueoActor;
+  const navigate = useNavigate();
+  if (!actor) return null;
+  const meta = bloqueoLabel[actor];
+  if (!meta) return null;
+  // Variante "soccer": "Pelota: Responsable" sin pill (sin borde, sin fondo),
+  // sólo icono y nombre. Clickeable → abre el popover "Línea de pases".
+  if (variant === 'soccer') {
+    return <SoccerBloqueoTrigger op={op} navigate={navigate} />;
   }
 
   const tone = actor === 'bloqueado' ? BLOQUEO_TONE.red : BLOQUEO_TONE.neutral;

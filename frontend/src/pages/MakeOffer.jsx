@@ -112,7 +112,7 @@ export default function MakeOffer() {
         <ShieldCheck className="h-5 w-5 text-[#3483FA] shrink-0 mt-0.5" />
         <p className="text-xs leading-relaxed">
           Tu oferta es vinculante por 48 hs y queda firmada con tu identidad verificada. Si el vendedor acepta, pasás
-          directo a la reserva con escrow.
+          directo a la reserva con respaldo MercadoPago.
         </p>
       </div>
 

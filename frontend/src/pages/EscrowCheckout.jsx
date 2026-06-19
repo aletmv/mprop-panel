@@ -45,7 +45,7 @@ export default function EscrowCheckout() {
           <Loader2 className="h-12 w-12 text-[#3483FA] mx-auto animate-spin" />
           <h1 className="font-heading font-extrabold text-xl tracking-tight mt-4">Procesando tu pago</h1>
           <p className="text-sm text-[#666666] mt-2" data-testid="payment-processing-msg">
-            Mercado Pago está reteniendo los fondos en custodia...
+            MercadoPago está registrando la reserva en tu Bóveda...
           </p>
         </div>
       </div>
@@ -63,8 +63,9 @@ export default function EscrowCheckout() {
             ¡Reserva pagada!
           </h1>
           <p className="text-sm text-[#666666] mt-2">
-            Retuvimos <span className="font-bold text-[#333333]">{formatUSD(amount)}</span> en custodia. El vendedor no
-            recibe el dinero hasta la firma del boleto.
+            Registramos <span className="font-bold text-[#333333]">{formatUSD(amount)}</span> en la{" "}
+            <span className="font-bold text-[#333333]">Bóveda de la operación</span>. El vendedor no
+            recibe el dinero hasta la firma ante escribanía.
           </p>
           <div className="bg-[#F5F5F5] rounded-lg p-4 mt-5 text-left text-sm space-y-2">
             <div className="flex justify-between">
@@ -73,7 +74,7 @@ export default function EscrowCheckout() {
             </div>
             <div className="flex justify-between">
               <span className="text-[#666666]">Estado</span>
-              <span className="font-semibold text-[#3483FA]">Fondos retenidos (escrow)</span>
+              <span className="font-semibold text-[#3483FA]">Pago registrado en Bóveda</span>
             </div>
             <div className="flex justify-between">
               <span className="text-[#666666]">Propiedad</span>
@@ -272,8 +273,8 @@ export default function EscrowCheckout() {
       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex gap-3 mt-5">
         <Lock className="h-5 w-5 text-[#3483FA] shrink-0 mt-0.5" />
         <p className="text-xs leading-relaxed">
-          <span className="font-bold">Custodia Mercado Pago (escrow).</span> Tu dinero queda retenido hasta la firma del
-          boleto de compraventa. Si la operación no avanza, te devolvemos el 100%.
+          <span className="font-bold">Reserva con respaldo MercadoPago.</span> Tu pago queda registrado en la
+          Bóveda de la operación. Si la operación no avanza, te devolvemos el 100%.
         </p>
       </div>
 

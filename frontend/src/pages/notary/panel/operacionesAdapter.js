@@ -77,6 +77,20 @@ export const reservationToOperacion = (reservation, property) => {
   const buyerItems = buildBuyerEconomicItems(property?.price);
   const sellerItems = buildSellerEconomicItems(property?.price);
 
+  // Línea de pases inicial para reservas del marketplace.
+  // Como la operación recién se abre, el primer pase es la reserva y el actor
+  // activo es la escribanía hasta que se reciba documentación.
+  const lineaDePases = [
+    { actor: 'comprador',  accion: 'Acreditó la reserva en Bóveda', fecha: reservation.date || '—', hora: '10:00' },
+    { actor: 'escribania', accion: 'Inició apertura del legajo',     desde: 'desde ayer', current: true },
+  ];
+  const proximoPaso = {
+    descripcion: 'Validar partes y solicitar documentación inicial',
+    responsable: 'escribania',
+    vence: firma,
+    impacto: 'Sin documentación inicial el legajo no avanza a Expediente.',
+  };
+
   return {
     id: opId,
     _isFromReservation: true,
@@ -116,6 +130,8 @@ export const reservationToOperacion = (reservation, property) => {
     ...vault,
     buyerEconomicItems: buyerItems,
     sellerEconomicItems: sellerItems,
+    lineaDePases,
+    proximoPaso,
   };
 };
 

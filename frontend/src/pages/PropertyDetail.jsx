@@ -154,7 +154,7 @@ export default function PropertyDetail() {
             <Lock className="h-5 w-5 text-[#3483FA] shrink-0 mt-0.5" />
             <p className="text-xs text-[#333333] leading-relaxed">
               <span className="font-bold">Reserva protegida.</span> Señás con {formatUSD(reservationAmount(property.price))} vía
-              Mercado Pago. El dinero queda retenido en custodia hasta la firma del boleto.
+              MercadoPago. Tu pago queda registrado en la Bóveda de la operación hasta el cierre.
             </p>
           </div>
         </div>

@@ -63,7 +63,7 @@ export default function Publish() {
       cochera: false,
       publishedDays: 0,
       description: form.description || "Publicación de particular verificado en MercadoProp.",
-      features: ["Vendedor verificado", "Operación con escrow", "Publicación particular"],
+      features: ["Vendedor verificado", "Operación con respaldo MercadoPago", "Publicación particular"],
       images: form.photos.length ? form.photos : [IMG.prop1, IMG.prop2, IMG.prop3],
       seller: { name: CURRENT_USER.name, avatar: CURRENT_USER.avatar, verified: true, rating: 5.0, sales: 0, memberSince: CURRENT_USER.memberSince },
     });

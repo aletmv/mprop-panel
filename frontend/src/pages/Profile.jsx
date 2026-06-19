@@ -14,6 +14,7 @@ import {
   Trash2,
   Pause,
   Play,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -392,7 +393,7 @@ export default function Profile() {
                       <Chip status={r.status} />
                     </div>
                     <p className="text-xs text-[#666666] mt-1 flex items-center gap-1">
-                      <Lock className="h-3.5 w-3.5" /> {formatUSD(r.amount)} en custodia · {r.paymentId}
+                      <Wallet className="h-3.5 w-3.5" /> {formatUSD(r.amount)} · Bóveda · {r.paymentId}
                     </p>
                     {notary ? (
                       <p className="text-xs text-[#666666] mt-0.5 flex items-center gap-1">

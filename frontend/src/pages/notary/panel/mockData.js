@@ -42,7 +42,92 @@ const seedVault = (opId, economicStatus, eventTemplates, { price, firstHome = fa
     economicEvents: events,
     buyerEconomicItems: buildBuyerEconomicItems(price, firstHome),
     sellerEconomicItems: buildSellerEconomicItems(price, firstHome),
+    ...(LINEA_PASES[opId] || {}),
   };
+};
+
+// Línea de pases mock por operación: historia de traspasos de responsabilidad
+// (último pase activo marcado con `current: true`) + próximo paso a destrabar.
+// Vocabulario consistente con el modelo Bóveda — sin "comprobante", "transfirió", etc.
+const LINEA_PASES = {
+  'MP-475032': {
+    lineaDePases: [
+      { actor: 'comprador',  accion: 'Identidad verificada',                 fecha: '04/06', hora: '09:30' },
+      { actor: 'escribania', accion: 'Revisó documentación inicial',         fecha: '09/06', hora: '16:20' },
+      { actor: 'gestoria',   accion: 'Esperando certificado de dominio',     desde: 'hace 3 días', current: true },
+    ],
+    proximoPaso: {
+      descripcion: 'Recibir certificado de dominio vigente',
+      responsable: 'gestoria',
+      vence: '24/06',
+      impacto: 'Firma en riesgo si no se resuelve antes del 24/06.',
+    },
+  },
+  'MP-475011': {
+    lineaDePases: [
+      { actor: 'comprador',  accion: 'Acreditó la seña en Bóveda',           fecha: '28/05', hora: '10:00' },
+      { actor: 'gestoria',   accion: 'Verificación dominial completa',       fecha: '18/06', hora: '14:10' },
+      { actor: 'escribania', accion: 'Coordinando firma con las partes',     desde: 'desde ayer', current: true },
+    ],
+    proximoPaso: {
+      descripcion: 'Confirmar sala y horario de firma',
+      responsable: 'escribania',
+      vence: '24/06',
+      impacto: 'Firma agendada en 2 días — no debe demorarse.',
+    },
+  },
+  'MP-474998': {
+    lineaDePases: [
+      { actor: 'comprador',  accion: 'Identidad verificada',                       fecha: '12/06', hora: '10:11' },
+      { actor: 'escribania', accion: 'Solicitó verificación biométrica al vendedor', fecha: '13/06', hora: '09:30' },
+      { actor: 'vendedor',   accion: 'Pendiente validación biométrica',            desde: 'hace 8 días', current: true },
+    ],
+    proximoPaso: {
+      descripcion: 'Completar validación biométrica del vendedor',
+      responsable: 'vendedor',
+      vence: '30/06',
+      impacto: 'Sin identidad verificada del vendedor no se puede avanzar.',
+    },
+  },
+  'MP-474870': {
+    lineaDePases: [
+      { actor: 'comprador',  accion: 'Acreditó la reserva en Bóveda',        fecha: '22/06', hora: '10:09' },
+      { actor: 'escribania', accion: 'Solicitó documentación inicial',       fecha: '23/06', hora: '11:00' },
+      { actor: 'comprador',  accion: 'Pendiente carga de DNI',               desde: 'hace 5 días', current: true },
+    ],
+    proximoPaso: {
+      descripcion: 'Subir DNI y constancia de domicilio',
+      responsable: 'comprador',
+      vence: '06/07',
+      impacto: 'Bloquea apertura formal del legajo.',
+    },
+  },
+  'MP-474812': {
+    lineaDePases: [
+      { actor: 'comprador',  accion: 'Acreditó la reserva en Bóveda',        fecha: '25/06', hora: '13:08' },
+      { actor: 'escribania', accion: 'Inició apertura del legajo',           fecha: '26/06', hora: '10:00' },
+      { actor: 'comprador',  accion: 'Pendiente validación biométrica',      desde: 'desde ayer', current: true },
+    ],
+    proximoPaso: {
+      descripcion: 'Completar validación biométrica del comprador',
+      responsable: 'comprador',
+      vence: '05/07',
+      impacto: 'Validación es prerrequisito para habilitar la seña.',
+    },
+  },
+  'MP-474755': {
+    lineaDePases: [
+      { actor: 'comprador',  accion: 'Identidad y pago acreditados',         fecha: '28/04', hora: '10:07' },
+      { actor: 'escribania', accion: 'Firma de escritura ejecutada',         fecha: '14/06', hora: '16:00' },
+      { actor: 'tercero',    accion: 'Esperando turno del Registro de la Propiedad', desde: 'hace 4 días', current: true },
+    ],
+    proximoPaso: {
+      descripcion: 'Inscripción registral de la escritura',
+      responsable: 'tercero',
+      vence: '25/06',
+      impacto: 'Hasta inscribir no se entrega título inscripto al comprador.',
+    },
+  },
 };
 
 export const escribania = {
@@ -170,7 +255,7 @@ export const operaciones = [
     firma: '15/07/2025',
     diasFirma: 23,
     bloqueoActor: 'comprador',
-    bloqueoMotivo: 'Debe subir DNI y comprobante de domicilio',
+    bloqueoMotivo: 'Debe subir DNI y constancia de domicilio',
     vendedor: { nombre: 'Estudio Vega S.A.', dni: 'CUIT 30-71...', verificado: true, avatar: 'EV' },
     comprador: { nombre: 'Tomás Aguirre', dni: '30.118.005', verificado: false, avatar: 'TA' },
     riesgo: 'medio',

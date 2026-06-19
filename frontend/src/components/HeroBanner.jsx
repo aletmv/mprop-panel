@@ -23,7 +23,7 @@ const SLIDES = [
   {
     kicker: "Reserva protegida",
     title: "Congelá la propiedad de manera segura.",
-    text: "Tu seña queda en custodia digital dentro de Mercado Pago hasta el momento exacto de la firma de la escritura.",
+    text: "Tu seña queda registrada en la Bóveda MercadoProp dentro de MercadoPago hasta el momento exacto de la firma de la escritura.",
     icon: Lock,
   },
   {
