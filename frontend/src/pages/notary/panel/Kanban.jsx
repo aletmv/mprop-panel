@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, Clock, ChevronRight, Plus, Calendar,
+  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, ShieldAlert, FileText, Clock, ChevronRight, Plus, Calendar,
   ArrowRight, ExternalLink,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
@@ -141,10 +141,7 @@ const PaseRow = ({ pase, variant }) => {
     <li className={`relative pl-7 pr-3 py-2 rounded-md ${rowBg}`}>
       <span className="absolute left-1.5 top-3.5 -translate-y-1/2">
         {isCurrent ? (
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 ring-2 ring-white" />
-          </span>
+          <span className="block w-2.5 h-2.5 rounded-full pase-current-dot ring-2 ring-white" aria-hidden />
         ) : (
           <span className="block w-2 h-2 rounded-full bg-slate-300 ring-2 ring-white" />
         )}
@@ -311,8 +308,10 @@ export const AlertChip = ({ op, size = 'sm' }) => {
   const data = getOpAlert(op);
   if (!data) return null;
   const cfg = NIVEL_CFG[data.nivel];
-  const iconSize = size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5';
-  const textSize = size === 'sm' ? 'text-[10px]' : 'text-[11px]';
+  const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-4.5 h-4.5';
+  // Icono por nivel — coincide con el que muestra la card de Alertas para
+  // mantener consistencia visual entre Kanban y Dashboard.
+  const Icon = { critica: ShieldAlert, media: AlertTriangle, info: FileText }[data.nivel] || AlertTriangle;
 
   return (
     <HoverCard openDelay={120} closeDelay={80}>
@@ -321,9 +320,11 @@ export const AlertChip = ({ op, size = 'sm' }) => {
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           data-testid={`alert-chip-${op.id}`}
-          className={`inline-flex items-center gap-1 ${textSize} font-semibold ${cfg.textClass} hover:underline focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-300 rounded`}
+          aria-label={`Alerta ${cfg.label.toLowerCase()}`}
+          title={`Alerta ${cfg.label.toLowerCase()}`}
+          className="inline-flex items-center justify-center text-red-600 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-300 rounded"
         >
-          <AlertTriangle className={iconSize} /> Alerta
+          <Icon className={`${iconSize} fill-red-600 text-red-600`} strokeWidth={1.2} />
         </button>
       </HoverCardTrigger>
       <HoverCardContent
@@ -389,13 +390,12 @@ const KanbanCard = ({ op }) => {
       data-testid={`kanban-card-${op.id}`}
       className="block bg-white border border-slate-200 rounded-lg p-3 hover:shadow-md hover:border-slate-300 transition-all group cursor-grab active:cursor-grabbing"
     >
-      {op.bloqueoActor && (
-        <div className="mb-2">
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        {op.bloqueoActor ? (
           <BloqueoBadge op={op} variant="soccer" />
-        </div>
-      )}
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="font-mono text-[10.5px] text-slate-500 tracking-tight">{op.id}</span>
+        ) : (
+          <span aria-hidden />
+        )}
         <AlertChip op={op} />
       </div>
       <div className="text-[13px] font-semibold text-slate-900 leading-snug truncate" title={op.direccion}>
@@ -455,6 +455,10 @@ const KanbanCard = ({ op }) => {
           {op.diasFirma > 0 ? `${op.diasFirma}d` : op.diasFirma === 0 ? 'hoy' : `${Math.abs(op.diasFirma)}d`}
         </span>
         <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
+      </div>
+
+      <div className="mt-2 pt-2 border-t border-slate-100 text-right">
+        <span className="font-mono text-[10px] text-slate-400 tracking-tight">{op.id}</span>
       </div>
     </Link>
   );

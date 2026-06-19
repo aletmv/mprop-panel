@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { PanelShell, Topbar } from './PanelShell';
 import { StatusBadge } from './StatusBadge';
 import {
-  Clock, CalendarDays, ChevronRight, Sparkles,
+  Clock, CalendarDays, ChevronRight, Sparkles, ShieldAlert, AlertTriangle, FileText,
 } from 'lucide-react';
 import {
   alertas, proximasFirmas, estadoLabel, operaciones as MOCK_OPERACIONES,
@@ -61,29 +61,21 @@ const Dashboard = () => {
               </div>
               <div className="space-y-2 overflow-y-auto pr-1 flex-1 max-h-[420px]">
                 {alertas.map((a) => {
-                  const isCrit = a.nivel === 'critica';
-                  const colorMap = {
-                    critica: { bg: 'bg-destructive-soft', border: 'border-destructive/15', label: 'Crítica' },
-                    media: { bg: 'bg-card', border: 'border-border', label: 'Media' },
-                    info: { bg: 'bg-card', border: 'border-border', label: 'Info' },
+                  const cfg = {
+                    critica: { Icon: ShieldAlert, bg: 'bg-destructive-soft', border: 'border-destructive/15', boxBg: 'bg-destructive', boxBorder: 'border-destructive', iconClass: 'text-white' },
+                    media:   { Icon: AlertTriangle, bg: 'bg-card', border: 'border-border', boxBg: 'bg-card', boxBorder: 'border-warning/40', iconClass: 'text-warning-foreground' },
+                    info:    { Icon: FileText, bg: 'bg-card', border: 'border-border', boxBg: 'bg-card', boxBorder: 'border-info/30', iconClass: 'text-info' },
                   }[a.nivel];
+                  const Icon = cfg.Icon;
                   return (
                     <Link
                       to={`/escribanos/operaciones/${a.operacionId}`}
                       key={a.id}
                       data-testid={`alert-${a.id}`}
-                      className={`flex items-start gap-2.5 p-2.5 rounded-lg border ${colorMap.bg} ${colorMap.border} hover:shadow-sm transition-shadow group`}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-lg border ${cfg.bg} ${cfg.border} hover:shadow-sm transition-shadow group`}
                     >
-                      <div className="shrink-0 pt-0.5">
-                        {isCrit ? (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9.5px] font-bold whitespace-nowrap bg-destructive text-white">
-                            {colorMap.label}
-                          </span>
-                        ) : (
-                          <StatusBadge variant={a.nivel === 'media' ? 'warning' : 'info'} dot={false} className="text-[9.5px]">
-                            {colorMap.label}
-                          </StatusBadge>
-                        )}
+                      <div className={`w-7 h-7 rounded-md grid place-items-center shrink-0 border ${cfg.boxBorder} ${cfg.boxBg}`}>
+                        <Icon className={`w-3.5 h-3.5 ${cfg.iconClass}`} strokeWidth={1.75} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[12px] font-semibold text-foreground leading-snug">{a.titulo}</div>
