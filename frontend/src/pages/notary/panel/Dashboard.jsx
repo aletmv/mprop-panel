@@ -175,7 +175,12 @@ const Dashboard = () => {
                             <span className="font-mono">{f.operacion}</span> · {f.escribano}
                           </div>
                         </div>
-                        <StatusBadge variant={colorByState}>{labelByState}</StatusBadge>
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 bg-${colorByState}`}
+                          title={labelByState}
+                          aria-label={`Estado: ${labelByState}`}
+                          role="img"
+                        />
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
                       </Link>
                     );
@@ -183,7 +188,18 @@ const Dashboard = () => {
                 </div>
               )}
 
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3.5" data-testid="agenda-status-legend">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-success">
+                    <span className="w-2 h-2 rounded-full bg-success" aria-hidden="true" /> Confirmada
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-destructive">
+                    <span className="w-2 h-2 rounded-full bg-destructive" aria-hidden="true" /> Observada
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-warning-foreground">
+                    <span className="w-2 h-2 rounded-full bg-warning" aria-hidden="true" /> Tentativa
+                  </span>
+                </div>
                 <Link
                   to="/escribanos/agenda"
                   className="text-[12px] font-semibold text-primary hover:underline"
