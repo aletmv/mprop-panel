@@ -111,7 +111,11 @@ Pantallas: Profile (pestaña Reservas), NotarySelection, **adapter del panel** (
 
 Cada operación inmobiliaria tiene una **Bóveda MercadoProp**.
 
-La Bóveda representa la cuenta transaccional única dentro del ecosistema MercadoPago donde se canalizan los movimientos económicos de esa operación: reserva, seña, pagos asociados, honorarios, gastos y liquidaciones.
+La Bóveda representa la cuenta transaccional única dentro del ecosistema MercadoPago donde se canalizan los movimientos económicos de la operación que suceden dentro de la app: reserva, seña y pagos asociados que MercadoProp decida operar por MercadoPago.
+
+Además, la Bóveda organiza la **liquidación económica de la operación**: impuestos, sellos, honorarios, certificados, inscripción registral y otros gastos a cargo de comprador/vendedor. Estos conceptos pueden mostrarse como hitos económicos calculados/programados aunque no todos sean pagos ya registrados.
+
+El **saldo a escriturar** no se procesa dentro de la app: se paga ante la escribanía el día de la firma. En la Bóveda puede aparecer como hito económico programado o referencia de calendario, pero no como pago registrado/validado por MercadoPago.
 
 La Bóveda **no** es:
 
@@ -142,6 +146,8 @@ Campos conceptuales sugeridos:
 | `notaryId` | `n1` | Escribanía asignada |
 | `economicStatus` | `reserva_acreditada` | Estado económico general |
 | `economicEvents[]` | ver §2.7 | Eventos automáticos trazables |
+| `buyerEconomicItems[]` | ver §2.8 | Impuestos/gastos a cargo del comprador |
+| `sellerEconomicItems[]` | ver §2.8 | Impuestos/gastos a cargo del vendedor |
 
 ### 2.7 Eventos económicos automáticos
 
@@ -153,7 +159,7 @@ Regla de dominio:
 - La escribanía no revisa comprobantes ni concilia transferencias.
 - Un pago no debe aparecer como documento cargado por una parte.
 - El timeline debe mostrar eventos auditables generados por sistema.
-- La pestaña Pagos debe mostrar hitos económicos, estado y trazabilidad.
+- La pestaña Bóveda debe mostrar hitos económicos, impuestos/gastos por parte, estado y trazabilidad.
 
 Eventos sugeridos:
 
@@ -165,9 +171,10 @@ Eventos sugeridos:
 | `down_payment_pending_enablement` | Seña pendiente de habilitación | pendiente |
 | `down_payment_enabled` | Seña habilitada tras revisión notarial | habilitado |
 | `down_payment_accredited` | Pago registrado | validado |
+| `buyer_taxes_scheduled` | Impuestos y gastos del comprador programados | programado |
+| `seller_taxes_scheduled` | Impuestos y gastos del vendedor programados | programado |
 | `fees_scheduled` | Honorarios y gastos programados | programado |
-| `final_settlement_scheduled` | Liquidación final programada | programado |
-| `final_settlement_confirmed` | Liquidación final confirmada por MercadoPago | validado |
+| `closing_balance_scheduled` | Saldo a escriturar programado ante escribanía | programado |
 
 Forma sugerida:
 
@@ -188,7 +195,65 @@ Forma sugerida:
 
 Esta demo sigue siendo mock/frontend/localStorage. No hay integración real con MercadoPago todavía, pero la narrativa y el modelo conceptual deben preparar ese camino.
 
-### 2.8 Operaciones MercadoProp · `operaciones` (panel/mockData.js)
+### 2.8 Liquidación de impuestos y gastos
+
+La pestaña económica del legajo calcula y muestra dos bloques:
+
+- **Comprador**
+- **Vendedor**
+
+Estos conceptos salen de `src/lib/costs.js` y deben formar parte del flujo económico de la Bóveda como liquidación programada/calculada.
+
+#### Comprador
+
+| Concepto | Cálculo actual | Nota visible |
+|---|---:|---|
+| Comisión MercadoProp | 1 % del precio | Al momento de la compra |
+| Honorarios de escribanía | ~2 % del precio | La elegís en la app |
+| Impuesto de sellos (mitad comprador) | 1,75 % del precio, con posible exención vivienda única | Puede quedar exento/parcial según regla CABA |
+| Certificados e inscripción registral | Monto fijo mock `U$S 450` | Dominio, inhibición y tasas |
+
+#### Vendedor
+
+| Concepto | Cálculo actual | Nota visible |
+|---|---:|---|
+| Comisión MercadoProp | 1 % del precio | Solo si vendés |
+| Impuesto de sellos (mitad vendedor) | 1,75 % del precio, con posible exención vivienda única | Puede quedar exento/parcial según regla CABA |
+| Certificados de dominio e inhibición | Monto fijo mock `U$S 180` | Trámite incluido en la operación |
+
+Ejemplo con operación `MP-474755` de `U$S 88.000`:
+
+| Parte | Concepto | Importe |
+|---|---|---:|
+| Comprador | Comisión MercadoProp | U$S 880 |
+| Comprador | Honorarios de escribanía | U$S 1.760 |
+| Comprador | Impuesto de sellos (tu mitad) | U$S 1.540 |
+| Comprador | Certificados e inscripción registral | U$S 450 |
+| Vendedor | Comisión MercadoProp | U$S 880 |
+| Vendedor | Impuesto de sellos (tu mitad) | U$S 1.540 |
+| Vendedor | Certificados de dominio e inhibición | U$S 180 |
+
+Estos importes no deben mezclarse con el **saldo a escriturar**. El saldo a escriturar es el 95 % del precio y ocurre ante escribanía el día de la firma.
+
+Forma sugerida:
+
+```js
+{
+  buyerEconomicItems: [
+    { type: "buyer_marketplace_fee", label: "Comisión MercadoProp", amount: 880, status: "programado" },
+    { type: "notary_fees", label: "Honorarios de escribanía", amount: 1760, status: "programado" },
+    { type: "buyer_stamp_tax", label: "Impuesto de sellos (tu mitad)", amount: 1540, status: "programado" },
+    { type: "buyer_registry_certificates", label: "Certificados e inscripción registral", amount: 450, status: "programado" }
+  ],
+  sellerEconomicItems: [
+    { type: "seller_marketplace_fee", label: "Comisión MercadoProp", amount: 880, status: "programado" },
+    { type: "seller_stamp_tax", label: "Impuesto de sellos (tu mitad)", amount: 1540, status: "programado" },
+    { type: "seller_certificates", label: "Certificados de dominio e inhibición", amount: 180, status: "programado" }
+  ]
+}
+```
+
+### 2.9 Operaciones MercadoProp · `operaciones` (panel/mockData.js)
 
 Son los legajos hardcodeados del panel + los que vienen de reservas vía adapter.
 
@@ -214,7 +279,7 @@ IDs derivados de reservas: vienen del `paymentId` de la reserva (`MP-734120985`,
 **No mostrar en el kanban**: `matricula`, `partida`, `catastro`, `uc/uf` (sólo en detalle, tab "Partes e inmueble").
 **No mostrar en lista**: `tareaEnCursoFull` (es del board), `tareaEnCurso` corta (el kanban sí la muestra).
 
-### 2.9 Escribanías · `NOTARIES` (mock.js)
+### 2.10 Escribanías · `NOTARIES` (mock.js)
 
 | Campo | Ejemplo |
 |---|---|
@@ -226,7 +291,7 @@ IDs derivados de reservas: vienen del `paymentId` de la reserva (`MP-734120985`,
 Pantalla: NotarySelection.jsx (selección post-reserva).
 **No mostrar dentro del panel**: `fee`, `reviews`, `distance` — son métricas comerciales del marketplace, no del workspace de la escribana.
 
-### 2.10 Invitaciones a escribanía
+### 2.11 Invitaciones a escribanía
 
 **Implementación actual**: no existe una entidad explícita "invitación". El flujo se simula así:
 
@@ -237,7 +302,7 @@ Pantalla: NotarySelection.jsx (selección post-reserva).
 
 Si más adelante se quiere modelar invitaciones explícitas, agregar un mock `INVITATIONS` con `{ id, reservationId, notaryId, status: 'pendiente'|'aceptada'|'rechazada', sentAt }`.
 
-### 2.11 Legajos / expedientes
+### 2.12 Legajos / expedientes
 
 En esta demo "legajo" y "operación MercadoProp" son **la misma entidad** (ver §2.6). Lo que cambia es la vista:
 
@@ -255,7 +320,7 @@ Mapping hito → estado(s):
 | Pre-cierre | `en-firma` |
 | Cierre y post-cierre | `cerrado` |
 
-### 2.12 Tareas del día · `dayTasksStore.js`
+### 2.13 Tareas del día · `dayTasksStore.js`
 
 Estructura:
 ```js
@@ -269,7 +334,7 @@ Acciones (API del store): `addPending`, `removePending`, `reorderPending(from,to
 
 Sólo guardamos IDs; el texto y meta se resuelven contra `operaciones[]` en render.
 
-### 2.13 Alertas · `alertas` (panel/mockData.js)
+### 2.14 Alertas · `alertas` (panel/mockData.js)
 
 | Campo | Ejemplo |
 |---|---|
@@ -286,7 +351,7 @@ Demo: 3 alertas asociadas a `MP-475032`.
 
 **Fallback**: si un legajo tiene `riesgo === 'alto'` o `estado === 'observado'` pero no hay entrada en `alertas[]`, `Kanban.jsx::getOpAlert` genera una alerta genérica para que el chip funcione igual.
 
-### 2.14 Eventos · `eventos` (panel/mockData.js)
+### 2.15 Eventos · `eventos` (panel/mockData.js)
 
 Línea de tiempo auditable que se muestra en el tab **Timeline** del Detalle de legajo.
 
@@ -302,7 +367,7 @@ Debe incluir eventos documentales, registrales, de gestión y económicos. Los e
 
 Los eventos económicos no deben decir "comprador cargó comprobante", "subió comprobante" ni "transferencia manual". Usar labels simples como "Pago registrado", "Evento económico registrado" o "Hito económico confirmado". La asociación con la Bóveda se entiende por el contexto de la operación `MP-XXXXXXX`; no hace falta mostrar un número visible de Bóveda.
 
-### 2.15 Otros mocks útiles
+### 2.16 Otros mocks útiles
 
 - **`documentos`** (panel/mockData.js): checklist documental del legajo (8 items). Tab "Documentos" del Detalle.
 - **`proximasFirmas`** (panel/mockData.js): 5 firmas agendadas. Card de agenda secundaria del Dashboard + Agenda.jsx.
@@ -395,10 +460,12 @@ Los eventos económicos no deben decir "comprador cargó comprobante", "subió c
 
 1. **El `paymentId` de una reserva = `id` de la operación en el panel** (ej. `MP-734120985`). No hay otra "translation table".
 2. **La Bóveda MercadoProp es la entidad conceptual económica** de cada operación. En la demo puede tener `vaultId` interno derivado de `resId`, pero la UI no necesita mostrar un número de Bóveda: se sobreentiende que está asociada a la operación `MP-XXXXXXX`.
-3. **Los eventos económicos son automáticos**: reserva, seña, honorarios y liquidaciones se muestran como registrados/validados por MercadoPago, no como comprobantes manuales.
-4. **No existe persistencia real**: si limpiás localStorage perdés todo lo dinámico (reservas, tareas del día, sesión de escribanía, publicaciones).
-5. **El panel mezcla** operaciones mock duras (`MP-475032` etc.) + las que provienen de reservas del marketplace. Las primeras aportan riqueza visual; las segundas demuestran la sincronización.
-6. **Las alertas y eventos están atados sólo a `MP-475032`** para tener un legajo "rico" cuando se navega. Los otros legajos hardcodeados y todos los provenientes de reservas no tienen alertas detalladas (caen al fallback genérico del `AlertChip`).
+3. **Los eventos económicos dentro de la app son automáticos**: reserva y seña se muestran como registrados/validados por MercadoPago, no como comprobantes manuales.
+4. **La Bóveda también organiza impuestos y gastos por parte**: comprador y vendedor tienen conceptos económicos programados/calculados, como comisión MercadoProp, honorarios de escribanía, impuesto de sellos y certificados.
+5. **El saldo a escriturar ocurre ante escribanía**: puede figurar como hito programado dentro del calendario económico, pero no como movimiento MercadoPago registrado/validado dentro de la app.
+6. **No existe persistencia real**: si limpiás localStorage perdés todo lo dinámico (reservas, tareas del día, sesión de escribanía, publicaciones).
+7. **El panel mezcla** operaciones mock duras (`MP-475032` etc.) + las que provienen de reservas del marketplace. Las primeras aportan riqueza visual; las segundas demuestran la sincronización.
+8. **Las alertas y eventos están atados sólo a `MP-475032`** para tener un legajo "rico" cuando se navega. Los otros legajos hardcodeados y todos los provenientes de reservas no tienen alertas detalladas (caen al fallback genérico del `AlertChip`).
 
 ---
 

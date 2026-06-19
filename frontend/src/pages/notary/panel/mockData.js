@@ -6,15 +6,26 @@ import {
   DEFAULT_VAULT_LABEL,
   makeEconomicEvent,
   ECONOMIC_STATUS,
+  buildBuyerEconomicItems,
+  buildSellerEconomicItems,
+  closingBalanceAmount,
 } from './vault';
 
 // Reexport del catálogo de status económico para vistas que lo necesiten
 // sin tener que importar dos archivos.
-export { ECONOMIC_STATUS, ECONOMIC_EVENT_CATALOG, EVENT_STATUS } from './vault';
+export {
+  ECONOMIC_STATUS,
+  ECONOMIC_EVENT_CATALOG,
+  EVENT_STATUS,
+  buildBuyerEconomicItems,
+  buildSellerEconomicItems,
+  closingBalanceAmount,
+} from './vault';
 
-// Helper interno para sembrar la Bóveda en operaciones mock duras.
-// Recibe el opId y un array de "eventos plantilla" (sin id/paymentId/vaultId/source).
-const seedVault = (opId, economicStatus, eventTemplates) => {
+// Helper interno: arma la Bóveda completa para un legajo mock.
+// price → calcula y siembra buyerEconomicItems / sellerEconomicItems.
+// firstHome → exención de sellos (opcional, default false).
+const seedVault = (opId, economicStatus, eventTemplates, { price, firstHome = false } = {}) => {
   const vaultId = vaultIdFromOpId(opId);
   const events = eventTemplates.map((t, idx) =>
     makeEconomicEvent({
@@ -29,6 +40,8 @@ const seedVault = (opId, economicStatus, eventTemplates) => {
     vaultLabel: DEFAULT_VAULT_LABEL,
     economicStatus,
     economicEvents: events,
+    buyerEconomicItems: buildBuyerEconomicItems(price, firstHome),
+    sellerEconomicItems: buildSellerEconomicItems(price, firstHome),
   };
 };
 
@@ -73,8 +86,8 @@ export const operaciones = [
       { type: 'vault_created',                    status: 'confirmado', occurredAt: '2025-06-04T10:00:00-03:00' },
       { type: 'reservation_accredited',           status: 'validado',   amount: 1300,  occurredAt: '2025-06-04T10:12:00-03:00' },
       { type: 'notary_assigned',                  status: 'confirmado', occurredAt: '2025-06-04T16:30:00-03:00' },
-      { type: 'down_payment_pending_enablement',  status: 'pendiente',  amount: 13000, occurredAt: '2025-06-11T09:13:00-03:00' },
-    ]),
+      { type: 'down_payment_pending_enablement',  status: 'pendiente',  amount: 5200,  occurredAt: '2025-06-11T09:13:00-03:00' },
+    ], { price: 130000 }),
   },
   {
     id: 'MP-475011',
@@ -99,15 +112,17 @@ export const operaciones = [
     matricula: 'FR 14-8821',
     partida: '8821934',
     catastro: 'Circ. 16 · Sec. 18 · Manz. 22 · Parc. 04',
-    ...seedVault('MP-475011', 'liquidacion_pendiente', [
+    ...seedVault('MP-475011', 'sena_habilitada', [
       { type: 'vault_created',                  status: 'confirmado', occurredAt: '2025-05-20T11:00:00-03:00' },
       { type: 'reservation_accredited',         status: 'validado',   amount: 2150,   occurredAt: '2025-05-20T11:14:00-03:00' },
       { type: 'notary_assigned',                status: 'confirmado', occurredAt: '2025-05-21T09:00:00-03:00' },
       { type: 'down_payment_enabled',           status: 'habilitado',                 occurredAt: '2025-05-27T15:00:00-03:00' },
-      { type: 'down_payment_accredited',        status: 'validado',   amount: 21500,  occurredAt: '2025-05-28T10:00:00-03:00' },
+      { type: 'down_payment_accredited',        status: 'validado',   amount: 8600,   occurredAt: '2025-05-28T10:00:00-03:00' },
+      { type: 'buyer_taxes_scheduled',          status: 'programado',                 occurredAt: '2025-06-15T12:00:00-03:00' },
+      { type: 'seller_taxes_scheduled',         status: 'programado',                 occurredAt: '2025-06-15T12:00:00-03:00' },
       { type: 'fees_scheduled',                 status: 'programado',                 occurredAt: '2025-06-15T12:00:00-03:00' },
-      { type: 'final_settlement_scheduled',     status: 'programado', amount: 191350, occurredAt: '2025-06-22T18:00:00-03:00' },
-    ]),
+      { type: 'closing_balance_scheduled',      status: 'programado', amount: 204250, occurredAt: '2025-06-22T18:00:00-03:00' },
+    ], { price: 215000 }),
   },
   {
     id: 'MP-474998',
@@ -136,8 +151,8 @@ export const operaciones = [
       { type: 'vault_created',                   status: 'confirmado', occurredAt: '2025-06-12T10:00:00-03:00' },
       { type: 'reservation_accredited',          status: 'validado',   amount: 1000,  occurredAt: '2025-06-12T10:11:00-03:00' },
       { type: 'notary_assigned',                 status: 'confirmado', occurredAt: '2025-06-13T09:30:00-03:00' },
-      { type: 'down_payment_pending_enablement', status: 'pendiente',  amount: 9500,  occurredAt: '2025-06-20T11:00:00-03:00' },
-    ]),
+      { type: 'down_payment_pending_enablement', status: 'pendiente',  amount: 3800,  occurredAt: '2025-06-20T11:00:00-03:00' },
+    ], { price: 95000 }),
   },
   {
     id: 'MP-474870',
@@ -166,7 +181,7 @@ export const operaciones = [
       { type: 'vault_created',           status: 'confirmado', occurredAt: '2025-06-22T10:00:00-03:00' },
       { type: 'reservation_accredited',  status: 'validado',   amount: 1780, occurredAt: '2025-06-22T10:09:00-03:00' },
       { type: 'notary_assigned',         status: 'confirmado', occurredAt: '2025-06-23T11:00:00-03:00' },
-    ]),
+    ], { price: 178000 }),
   },
   {
     id: 'MP-474812',
@@ -195,7 +210,7 @@ export const operaciones = [
       { type: 'vault_created',           status: 'confirmado', occurredAt: '2025-06-25T13:00:00-03:00' },
       { type: 'reservation_accredited',  status: 'validado',   amount: 3200, occurredAt: '2025-06-25T13:08:00-03:00' },
       { type: 'notary_assigned',         status: 'confirmado', occurredAt: '2025-06-26T10:00:00-03:00' },
-    ]),
+    ], { price: 320000 }),
   },
   {
     id: 'MP-474755',
@@ -220,16 +235,17 @@ export const operaciones = [
     matricula: 'FR 06-1192',
     partida: '1192337',
     catastro: 'Circ. 06 · Sec. 14 · Manz. 18 · Parc. 02',
-    ...seedVault('MP-474755', 'liquidada', [
-      { type: 'vault_created',                status: 'confirmado', occurredAt: '2025-04-28T10:00:00-03:00' },
-      { type: 'reservation_accredited',       status: 'validado',   amount: 1000,  occurredAt: '2025-04-28T10:07:00-03:00' },
-      { type: 'notary_assigned',              status: 'confirmado', occurredAt: '2025-04-29T11:00:00-03:00' },
-      { type: 'down_payment_enabled',         status: 'habilitado',                occurredAt: '2025-05-08T12:00:00-03:00' },
-      { type: 'down_payment_accredited',      status: 'validado',   amount: 8800,  occurredAt: '2025-05-09T10:30:00-03:00' },
-      { type: 'fees_scheduled',               status: 'programado',                occurredAt: '2025-06-10T11:00:00-03:00' },
-      { type: 'final_settlement_scheduled',   status: 'programado', amount: 78200, occurredAt: '2025-06-15T11:00:00-03:00' },
-      { type: 'final_settlement_confirmed',   status: 'confirmado', amount: 78200, occurredAt: '2025-06-18T16:45:00-03:00' },
-    ]),
+    ...seedVault('MP-474755', 'sena_habilitada', [
+      { type: 'vault_created',              status: 'confirmado', occurredAt: '2025-04-28T10:00:00-03:00' },
+      { type: 'reservation_accredited',     status: 'validado',   amount: 880,   occurredAt: '2025-04-28T10:07:00-03:00' },
+      { type: 'notary_assigned',            status: 'confirmado', occurredAt: '2025-04-29T11:00:00-03:00' },
+      { type: 'down_payment_enabled',       status: 'habilitado',                occurredAt: '2025-05-08T12:00:00-03:00' },
+      { type: 'down_payment_accredited',    status: 'validado',   amount: 3520,  occurredAt: '2025-05-09T10:30:00-03:00' },
+      { type: 'buyer_taxes_scheduled',      status: 'programado',                occurredAt: '2025-06-10T11:00:00-03:00' },
+      { type: 'seller_taxes_scheduled',     status: 'programado',                occurredAt: '2025-06-10T11:00:00-03:00' },
+      { type: 'fees_scheduled',             status: 'programado',                occurredAt: '2025-06-10T11:00:00-03:00' },
+      { type: 'closing_balance_scheduled',  status: 'programado', amount: 83600, occurredAt: '2025-06-17T18:00:00-03:00' },
+    ], { price: 88000 }),
   },
 ];
 

@@ -5,6 +5,8 @@ import {
   vaultIdFromOpId,
   DEFAULT_VAULT_LABEL,
   buildInitialVaultFromReservation,
+  buildBuyerEconomicItems,
+  buildSellerEconomicItems,
 } from './vault';
 
 const dniDemoFromName = (name) => {
@@ -69,6 +71,12 @@ export const reservationToOperacion = (reservation, property) => {
           economicEvents: [],
         };
 
+  // Items económicos calculados a partir del precio. Independientes de la reserva;
+  // siempre se derivan del precio de la propiedad para asegurar consistencia con
+  // el simulador del marketplace (lib/costs.js).
+  const buyerItems = buildBuyerEconomicItems(property?.price);
+  const sellerItems = buildSellerEconomicItems(property?.price);
+
   return {
     id: opId,
     _isFromReservation: true,
@@ -106,6 +114,8 @@ export const reservationToOperacion = (reservation, property) => {
     partida: String(1000000 + (opId.length * 53217)).slice(0, 7),
     catastro: 'Pendiente de carga',
     ...vault,
+    buyerEconomicItems: buyerItems,
+    sellerEconomicItems: sellerItems,
   };
 };
 
