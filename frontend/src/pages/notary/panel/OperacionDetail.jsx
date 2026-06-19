@@ -6,7 +6,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   ChevronLeft, CheckCircle2, AlertTriangle, FileSignature, Download,
   MessageSquarePlus, ChevronRight, Sparkles, ExternalLink, Phone, Mail,
-  FileText, DollarSign, Building2, CircleDot, Circle, Clock, Copy,
+  FileText, DollarSign, Building2, CircleDot, Circle, Clock, Copy, Wallet,
+  CalendarClock, ShieldCheck,
 } from 'lucide-react';
 import {
   operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, eventos, documentos, estadoLabel, riesgoLabel,
@@ -14,6 +15,12 @@ import {
 import { buildNotaryOperaciones } from './operacionesAdapter';
 import { BloqueoBadge } from './Kanban';
 import { buyerCosts, sellerCosts } from '@/lib/costs';
+import {
+  RESERVATION_PCT,
+  DOWN_PAYMENT_PCT,
+  closingBalanceAmount,
+  ECONOMIC_STATUS,
+} from './vault';
 import { formatUSD } from '@/data/mock';
 import { useApp } from '@/context/AppContext';
 
@@ -74,13 +81,68 @@ const PagosItemRow = ({ label, detail, amount, zero }) => (
   </div>
 );
 
-const PagosTab = ({ op }) => {
+// ─── Bóveda de la operación ──────────────────────────────────────────────
+// Calendario económico completo: hitos MercadoPago/MercadoProp + liquidación
+// de comprador y vendedor + saldo a escriturar como hito programado ante
+// escribanía (visualmente diferenciado, NO marcado como pago registrado).
+//
+// Fuente de verdad: /app/DEMO_MOCK_MAP.md §2.6, §2.7 y §2.8.
+
+const HitoRow = ({ label, subtitle, amount, pill, accent = 'mp', testid }) => {
+  // accent="mp" → hito procesado por MercadoPago (azul sutil)
+  // accent="notary" → hito programado ante escribanía (slate, diferenciado)
+  const tone = accent === 'notary'
+    ? 'border-l-slate-400 bg-slate-50/50'
+    : 'border-l-sky-400 bg-sky-50/40';
+  return (
+    <div
+      data-testid={testid}
+      className={`px-5 py-4 flex items-start justify-between gap-3 border-l-2 ${tone}`}
+    >
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-slate-900">{label}</div>
+        <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>
+      </div>
+      <div className="text-right shrink-0">
+        <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(amount)}</div>
+        {pill && (
+          <div className="mt-1">
+            <Pill variant={pill.variant}>{pill.label}</Pill>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const BovedaTab = ({ op }) => {
   const [firstHome, setFirstHome] = useState(false);
+  const reserva = Math.round(op.precio * RESERVATION_PCT);
+  const sena = Math.round(op.precio * DOWN_PAYMENT_PCT);
+  const closing = closingBalanceAmount(op.precio);
   const buyer = buyerCosts(op.precio, firstHome);
   const seller = sellerCosts(op.precio, firstHome);
-  const reserva = Math.round(op.precio * 0.01);
-  const sena = Math.round(op.precio * 0.04);
-  const saldo = op.precio - reserva - sena;
+
+  // Estado de los hitos derivado de los eventos económicos de la Bóveda.
+  const events = op.economicEvents || [];
+  const hasEvent = (t) => events.some((e) => e.type === t);
+
+  const reservaPill = hasEvent('reservation_accredited')
+    ? { label: 'Pago registrado', variant: 'success' }
+    : { label: 'A integrar', variant: 'muted' };
+
+  let senaPill;
+  if (hasEvent('down_payment_accredited')) {
+    senaPill = { label: 'Pago registrado', variant: 'success' };
+  } else if (hasEvent('down_payment_enabled')) {
+    senaPill = { label: 'Habilitada', variant: 'info' };
+  } else if (hasEvent('down_payment_pending_enablement')) {
+    senaPill = { label: 'Pendiente de habilitación', variant: 'warning' };
+  } else {
+    senaPill = { label: 'A integrar', variant: 'muted' };
+  }
+
+  const closingPill = { label: 'Programado ante escribanía', variant: 'muted' };
 
   const sellosState = buyer.sellos.exempt ? 'exempt' : buyer.sellos.partial ? 'partial' : 'full';
   const sellosBadge = {
@@ -89,15 +151,94 @@ const PagosTab = ({ op }) => {
     full: { label: 'Sin exención', cls: 'bg-slate-50 text-slate-600 border-slate-200' },
   }[sellosState];
 
+  const statusMeta = ECONOMIC_STATUS[op.economicStatus] || ECONOMIC_STATUS.reserva_acreditada;
+
+  // Movimientos efectivos en la Bóveda: sumamos los importes de los eventos que
+  // representan dinero ya ingresado al ecosistema MercadoPago (reserva acreditada,
+  // seña acreditada o seña pendiente de habilitación notarial).
+  const MOVEMENT_TYPES = new Set([
+    'reservation_accredited',
+    'down_payment_accredited',
+    'down_payment_pending_enablement',
+  ]);
+  const movementsTotal = events
+    .filter((e) => MOVEMENT_TYPES.has(e.type) && e.amount)
+    .reduce((s, e) => s + e.amount, 0);
+
   return (
-    <div className="grid grid-cols-12 gap-5" data-testid="pagos-tab">
+    <div className="grid grid-cols-12 gap-5" data-testid="boveda-tab">
       <div className="col-span-12 lg:col-span-7 space-y-5">
+
+        {/* Hitos MercadoPago/MercadoProp */}
         <Card>
           <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Impuestos y sellos</h2>
+              <h2 className="text-base font-semibold text-slate-900">Hitos MercadoPago/MercadoProp</h2>
               <div className="text-xs text-slate-500 mt-0.5">
-                Liquidación calculada sobre el precio de escritura
+                Pagos procesados dentro de la Bóveda
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-2.5 py-1">
+              <ShieldCheck className="w-3.5 h-3.5" strokeWidth={1.75} />
+              Trazado por MercadoPago
+            </span>
+          </div>
+
+          <HitoRow
+            testid="hito-reserva"
+            label="Reserva"
+            subtitle="1% del precio · al inicio de la operación"
+            amount={reserva}
+            pill={reservaPill}
+            accent="mp"
+          />
+          <HitoRow
+            testid="hito-sena"
+            label="Seña"
+            subtitle="4% del precio · habilitación notarial requerida"
+            amount={sena}
+            pill={senaPill}
+            accent="mp"
+          />
+        </Card>
+
+        {/* Saldo a escriturar — visualmente diferenciado */}
+        <Card>
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Saldo a escriturar</h2>
+              <div className="text-xs text-slate-500 mt-0.5">
+                Hito programado ante escribanía · no se procesa por MercadoPago
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-2.5 py-1">
+              <CalendarClock className="w-3.5 h-3.5" strokeWidth={1.75} />
+              Ante escribanía
+            </span>
+          </div>
+
+          <HitoRow
+            testid="hito-saldo"
+            label="Pago ante escribanía"
+            subtitle="95% del precio · el día de la firma"
+            amount={closing}
+            pill={closingPill}
+            accent="notary"
+          />
+
+          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/40 text-[11px] text-slate-600 leading-relaxed">
+            El saldo a escriturar se integra directamente ante la escribanía el día de la firma.
+            No figura como pago registrado por MercadoPago.
+          </div>
+        </Card>
+
+        {/* Liquidación comprador */}
+        <Card>
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Liquidación · Comprador</h2>
+              <div className="text-xs text-slate-500 mt-0.5">
+                Impuestos y gastos calculados sobre el precio de escritura
               </div>
             </div>
             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${sellosBadge.cls}`}>
@@ -125,7 +266,6 @@ const PagosTab = ({ op }) => {
           </div>
 
           <div className="px-5 py-4">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">Comprador</div>
             <div className="divide-y divide-slate-100">
               {buyer.items.map((it, i) => (
                 <PagosItemRow
@@ -138,13 +278,24 @@ const PagosTab = ({ op }) => {
               ))}
             </div>
             <div className="mt-3 pt-3 border-t border-slate-200 flex justify-between items-baseline">
-              <div className="text-sm font-semibold text-slate-900">Total gastos comprador</div>
-              <div className="text-lg font-semibold text-slate-900 tabular-nums">{formatUSD(buyer.total)}</div>
+              <div className="text-sm font-semibold text-slate-900">Total comprador</div>
+              <div className="text-lg font-semibold text-slate-900 tabular-nums" data-testid="buyer-total">
+                {formatUSD(buyer.total)}
+              </div>
+            </div>
+            <div className="mt-1 text-[11px] text-slate-500">Importes a abonar · calculados</div>
+          </div>
+        </Card>
+
+        {/* Liquidación vendedor */}
+        <Card>
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="text-base font-semibold text-slate-900">Liquidación · Vendedor</h2>
+            <div className="text-xs text-slate-500 mt-0.5">
+              Impuestos y gastos calculados sobre el precio de escritura
             </div>
           </div>
-
-          <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/40">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-500 mb-1">Vendedor</div>
+          <div className="px-5 py-4">
             <div className="divide-y divide-slate-100">
               {seller.items.map((it, i) => (
                 <PagosItemRow
@@ -157,63 +308,55 @@ const PagosTab = ({ op }) => {
               ))}
             </div>
             <div className="mt-3 pt-3 border-t border-slate-200 flex justify-between items-baseline">
-              <div className="text-sm font-semibold text-slate-900">Total gastos vendedor</div>
-              <div className="text-lg font-semibold text-slate-900 tabular-nums">{formatUSD(seller.total)}</div>
+              <div className="text-sm font-semibold text-slate-900">Total vendedor</div>
+              <div className="text-lg font-semibold text-slate-900 tabular-nums" data-testid="seller-total">
+                {formatUSD(seller.total)}
+              </div>
             </div>
+            <div className="mt-1 text-[11px] text-slate-500">Importes a abonar · calculados</div>
           </div>
         </Card>
       </div>
 
       <div className="col-span-12 lg:col-span-5 space-y-5">
+        {/* Resumen de la Bóveda */}
         <Card>
-          <div className="px-5 py-4 border-b border-slate-100">
-            <h2 className="text-base font-semibold text-slate-900">Hitos de pago</h2>
-            <div className="text-xs text-slate-500 mt-0.5">Calendario económico de la operación</div>
-          </div>
-          <div className="divide-y divide-slate-100">
-            <div className="px-5 py-4 flex items-center justify-between gap-3" data-testid="hito-reserva">
-              <div>
-                <div className="text-sm font-medium text-slate-900">Reserva</div>
-                <div className="text-xs text-slate-500 mt-0.5">1% · acreditada al inicio del legajo</div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(reserva)}</div>
-                <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 mt-1 inline-block">
-                  Acreditada
-                </span>
-              </div>
+          <div className="px-5 py-4 border-b border-slate-100 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-sky-100 grid place-items-center shrink-0">
+              <Wallet className="w-4.5 h-4.5 text-sky-700" strokeWidth={1.75} />
             </div>
-            <div className="px-5 py-4 flex items-center justify-between gap-3" data-testid="hito-sena">
-              <div>
-                <div className="text-sm font-medium text-slate-900">Seña</div>
-                <div className="text-xs text-slate-500 mt-0.5">4% · 72 hs tras revisión sin observaciones</div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(sena)}</div>
-                <span className="text-[10px] uppercase tracking-widest font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 mt-1 inline-block">
-                  Pendiente
-                </span>
-              </div>
-            </div>
-            <div className="px-5 py-4 flex items-center justify-between gap-3" data-testid="hito-saldo">
-              <div>
-                <div className="text-sm font-medium text-slate-900">Saldo a escriturar</div>
-                <div className="text-xs text-slate-500 mt-0.5">95% · ante escribano el día de la firma</div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(saldo)}</div>
-                <span className="text-[10px] uppercase tracking-widest font-bold text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5 mt-1 inline-block">
-                  Programado
-                </span>
-              </div>
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-slate-900">Bóveda de la operación</h2>
+              <div className="text-xs text-slate-500 mt-0.5">Trazabilidad económica MercadoProp</div>
             </div>
           </div>
-          <div className="px-5 py-4 border-t border-slate-100 flex justify-between items-baseline">
-            <div className="text-sm font-semibold text-slate-900">Precio de escritura</div>
-            <div className="text-lg font-semibold text-slate-900 tabular-nums">{formatUSD(op.precio)}</div>
+
+          <div className="px-5 py-4 space-y-3.5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-xs text-slate-500">Estado económico</div>
+              <Pill variant={statusMeta.tone}>{statusMeta.label}</Pill>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-xs text-slate-500">Precio de escritura</div>
+              <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(op.precio)}</div>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-xs text-slate-500">Movimientos en Bóveda</div>
+              <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(movementsTotal)}</div>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-xs text-slate-500">Programado ante escribanía</div>
+              <div className="text-sm font-semibold text-slate-900 tabular-nums">{formatUSD(closing)}</div>
+            </div>
+          </div>
+
+          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/60 text-[11px] text-slate-500 leading-relaxed">
+            Eventos económicos registrados y validados automáticamente dentro del ecosistema MercadoPago/MercadoProp.
+            La escribanía consulta y audita; no concilia ni valida pagos manualmente.
           </div>
         </Card>
 
+        {/* Helper de exención */}
         <Card className="p-5 bg-gradient-to-br from-sky-50 to-white">
           <div className="flex items-start gap-3">
             <DollarSign className="w-5 h-5 text-primary shrink-0 mt-0.5" strokeWidth={1.5} />
@@ -454,7 +597,7 @@ const OperacionDetail = () => {
                 { v: 'partes', label: 'Partes e inmueble' },
                 { v: 'documentos', label: `Documentos · ${documentos.length}` },
                 { v: 'timeline', label: 'Timeline' },
-                { v: 'pagos', label: 'Pagos' },
+                { v: 'boveda', label: 'Bóveda' },
               ].map((t) => (
                 <TabsTrigger
                   key={t.v}
@@ -715,13 +858,17 @@ const OperacionDetail = () => {
                       alerta: AlertTriangle,
                       decision: FileSignature,
                       pago: DollarSign,
+                      boveda: Wallet,
                       gestion: Building2,
                       apertura: CircleDot,
                     }[ev.tipo] || FileText;
+                    const isBoveda = ev.tipo === 'boveda';
                     return (
                       <li key={idx} className="relative pl-12 pb-5 last:pb-0">
-                        <div className="absolute left-0 top-0 w-9 h-9 rounded-full bg-white border border-slate-200 grid place-items-center">
-                          <Icon className="w-4 h-4 text-slate-600" strokeWidth={1.5} />
+                        <div className={`absolute left-0 top-0 w-9 h-9 rounded-full grid place-items-center ${
+                          isBoveda ? 'bg-sky-50 border border-sky-200' : 'bg-white border border-slate-200'
+                        }`}>
+                          <Icon className={`w-4 h-4 ${isBoveda ? 'text-sky-700' : 'text-slate-600'}`} strokeWidth={1.5} />
                         </div>
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div className="flex-1 min-w-0">
@@ -741,8 +888,8 @@ const OperacionDetail = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="pagos" className="mt-6" data-testid="tab-content-pagos">
-              <PagosTab op={op} />
+            <TabsContent value="boveda" className="mt-6" data-testid="tab-content-boveda">
+              <BovedaTab op={op} />
             </TabsContent>
           </Tabs>
         </div>

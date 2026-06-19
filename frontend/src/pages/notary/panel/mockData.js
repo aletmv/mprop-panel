@@ -273,9 +273,9 @@ export const alertas = [
   {
     id: 3, operacionId: 'MP-475032',
     nivel: 'info',
-    titulo: 'Comprador subió comprobante de seña',
-    descripcion: 'Pendiente revisión cruzada con banco emisor.',
-    accion: 'Revisar comprobante en panel de pagos.',
+    titulo: 'Seña pendiente de habilitación',
+    descripcion: 'Seña acreditada en Bóveda. Habilitación requiere revisión notarial.',
+    accion: 'Habilitar seña tras revisión notarial.',
     responsable: 'Esc. Lagos', prioridad: 'Baja',
   },
 ];
@@ -284,10 +284,10 @@ export const eventos = [
   { fecha: '23/06', hora: '10:31', tipo: 'documento', evento: 'Se recibió certificado de dominio', responsable: 'Gestoría', evidencia: 'archivo' },
   { fecha: '22/06', hora: '10:45', tipo: 'alerta', evento: 'Vencimiento previo a firma marcado por la gestoría', responsable: 'Gestoría', evidencia: 'alerta' },
   { fecha: '19/06', hora: '11:05', tipo: 'decision', evento: 'Esc. Lagos marcó título como "En estudio"', responsable: 'Esc. Lagos', evidencia: 'cambio' },
-  { fecha: '17/06', hora: '12:20', tipo: 'pago', evento: 'Comprador cargó comprobante de pago', responsable: 'Portal comprador', evidencia: 'comprobante' },
-  { fecha: '11/06', hora: '09:13', tipo: 'pago', evento: 'Comprador transfirió la seña', responsable: 'Comprador', evidencia: 'comprobante' },
+  { fecha: '11/06', hora: '09:13', tipo: 'boveda', evento: 'Seña pendiente de habilitación · USD 5.200 · Registrada por MercadoPago', responsable: 'MercadoPago', evidencia: 'evento Bóveda' },
   { fecha: '09/06', hora: '11:17', tipo: 'gestion', evento: 'Comprador solicitó libre deuda de expensas', responsable: 'Comprador', evidencia: 'solicitud' },
   { fecha: '06/06', hora: '15:48', tipo: 'documento', evento: 'Vendedor cargó título de propiedad escaneado', responsable: 'Vendedor', evidencia: 'archivo' },
+  { fecha: '04/06', hora: '10:12', tipo: 'boveda', evento: 'Pago registrado · Reserva USD 1.300 · Trazado por MercadoPago', responsable: 'MercadoPago', evidencia: 'evento Bóveda' },
   { fecha: '04/06', hora: '10:00', tipo: 'apertura', evento: 'Apertura del legajo MP-475032', responsable: 'Esc. Lagos', evidencia: 'sistema' },
 ];
 
