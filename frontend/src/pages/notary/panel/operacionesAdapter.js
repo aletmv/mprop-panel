@@ -61,6 +61,8 @@ export const reservationToOperacion = (reservation, property) => {
     pasoActual: 'Apertura',
     tareaEnCurso: 'Validar partes',
     tareaEnCursoFull: 'Validar partes y solicitar documentación inicial',
+    bloqueoActor: 'escribania',
+    bloqueoMotivo: 'Inicia apertura del legajo y solicita documentación',
     firma,
     diasFirma,
     vendedor: {

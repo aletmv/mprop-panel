@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, Clock, ChevronRight, ArrowRight, Plus,
+  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, Clock, ChevronRight, Plus, Calendar,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { alertas as ALERTAS_MOCK } from './mockData';
+import { alertas as ALERTAS_MOCK, estadoLabel, riesgoLabel, bloqueoLabel } from './mockData';
 import { DND_TYPE } from './dndTypes';
 import { dayTasks, useDayTasks } from './dayTasksStore';
 import { HourglassFalling } from './HourglassFalling';
 import { PartiesPair } from './PartiesPair';
+import { StatusBadge } from './StatusBadge';
 
 // 5 hitos con progresión cromática lógica:
 // neutro-frío (Inicio) → fresco (Expediente) → análisis (Due diligence) → transición (Pre-cierre) → final/éxito (Cierre).
@@ -59,6 +60,43 @@ const NIVEL_CFG = {
   critica: { label: 'Crítica', tone: 'red', priority: 'Alta', barClass: 'bg-red-500', textClass: 'text-red-700', softBg: 'bg-red-50', softBorder: 'border-red-200' },
   media: { label: 'Media', tone: 'amber', priority: 'Media', barClass: 'bg-amber-500', textClass: 'text-amber-700', softBg: 'bg-amber-50', softBorder: 'border-amber-200' },
   info: { label: 'Info', tone: 'sky', priority: 'Baja', barClass: 'bg-sky-500', textClass: 'text-sky-700', softBg: 'bg-sky-50', softBorder: 'border-sky-200' },
+};
+
+// Tono cromático del badge "Acción / Esperando / Bloqueado".
+const BLOQUEO_TONE = {
+  amber:  { dot: 'bg-amber-500',  bg: 'bg-amber-50',  text: 'text-amber-800',  border: 'border-amber-200'  },
+  sky:    { dot: 'bg-sky-500',    bg: 'bg-sky-50',    text: 'text-sky-800',    border: 'border-sky-200'    },
+  violet: { dot: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-800', border: 'border-violet-200' },
+  slate:  { dot: 'bg-slate-500',  bg: 'bg-slate-50',  text: 'text-slate-700',  border: 'border-slate-200'  },
+  red:    { dot: 'bg-red-500',    bg: 'bg-red-50',    text: 'text-red-800',    border: 'border-red-200'    },
+};
+
+// Extrae sólo la jurisdicción (último segmento de "Recoleta, CABA").
+const jurisdiccionDe = (barrio) => {
+  if (!barrio) return '—';
+  const parts = barrio.split(',').map((p) => p.trim()).filter(Boolean);
+  return parts[parts.length - 1] || barrio;
+};
+
+export const BloqueoBadge = ({ op, size = 'sm' }) => {
+  const actor = op.bloqueoActor;
+  if (!actor) return null;
+  const meta = bloqueoLabel[actor];
+  if (!meta) return null;
+  const tone = BLOQUEO_TONE[meta.tone] || BLOQUEO_TONE.slate;
+  const padding = size === 'sm' ? 'px-1.5 py-0.5' : 'px-2 py-1';
+  const fontSize = size === 'sm' ? 'text-[10px]' : 'text-[11px]';
+
+  return (
+    <span
+      data-testid={`bloqueo-badge-${op.id}`}
+      title={op.bloqueoMotivo || meta.label}
+      className={`inline-flex items-center gap-1 ${padding} rounded-full border ${tone.bg} ${tone.text} ${tone.border} ${fontSize} font-semibold whitespace-nowrap`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} aria-hidden />
+      {meta.label}
+    </span>
+  );
 };
 
 export const pickWorstAlert = (opId) => {
@@ -173,7 +211,10 @@ const KanbanCard = ({ op }) => {
       <div className="text-[13px] font-semibold text-slate-900 leading-snug truncate" title={op.direccion}>
         {op.direccion}
       </div>
-      <div className="text-[11px] text-slate-500 mt-0.5 truncate">{op.barrio}</div>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <span className="text-[11px] text-slate-500 truncate">{jurisdiccionDe(op.barrio)}</span>
+        <BloqueoBadge op={op} />
+      </div>
 
       {op.tareaEnCurso && (
         <div
@@ -258,7 +299,6 @@ const Column = ({ hito, items }) => {
         >
           {items.length}
         </span>
-        <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-all" />
       </Link>
       <div className="p-2.5 flex flex-col gap-2 min-h-[260px] max-h-[460px] overflow-y-auto">
         {items.length === 0 ? (
@@ -273,7 +313,82 @@ const Column = ({ hito, items }) => {
   );
 };
 
+const InlineList = ({ operaciones }) => (
+  <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <div className="overflow-x-auto">
+      <table className="w-full text-[13px]" data-testid="legajos-inline-list">
+        <thead>
+          <tr className="bg-slate-50/70 border-b border-slate-200">
+            {['Legajo', 'Estado', 'Acción', 'Tarea en curso', 'Partes', 'Firma', 'Riesgo', ''].map((h) => (
+              <th key={h} className="px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {operaciones.map((op) => {
+            const e = estadoLabel[op.estado];
+            const r = riesgoLabel[op.riesgo];
+            const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
+            return (
+              <tr
+                key={op.id}
+                data-testid={`inline-row-${op.id}`}
+                className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition-colors"
+              >
+                <td className="px-3.5 py-3 align-top">
+                  <Link to={`/escribanos/operaciones/${op.id}`} className="block">
+                    <div className="font-mono text-[10.5px] text-slate-500">{op.id}</div>
+                    <div className="font-semibold text-slate-900 truncate max-w-[260px]">{op.direccion}</div>
+                    <div className="text-[11px] text-slate-500">{jurisdiccionDe(op.barrio)}</div>
+                  </Link>
+                </td>
+                <td className="px-3.5 py-3 align-top">
+                  <StatusBadge variant={e.color}>{e.label}</StatusBadge>
+                </td>
+                <td className="px-3.5 py-3 align-top">
+                  <BloqueoBadge op={op} />
+                </td>
+                <td className="px-3.5 py-3 align-top">
+                  <div className="text-[12px] text-slate-700 max-w-[220px] truncate">
+                    {op.tareaEnCursoFull || op.tareaEnCurso || '—'}
+                  </div>
+                </td>
+                <td className="px-3.5 py-3 align-top">
+                  <PartiesPair vendedor={op.vendedor} comprador={op.comprador} size="sm" />
+                </td>
+                <td className="px-3.5 py-3 align-top">
+                  <div className="flex items-center gap-1.5 text-[12px]">
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    <span className="font-semibold text-slate-900 tabular-nums">{op.firma}</span>
+                  </div>
+                  <div className={`text-[10.5px] mt-0.5 ${urgente ? 'text-red-600 font-semibold' : 'text-slate-500'}`}>
+                    {op.diasFirma > 0 ? `en ${op.diasFirma}d` : op.diasFirma === 0 ? 'hoy' : `hace ${-op.diasFirma}d`}
+                  </div>
+                </td>
+                <td className="px-3.5 py-3 align-top">
+                  <StatusBadge variant={r.color}>{r.label}</StatusBadge>
+                </td>
+                <td className="px-3.5 py-3 align-top text-right">
+                  <Link
+                    to={`/escribanos/operaciones/${op.id}`}
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
 export const LegajosKanban = ({ operaciones }) => {
+  const [view, setView] = useState('kanban');
   const columnas = HITOS.map((h) => ({
     hito: h,
     items: operaciones.filter((o) => h.states.includes(o.estado)),
@@ -292,20 +407,41 @@ export const LegajosKanban = ({ operaciones }) => {
             activos
           </div>
         </div>
-        <Link
-          to="/escribanos/operaciones"
-          className="text-[12px] font-semibold text-primary hover:underline"
-          data-testid="kanban-link-list-view"
-        >
-          Ver como lista →
-        </Link>
+        <div className="inline-flex bg-muted rounded-lg p-1" data-testid="legajos-view-toggle" role="tablist">
+          <button
+            role="tab"
+            aria-selected={view === 'kanban'}
+            data-testid="legajos-view-kanban"
+            onClick={() => setView('kanban')}
+            className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
+              view === 'kanban' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Kanban
+          </button>
+          <button
+            role="tab"
+            aria-selected={view === 'lista'}
+            data-testid="legajos-view-lista"
+            onClick={() => setView('lista')}
+            className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
+              view === 'lista' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Lista
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {columnas.map(({ hito, items }) => (
-          <Column key={hito.id} hito={hito} items={items} />
-        ))}
-      </div>
+      {view === 'kanban' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {columnas.map(({ hito, items }) => (
+            <Column key={hito.id} hito={hito} items={items} />
+          ))}
+        </div>
+      ) : (
+        <InlineList operaciones={operaciones} />
+      )}
     </div>
   );
 };

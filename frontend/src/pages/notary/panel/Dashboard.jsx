@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { PanelShell, Topbar } from './PanelShell';
 import { StatusBadge } from './StatusBadge';
 import {
-  AlertTriangle, Clock, CalendarDays, ChevronRight, Sparkles, FileText, ShieldAlert,
+  Clock, CalendarDays, ChevronRight, Sparkles,
 } from 'lucide-react';
 import {
   alertas, proximasFirmas, estadoLabel, operaciones as MOCK_OPERACIONES,
@@ -47,37 +47,26 @@ const Dashboard = () => {
           <aside className="col-span-12 lg:col-span-4">
             <div className="card-surface p-5 h-full flex flex-col" data-testid="alerts-card-top">
               <div className="flex items-start justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-9 h-9 rounded-lg bg-destructive/10 text-destructive grid place-items-center shrink-0">
-                    <ShieldAlert className="w-5 h-5" />
-                  </span>
-                  <div className="min-w-0">
-                    <h2 className="font-display font-bold text-[16px] text-foreground leading-tight flex items-center gap-1.5">
-                      Alertas
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-destructive text-destructive-foreground">
-                        {alertas.length}
-                      </span>
-                    </h2>
-                    <div className="text-[11.5px] text-muted-foreground">Ordenadas por prioridad e impacto</div>
-                  </div>
+                <div>
+                  <h2 className="font-display font-bold text-[18px] text-foreground leading-tight">Alertas</h2>
+                  <div className="text-[11.5px] text-muted-foreground">Ordenadas por prioridad e impacto</div>
                 </div>
-                <Link to="/escribanos/operaciones" className="text-[11px] font-semibold text-primary hover:underline shrink-0">
+                <Link
+                  to="/escribanos/operaciones"
+                  data-testid="alerts-view-all"
+                  className="text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors shrink-0"
+                >
                   Ver todas
                 </Link>
               </div>
               <div className="space-y-2 overflow-y-auto pr-1 flex-1 max-h-[420px]">
                 {alertas.map((a) => {
+                  const isCrit = a.nivel === 'critica';
                   const colorMap = {
-                    critica: { bg: 'bg-destructive-soft', border: 'border-destructive/15', text: 'text-destructive', icon: ShieldAlert, badge: 'destructive', label: 'Crítica' },
-                    media: { bg: 'bg-card', border: 'border-border', text: 'text-warning-foreground', icon: AlertTriangle, badge: 'warning', label: 'Media' },
-                    info: { bg: 'bg-card', border: 'border-border', text: 'text-info', icon: FileText, badge: 'info', label: 'Info' },
+                    critica: { bg: 'bg-destructive-soft', border: 'border-destructive/15', label: 'Crítica' },
+                    media: { bg: 'bg-card', border: 'border-border', label: 'Media' },
+                    info: { bg: 'bg-card', border: 'border-border', label: 'Info' },
                   }[a.nivel];
-                  const iconContainerBorder = {
-                    critica: 'border-destructive/30',
-                    media: 'border-warning/40',
-                    info: 'border-info/30',
-                  }[a.nivel];
-                  const Icon = colorMap.icon;
                   return (
                     <Link
                       to={`/escribanos/operaciones/${a.operacionId}`}
@@ -85,18 +74,21 @@ const Dashboard = () => {
                       data-testid={`alert-${a.id}`}
                       className={`flex items-start gap-2.5 p-2.5 rounded-lg border ${colorMap.bg} ${colorMap.border} hover:shadow-sm transition-shadow group`}
                     >
-                      <div className={`w-7 h-7 rounded-md bg-card grid place-items-center shrink-0 border ${iconContainerBorder}`}>
-                        <Icon className={`w-3.5 h-3.5 ${colorMap.text}`} />
+                      <div className="shrink-0 pt-0.5">
+                        {isCrit ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9.5px] font-bold whitespace-nowrap bg-destructive text-white">
+                            {colorMap.label}
+                          </span>
+                        ) : (
+                          <StatusBadge variant={a.nivel === 'media' ? 'warning' : 'info'} dot={false} className="text-[9.5px]">
+                            {colorMap.label}
+                          </StatusBadge>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[12px] font-semibold text-foreground leading-snug">{a.titulo}</span>
-                          <StatusBadge variant={colorMap.badge} dot={false} className="text-[9.5px]">{colorMap.label}</StatusBadge>
-                        </div>
+                        <div className="text-[12px] font-semibold text-foreground leading-snug">{a.titulo}</div>
                         <div className="text-[11px] text-muted-foreground mt-1 leading-snug line-clamp-2">{a.descripcion}</div>
-                        <div className="text-[10px] text-muted-foreground mt-1">
-                          <span className="font-mono">{a.operacionId}</span> · {a.responsable}
-                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-1 font-mono">{a.operacionId}</div>
                       </div>
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
                     </Link>
