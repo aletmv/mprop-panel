@@ -14,6 +14,7 @@ import {
 } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
 import { BloqueoBadge } from './Kanban';
+import TimelineProceso from './TimelineProceso';
 import { buyerCosts, sellerCosts } from '@/lib/costs';
 import {
   RESERVATION_PCT,
@@ -596,7 +597,7 @@ const OperacionDetail = () => {
                 { v: 'resumen', label: 'Resumen' },
                 { v: 'partes', label: 'Partes e inmueble' },
                 { v: 'documentos', label: `Documentos · ${documentos.length}` },
-                { v: 'timeline', label: 'Timeline' },
+                { v: 'timeline', label: 'Actividad' },
                 { v: 'boveda', label: 'Bóveda' },
               ].map((t) => (
                 <TabsTrigger
@@ -892,6 +893,8 @@ const OperacionDetail = () => {
               <BovedaTab op={op} />
             </TabsContent>
           </Tabs>
+
+          <TimelineProceso op={op} />
         </div>
       </div>
     </PanelShell>
