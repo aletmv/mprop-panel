@@ -76,7 +76,7 @@ const DoneItem = ({ op }) => {
       data-testid={`done-item-${op.id}`}
       className="group flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-lg p-2.5"
     >
-      <span className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 grid place-items-center shrink-0 mt-0.5">
+      <span className="w-6 h-6 text-emerald-700 grid place-items-center shrink-0 mt-0.5">
         <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2} />
       </span>
       <div className="flex-1 min-w-0">
