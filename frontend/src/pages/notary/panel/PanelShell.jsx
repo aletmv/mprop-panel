@@ -216,7 +216,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   );
 };
 
-export const Topbar = ({ title, subtitle, actions }) => {
+export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
   const navigate = useNavigate();
   const { notaryLogout } = useApp();
 
@@ -224,7 +224,17 @@ export const Topbar = ({ title, subtitle, actions }) => {
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl">
       <div className="h-16 pl-4 pr-6 lg:pr-8 flex items-center gap-4 border-b border-border">
         <div className="flex-1 min-w-0">
-          {title && <h1 className="font-display font-bold text-[18px] text-foreground leading-tight truncate">{title}</h1>}
+          {title && (
+            <h1
+              className={`font-display leading-tight truncate ${
+                greeting
+                  ? 'font-semibold text-[30px] tracking-[-0.6px]'
+                  : 'font-bold text-[18px] text-foreground'
+              }`}
+            >
+              {title}
+            </h1>
+          )}
           {subtitle && <div className="text-[12px] text-muted-foreground truncate">{subtitle}</div>}
         </div>
 
@@ -232,20 +242,25 @@ export const Topbar = ({ title, subtitle, actions }) => {
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
             placeholder="Buscar legajo, parte o documento…"
-            className="pl-9 w-[320px] h-9 bg-muted border-transparent focus-visible:bg-card focus-visible:border-border"
+            className="pl-9 w-[320px] h-9 rounded-[14px] bg-muted border-transparent focus-visible:bg-card focus-visible:border-border"
           />
           <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-card border border-border text-muted-foreground">⌘K</kbd>
         </div>
 
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notificaciones" data-testid="topbar-notif-btn">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative w-[42px] h-[42px] rounded-[13px] bg-card border border-border hover:bg-muted"
+          aria-label="Notificaciones"
+          data-testid="topbar-notif-btn"
+        >
           <Bell className="w-[18px] h-[18px]" />
-          <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-accent" />
+          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive border-2 border-card" />
         </Button>
 
         <Button
-          variant="ghost"
           size="sm"
-          className="gap-2"
+          className="gap-2 rounded-[13px] bg-foreground text-background hover:bg-black"
           aria-label="Cerrar sesión"
           data-testid="topbar-logout-btn"
           onClick={() => {

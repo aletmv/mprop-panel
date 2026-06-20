@@ -36,9 +36,11 @@ const Dashboard = () => {
   return (
     <PanelShell>
       <Topbar
+        greeting
         title={
           <>
-            Buen día, <span className="text-slate-400">María Inés</span>
+            <span className="text-muted-foreground font-semibold">Buen día,</span>{' '}
+            <span className="text-foreground font-bold">María Inés</span>
           </>
         }
       />
