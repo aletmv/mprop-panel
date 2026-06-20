@@ -8,6 +8,13 @@ const variants = {
   info: 'bg-info-soft text-info border border-info/20',
   muted: 'bg-muted text-muted-foreground border border-border',
   primary: 'bg-primary/10 text-primary border border-primary/15',
+
+  // Etapas del legajo (design system nuevo) — usan los tokens --stage-* de index.css.
+  'stage-inicio': 'bg-[var(--stage-inicio-soft)] text-[var(--stage-inicio-text)] border border-[var(--stage-inicio)]',
+  'stage-expediente': 'bg-[var(--stage-expediente-soft)] text-[var(--stage-expediente-text)] border border-[var(--stage-expediente)]',
+  'stage-diligence': 'bg-[var(--stage-diligence-soft)] text-[var(--stage-diligence-text)] border border-[var(--stage-diligence)]',
+  'stage-precierre': 'bg-[var(--stage-precierre-soft)] text-[var(--stage-precierre-text)] border border-[var(--stage-precierre)]',
+  'stage-cierre': 'bg-[var(--stage-cierre-soft)] text-[var(--stage-cierre-text)] border border-[var(--stage-cierre)]',
 };
 
 export const StatusBadge = ({ children, variant = 'muted', dot = true, className }) => {
@@ -18,6 +25,12 @@ export const StatusBadge = ({ children, variant = 'muted', dot = true, className
     info: 'bg-info',
     muted: 'bg-muted-foreground/50',
     primary: 'bg-primary',
+
+    'stage-inicio': 'bg-[var(--stage-inicio)]',
+    'stage-expediente': 'bg-[var(--stage-expediente)]',
+    'stage-diligence': 'bg-[var(--stage-diligence)]',
+    'stage-precierre': 'bg-[var(--stage-precierre)]',
+    'stage-cierre': 'bg-[var(--stage-cierre)]',
   }[variant];
 
   return (
