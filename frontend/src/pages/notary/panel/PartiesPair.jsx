@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { parteIdFromPersona, whatsappLinkFromTelefono } from './partesData';
+import { parteIdFromPersona, telefonoDemoFromPersona, whatsappLinkFromTelefono } from './partesData';
 import { WhatsAppIcon } from './WhatsAppIcon';
 
 /**
@@ -31,7 +31,14 @@ const SIZE_MAP = {
 // Popover de ficha de parte — mismo lenguaje visual que el popover "Línea de
 // pases" del Kanban (header con título+subtítulo, cuerpo con filas label/valor,
 // footer con CTA "Ver ficha" + flecha).
-const PartePopoverContent = ({ parte, rol, opId, onNavigate }) => (
+const PartePopoverContent = ({ parte, rol, opId, onNavigate }) => {
+  // `parte` acá es el vendedor/comprador "crudo" de la operación (mockData.js),
+  // que no trae `telefono` propio — se deriva del mismo DNI con la misma regla
+  // que usa la sección Partes, así ambas vistas quedan siempre consistentes.
+  const telefono = telefonoDemoFromPersona(parte);
+  const whatsappLink = whatsappLinkFromTelefono(telefono);
+
+  return (
   <div className="min-w-[240px] max-w-[280px] w-max" data-testid={`party-popover-${rol.toLowerCase()}-${opId}`}>
     <div className="px-4 pt-4 pb-3 border-b border-slate-100">
       <h3 className="text-sm font-semibold text-slate-900">{parte?.nombre || '—'}</h3>
@@ -60,9 +67,9 @@ const PartePopoverContent = ({ parte, rol, opId, onNavigate }) => (
       <div>
         <div className="text-[11.5px] text-slate-500 leading-snug">WhatsApp</div>
         <div className="mt-0.5">
-          {whatsappLinkFromTelefono(parte?.telefono) ? (
+          {whatsappLink ? (
             <a
-              href={whatsappLinkFromTelefono(parte?.telefono)}
+              href={whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
               title="Abrir WhatsApp"
@@ -99,7 +106,8 @@ const PartePopoverContent = ({ parte, rol, opId, onNavigate }) => (
       <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
     </button>
   </div>
-);
+  );
+};
 
 const Circle = ({ size, parte, rol, opId, navigate, withPopover }) => {
   const s = SIZE_MAP[size] || SIZE_MAP.sm;

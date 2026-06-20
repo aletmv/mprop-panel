@@ -12,6 +12,22 @@ const normalizarTexto = (s) =>
 
 const normalizarDni = (dni) => (dni || '').replace(/[.\s]/g, '');
 
+// DEMO: teléfono mock determinístico, derivado del DNI de la propia persona
+// (no de su posición en ningún array). No es un dato real — no existe ningún
+// teléfono en mockData.js. Por estar atado al DNI, da el mismo resultado sin
+// importar desde dónde se llame: la lista de Partes, la ficha de detalle o el
+// popover del Kanban (que recibe el vendedor/comprador "crudo" de la
+// operación, no el contacto ya derivado). Sin Math.random().
+export const telefonoDemoFromPersona = (persona) => {
+  const digits = normalizarDni(persona?.dni).replace(/\D/g, '');
+  if (!digits) return null;
+  const ultimoDigito = Number(digits[digits.length - 1]);
+  const tieneWhatsappDemo = ultimoDigito % 2 === 0;
+  if (!tieneWhatsappDemo) return null;
+  const sufijo = digits.slice(-3).padStart(3, '0');
+  return `+5491155550${sufijo}`;
+};
+
 // Id determinista de un contacto a partir de sus propios datos (sin depender
 // de la lista completa de operaciones). Misma regla que usa buildPartesFromOperaciones
 // para deduplicar, así cualquier vista puede calcular el id de "esa persona puntual".
@@ -50,7 +66,7 @@ export const buildPartesFromOperaciones = (operaciones) => {
       avatar: persona.avatar || null,
       verificado: !!persona.verificado,
       email: null,
-      telefono: null,
+      telefono: telefonoDemoFromPersona(persona),
       rolPrincipal: rol,
       legajos: [legajo],
     });
@@ -61,22 +77,7 @@ export const buildPartesFromOperaciones = (operaciones) => {
     registrar(op.comprador, 'comprador', op);
   });
 
-  // DEMO: teléfono mock determinístico para poder probar el ícono de WhatsApp
-  // activo en la UI. No es un dato real — no existe ningún teléfono en
-  // mockData.js. Se asigna a la mitad de los contactos (alternando por
-  // posición, siempre el mismo orden) para que también queden casos sin
-  // WhatsApp cargado. Mismo resultado en cada render: depende únicamente del
-  // orden estable de `operaciones`, sin Math.random().
-  let secuenciaDemo = 0;
-  return Array.from(mapa.values()).map((c, idx) => {
-    const tieneWhatsappDemo = idx % 2 === 0;
-    let telefonoDemo = null;
-    if (tieneWhatsappDemo) {
-      secuenciaDemo += 1;
-      telefonoDemo = `+5491155550${100 + secuenciaDemo}`;
-    }
-    return { ...c, legajosCount: c.legajos.length, telefono: telefonoDemo };
-  });
+  return Array.from(mapa.values()).map((c) => ({ ...c, legajosCount: c.legajos.length }));
 };
 
 // Link de WhatsApp (wa.me) a partir del teléfono ya cargado del contacto.
