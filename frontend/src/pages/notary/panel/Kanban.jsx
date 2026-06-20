@@ -164,7 +164,7 @@ const LineaDePasesContent = ({ op, onNavigate }) => {
     : null;
 
   return (
-    <div className="w-[300px]" data-testid={`linea-pases-${op.id}`}>
+    <div className="w-[280px]" data-testid={`linea-pases-${op.id}`}>
       <div className="px-4 pt-4 pb-3 border-b border-slate-100">
         <h3 className="text-sm font-semibold text-slate-900">Línea de pases</h3>
         <p className="text-[11.5px] text-slate-500 mt-0.5 leading-snug">
@@ -470,7 +470,7 @@ const KanbanCard = ({ op }) => {
       </div>
 
       <div className="mt-2.5 flex items-center justify-between gap-2">
-        <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" />
+        <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" withPopover />
         <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
       </div>
 
