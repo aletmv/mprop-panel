@@ -171,8 +171,8 @@ export const TasksBoard = ({ operaciones }) => {
         isOver ? 'ring-2 ring-primary/40 border-primary/40 bg-primary/[0.02]' : ''
       }`}
     >
-      <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-3 pr-1">
+        <div className="flex items-center gap-1.5 min-w-0">
           <h2 className="font-display font-bold text-[20px] text-foreground leading-tight">Tareas del día</h2>
           <span className="text-slate-400 text-[16px]">·</span>
           <span className="text-slate-400 font-semibold text-[15px] num-tabular" data-testid="tasks-pending-count">
@@ -183,7 +183,7 @@ export const TasksBoard = ({ operaciones }) => {
           <button
             onClick={() => dayTasks.clearPending()}
             data-testid="tasks-clear-all"
-            className="text-[11px] font-semibold text-muted-foreground hover:text-destructive transition-colors"
+            className="text-[11px] font-semibold text-muted-foreground hover:text-destructive transition-colors shrink-0 whitespace-nowrap"
           >
             Vaciar pendientes
           </button>
@@ -230,7 +230,7 @@ export const TasksBoard = ({ operaciones }) => {
           <button
             onClick={() => setShowDone((v) => !v)}
             data-testid="done-toggle"
-            className="w-full flex items-center justify-between gap-2 group"
+            className="w-full flex items-center justify-between gap-2 group pr-1"
           >
             <div className="flex items-center gap-1.5">
               <span className="text-[12.5px] font-semibold text-slate-700">
