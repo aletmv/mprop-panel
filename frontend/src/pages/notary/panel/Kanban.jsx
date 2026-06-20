@@ -399,19 +399,34 @@ const KanbanCard = ({ op }) => {
 
       {op.tareaEnCurso && (
         <div
-          className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-700 bg-slate-50 border border-slate-200 rounded-md pl-2 pr-1 py-1"
+          className={`mt-2.5 flex items-center text-[11px] rounded-md pl-2 pr-1 py-1 transition-colors ${
+            isInBoard
+              ? 'gap-2.5 bg-foreground text-white border border-foreground shadow-md'
+              : 'gap-1.5 text-slate-700 bg-slate-50 border border-slate-200'
+          }`}
           data-testid={`kanban-task-${op.id}`}
           title={isInBoard ? 'Ya está en tu día' : undefined}
         >
           <span
-            className={`mt-0.5 inline-block w-1.5 h-1.5 rounded-full shrink-0 ${isInBoard ? 'pase-current-dot' : 'bg-slate-400'}`}
+            className={`inline-block rounded-full shrink-0 self-center ${
+              isInBoard ? 'w-2.5 h-2.5 pase-current-dot' : 'mt-0.5 w-1.5 h-1.5 bg-slate-400'
+            }`}
             aria-hidden
           />
           <span className="leading-snug flex-1 min-w-0">
-            <span className="block text-[9.5px] uppercase tracking-[0.08em] text-slate-500 font-semibold">
+            <span
+              className={`block text-[9.5px] uppercase tracking-[0.08em] font-semibold ${
+                isInBoard ? 'text-white/70' : 'text-slate-500'
+              }`}
+            >
               Tarea en curso
             </span>
-            <span className="block font-medium truncate" title={op.tareaEnCursoFull || op.tareaEnCurso}>{op.tareaEnCurso}</span>
+            <span
+              className={`block font-medium truncate ${isInBoard ? 'text-white' : ''}`}
+              title={op.tareaEnCursoFull || op.tareaEnCurso}
+            >
+              {op.tareaEnCurso}
+            </span>
             {isInBoard && <span className="sr-only">Ya está en tu día</span>}
           </span>
           {!isInBoard && (
