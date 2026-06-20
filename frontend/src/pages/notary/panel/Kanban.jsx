@@ -21,7 +21,7 @@ const HITOS = [
     label: 'Inicio de operación',
     sub: 'Apertura del legajo',
     icon: PlayCircle,
-    iconColor: 'text-[var(--stage-inicio-text)] bg-[var(--stage-inicio-soft)] border-[var(--stage-inicio)]',
+    iconColor: 'text-[var(--stage-inicio-text)] bg-[var(--stage-inicio-soft)]',
     borderColor: 'border-[var(--stage-inicio)]',
     states: ['apertura'],
   },
@@ -30,7 +30,7 @@ const HITOS = [
     label: 'Expediente documental',
     sub: 'Carga y revisión inicial',
     icon: FolderOpen,
-    iconColor: 'text-[var(--stage-expediente-text)] bg-[var(--stage-expediente-soft)] border-[var(--stage-expediente)]',
+    iconColor: 'text-[var(--stage-expediente-text)] bg-[var(--stage-expediente-soft)]',
     borderColor: 'border-[var(--stage-expediente)]',
     states: ['documentos'],
   },
@@ -39,7 +39,7 @@ const HITOS = [
     label: 'Due diligence',
     sub: 'Análisis registral y dominial',
     icon: Search,
-    iconColor: 'text-[var(--stage-diligence-text)] bg-[var(--stage-diligence-soft)] border-[var(--stage-diligence)]',
+    iconColor: 'text-[var(--stage-diligence-text)] bg-[var(--stage-diligence-soft)]',
     borderColor: 'border-[var(--stage-diligence)]',
     states: ['analisis', 'observado'],
   },
@@ -48,7 +48,7 @@ const HITOS = [
     label: 'Pre-cierre',
     sub: 'Listos para firma',
     icon: FileSignature,
-    iconColor: 'text-[var(--stage-precierre-text)] bg-[var(--stage-precierre-soft)] border-[var(--stage-precierre)]',
+    iconColor: 'text-[var(--stage-precierre-text)] bg-[var(--stage-precierre-soft)]',
     borderColor: 'border-[var(--stage-precierre)]',
     states: ['en-firma'],
   },
@@ -57,7 +57,7 @@ const HITOS = [
     label: 'Cierre y post-cierre',
     sub: 'Inscripción y archivado',
     icon: CheckCircle2,
-    iconColor: 'text-[var(--stage-cierre-text)] bg-[var(--stage-cierre-soft)] border-[var(--stage-cierre)]',
+    iconColor: 'text-[var(--stage-cierre-text)] bg-[var(--stage-cierre-soft)]',
     borderColor: 'border-[var(--stage-cierre)]',
     states: ['cerrado'],
   },
@@ -97,23 +97,6 @@ const BLOQUEO_TONE = {
   red:     { dot: 'bg-red-500',   bg: 'bg-red-50',    text: 'text-red-800',   border: 'border-red-200'   },
 };
 
-// Pelota de fútbol estilizada (SVG inline) para identificar al responsable
-// del próximo desbloqueo en el Kanban: "quién tiene la pelota".
-const SoccerBallIcon = ({ className = 'w-3.5 h-3.5' }) => (
-  <svg
-    viewBox="0 0 122.88 122.88"
-    fill="currentColor"
-    className={className}
-    aria-hidden="true"
-  >
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M61.44,0c16.97,0,32.33,6.88,43.44,18c11.12,11.12,18,26.48,18,43.44c0,16.97-6.88,32.33-18,43.44 c-11.12,11.12-26.48,18-43.44,18S29.11,116,18,104.88C6.88,93.77,0,78.41,0,61.44C0,44.47,6.88,29.11,18,18 C29.11,6.88,44.47,0,61.44,0L61.44,0z M76.85,117.08L76.73,117l6.89-23.09L69.41,78.15L52.66,78L39.38,94.62l6.66,22.32l-0.15,0.1 c4.95,1.38,10.16,2.12,15.55,2.12C66.78,119.16,71.95,118.44,76.85,117.08L76.85,117.08z M12.22,91.61l24.34,0.12L49.28,75.8 l-5.26-16.12l-21.42-9.3L3.78,64.08C4.23,74.14,7.26,83.53,12.22,91.61L12.22,91.61z M16.77,24.88l7.4,22.14l19.98,8.68 l15.44-11.97V20.94L40.51,7.63c-7.52,2.93-14.28,7.39-19.89,13C19.27,21.98,17.98,23.4,16.77,24.88L16.77,24.88z M81.7,7.37 L63.3,20.77V43.7L77.8,54.91l20.81-8.92l7.18-21.49c-1.12-1.35-2.3-2.64-3.54-3.88C96.48,14.85,89.49,10.29,81.7,7.37L81.7,7.37z M119.09,64.36l-0.02,0.01L99.09,49.82l-19.81,8.49l-6.08,18.03l13.73,15.23c0.06,0.06,0.09,0.13,0.11,0.21l23.6-0.11 C115.56,83.65,118.59,74.34,119.09,64.36L119.09,64.36z"
-    />
-  </svg>
-);
-
 // Extrae sólo la jurisdicción (último segmento de "Recoleta, CABA").
 const jurisdiccionDe = (barrio) => {
   if (!barrio) return '—';
@@ -121,23 +104,20 @@ const jurisdiccionDe = (barrio) => {
   return parts[parts.length - 1] || barrio;
 };
 
-// "Pelota: Responsable" sin pill — solo el icono de fútbol y el nombre del responsable.
-// Se usa tanto en el Kanban (variante clickeable que abre el popover) como dentro
-// del popover mismo en el bloque "Responsable actual".
-export const BloqueoNameOnly = ({ actor, opId, className = '', iconClassName = 'w-3.5 h-3.5', textClassName = 'text-[12px]', tone }) => {
+// Nombre del responsable del próximo paso, sin ícono. Se usa en el Kanban
+// (variante clickeable que abre el popover "Línea de pases").
+export const BloqueoNameOnly = ({ actor, opId, className = '', textClassName = 'text-[12px]', tone }) => {
   if (!actor) return null;
   const meta = bloqueoLabel[actor];
   if (!meta) return null;
   const isBloqueado = actor === 'bloqueado';
   // Con `tone`, el color lo define el contenedor (pill) vía currentColor.
   const colorText = isBloqueado ? 'text-red-700' : tone ? '' : 'text-slate-800';
-  const colorIcon = isBloqueado ? 'text-red-600' : tone ? '' : 'text-slate-700';
   return (
     <span
       data-testid={opId ? `bloqueo-name-${opId}` : `bloqueo-name-${actor}`}
       className={`inline-flex items-center gap-1.5 ${colorText} ${textClassName} font-semibold whitespace-nowrap ${className}`}
     >
-      <SoccerBallIcon className={`${iconClassName} ${colorIcon}`} />
       {meta.short}
     </span>
   );
@@ -258,7 +238,7 @@ const SoccerBloqueoTrigger = ({ op, navigate }) => {
             isBloqueado ? 'bg-red-50' : ''
           }`}
         >
-          <BloqueoNameOnly actor={op.bloqueoActor} opId={op.id} tone textClassName="text-[11px]" iconClassName="w-3 h-3" />
+          <BloqueoNameOnly actor={op.bloqueoActor} opId={op.id} tone textClassName="text-[11px]" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -446,8 +426,8 @@ const KanbanCard = ({ op }) => {
           title={isInBoard ? 'Ya está en tu día' : undefined}
         >
           <span
-            className={`inline-block rounded-full shrink-0 self-center ${
-              isInBoard ? 'w-2.5 h-2.5 pase-current-dot' : 'w-[7px] h-[7px] bg-emerald-500'
+            className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 self-center ${
+              isInBoard ? 'pase-current-dot' : 'bg-slate-300'
             }`}
             aria-hidden
           />
@@ -491,10 +471,8 @@ const KanbanCard = ({ op }) => {
 
       <div className="mt-[13px] h-[5px] rounded-full bg-[#EEF0F3] overflow-hidden">
         <div
-          className={`h-full rounded-full ${
-            isInBoard || op.estado === 'cerrado' ? 'bg-emerald-500' : 'bg-sky-500'
-          }`}
-          style={{ width: `${op.progreso}%` }}
+          className="h-full rounded-full"
+          style={{ width: `${op.progreso}%`, background: accent }}
         />
       </div>
 
@@ -532,7 +510,7 @@ const Column = ({ hito, items }) => {
         className={`px-3.5 py-3 flex items-center gap-2.5 border-b-2 ${hito.borderColor} bg-white hover:bg-slate-50 transition-colors group`}
         title={`Ver todos los legajos en ${hito.label}`}
       >
-        <span className={`w-[30px] h-[30px] rounded-[9px] grid place-items-center border ${hito.iconColor}`}>
+        <span className={`w-[30px] h-[30px] rounded-[9px] grid place-items-center ${hito.iconColor}`}>
           <Icon className="w-4 h-4" />
         </span>
         <div className="min-w-0 flex-1">
