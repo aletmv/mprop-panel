@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GripVertical, X, Inbox, Clock, ChevronDown, CheckCircle2, RotateCcw, Check,
+  GripVertical, X, Inbox, Clock, ChevronDown, CheckCircle2, RotateCcw, Check, ListChecks,
 } from 'lucide-react';
 import { dayTasks, useDayTasks } from './dayTasksStore';
 import { DND_TYPE } from './dndTypes';
@@ -171,9 +171,12 @@ export const TasksBoard = ({ operaciones }) => {
         isOver ? 'ring-2 ring-primary/40 border-primary/40 bg-primary/[0.02]' : ''
       }`}
     >
-      <div className="flex items-start justify-between gap-3 flex-wrap mb-4 pr-1">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div className="flex items-baseline gap-1.5 min-w-0">
-          <h2 className="font-display font-bold text-[20px] text-foreground leading-tight">Tareas del día</h2>
+          <h2 className="font-display font-bold text-[20px] text-foreground leading-tight flex items-center gap-2">
+            <ListChecks className="w-[18px] h-[18px] text-primary" />
+            Tareas del día
+          </h2>
           <span className="font-display font-bold text-[20px] text-slate-400 leading-tight">·</span>
           <span
             className="font-display font-bold text-[20px] text-slate-400 leading-tight num-tabular"

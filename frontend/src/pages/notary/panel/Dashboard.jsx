@@ -100,16 +100,18 @@ const Dashboard = () => {
           <div className="col-span-12 lg:col-span-8 space-y-6">
             <div className="card-surface p-5" data-testid="agenda-card">
               <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-                <div>
-                  <h2 className="font-display font-bold text-[18px] text-foreground flex items-center gap-2">
+                <div className="flex items-baseline gap-1.5 min-w-0">
+                  <h2 className="font-display font-bold text-[20px] text-foreground leading-tight flex items-center gap-2">
                     <CalendarDays className="w-[18px] h-[18px] text-primary" />
                     {agendaTab === 'hoy' ? 'Agenda del día' : 'Próximas firmas'}
                   </h2>
-                  <div className="text-[12px] text-muted-foreground mt-0.5">
-                    {agendaTab === 'hoy'
-                      ? `${firmasHoy.length} firma${firmasHoy.length === 1 ? '' : 's'} programada${firmasHoy.length === 1 ? '' : 's'} para hoy`
-                      : 'Próximos 5 actos notariales agendados'}
-                  </div>
+                  <span className="font-display font-bold text-[20px] text-slate-400 leading-tight">·</span>
+                  <span
+                    className="font-display font-bold text-[20px] text-slate-400 leading-tight num-tabular"
+                    data-testid="agenda-count"
+                  >
+                    {firmasAMostrar.length}
+                  </span>
                 </div>
                 <div
                   className="inline-flex bg-muted rounded-lg p-1"

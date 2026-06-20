@@ -634,7 +634,10 @@ export const LegajosKanban = ({ operaciones }) => {
     <div className="card-surface p-5" data-testid="legajos-kanban">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div className="flex items-baseline gap-1.5 min-w-0">
-          <h2 className="font-display font-bold text-[20px] text-foreground leading-tight">Legajos</h2>
+          <h2 className="font-display font-bold text-[20px] text-foreground leading-tight flex items-center gap-2">
+            <FolderOpen className="w-[18px] h-[18px] text-primary" />
+            Legajos
+          </h2>
           <span className="font-display font-bold text-[20px] text-slate-400 leading-tight">·</span>
           <span
             className="font-display font-bold text-[20px] text-slate-400 leading-tight num-tabular"
