@@ -5,7 +5,8 @@ import { StatusBadge } from './StatusBadge';
 import { ChevronLeft, ChevronRight, FileText, Phone, Mail, CheckCircle2, FolderOpen } from 'lucide-react';
 import { operaciones as MOCK_OPERACIONES, estadoLabel } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
-import { buildPartesFromOperaciones, findParteById, ROL_LABEL } from './partesData';
+import { buildPartesFromOperaciones, findParteById, ROL_LABEL, whatsappLinkFromTelefono } from './partesData';
+import { WhatsAppIcon } from './WhatsAppIcon';
 import { useApp } from '@/context/AppContext';
 
 const SectionLabel = ({ children }) => (
@@ -25,6 +26,7 @@ const PartesDetail = () => {
   const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
   const partes = useMemo(() => buildPartesFromOperaciones(operaciones), [operaciones]);
   const parte = findParteById(partes, id);
+  const whatsappLink = whatsappLinkFromTelefono(parte?.telefono);
 
   if (!notarySession) return <Navigate to="/escribanos" replace />;
 
@@ -96,6 +98,28 @@ const PartesDetail = () => {
                       <span className={parte.telefono ? 'text-slate-900' : 'text-slate-400'}>
                         {parte.telefono || 'No cargado'}
                       </span>
+                      {whatsappLink ? (
+                        <a
+                          href={whatsappLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Abrir WhatsApp"
+                          aria-label="Abrir WhatsApp"
+                          data-testid="parte-whatsapp"
+                          className="inline-flex text-[#25D366] hover:opacity-80 transition-opacity"
+                        >
+                          <WhatsAppIcon className="w-4 h-4" />
+                        </a>
+                      ) : (
+                        <span
+                          title="WhatsApp no cargado"
+                          aria-label="WhatsApp no cargado"
+                          data-testid="parte-whatsapp"
+                          className="inline-flex text-slate-300"
+                        >
+                          <WhatsAppIcon className="w-4 h-4" />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </Card>

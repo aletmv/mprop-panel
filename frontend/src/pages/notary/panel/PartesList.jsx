@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Search, ChevronRight, CheckCircle2, FolderOpen } from 'lucide-react';
 import { operaciones as MOCK_OPERACIONES } from './mockData';
 import { buildNotaryOperaciones } from './operacionesAdapter';
-import { buildPartesFromOperaciones, ROL_LABEL } from './partesData';
+import { buildPartesFromOperaciones, ROL_LABEL, whatsappLinkFromTelefono } from './partesData';
+import { WhatsAppIcon } from './WhatsAppIcon';
 import { useApp } from '@/context/AppContext';
 
 const PartesList = () => {
@@ -62,7 +63,7 @@ const PartesList = () => {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-50/70 border-b border-slate-200">
-                  {['Nombre', 'Rol', 'DNI', 'Legajos', 'Estado', ''].map((h) => (
+                  {['Nombre', 'Rol', 'DNI', 'Legajos', 'Estado', 'WhatsApp', ''].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
                       {h}
                     </th>
@@ -101,6 +102,31 @@ const PartesList = () => {
                         </span>
                       ) : (
                         <span className="text-[11.5px] text-slate-400">Sin verificar</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {whatsappLinkFromTelefono(p.telefono) ? (
+                        <a
+                          href={whatsappLinkFromTelefono(p.telefono)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Abrir WhatsApp"
+                          aria-label="Abrir WhatsApp"
+                          data-testid={`parte-whatsapp-${p.id}`}
+                          className="inline-flex text-[#25D366] hover:opacity-80 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <WhatsAppIcon className="w-4 h-4" />
+                        </a>
+                      ) : (
+                        <span
+                          title="WhatsApp no cargado"
+                          aria-label="WhatsApp no cargado"
+                          data-testid={`parte-whatsapp-${p.id}`}
+                          className="inline-flex text-slate-300"
+                        >
+                          <WhatsAppIcon className="w-4 h-4" />
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { parteIdFromPersona } from './partesData';
+import { parteIdFromPersona, whatsappLinkFromTelefono } from './partesData';
+import { WhatsAppIcon } from './WhatsAppIcon';
 
 /**
  * Representa las dos partes de un legajo (vendedor + comprador) como
@@ -54,6 +55,32 @@ const PartePopoverContent = ({ parte, rol, opId, onNavigate }) => (
           }`}
         >
           {parte?.verificado ? 'Verificado' : 'Sin verificar'}
+        </div>
+      </div>
+      <div>
+        <div className="text-[11.5px] text-slate-500 leading-snug">WhatsApp</div>
+        <div className="mt-0.5">
+          {whatsappLinkFromTelefono(parte?.telefono) ? (
+            <a
+              href={whatsappLinkFromTelefono(parte?.telefono)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Abrir WhatsApp"
+              aria-label="Abrir WhatsApp"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex text-[#25D366] hover:opacity-80 transition-opacity"
+            >
+              <WhatsAppIcon className="w-4 h-4" />
+            </a>
+          ) : (
+            <span
+              title="WhatsApp no cargado"
+              aria-label="WhatsApp no cargado"
+              className="inline-flex text-slate-300"
+            >
+              <WhatsAppIcon className="w-4 h-4" />
+            </span>
+          )}
         </div>
       </div>
     </div>
