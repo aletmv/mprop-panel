@@ -124,16 +124,6 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
         </button>
       )}
 
-      {collapsed && (
-        <div
-          className="mx-auto mt-4 mb-2 w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground grid place-items-center text-[11px] font-bold"
-          title={escribania.nombre}
-          data-testid="sidebar-escribania-switcher"
-        >
-          {escribania.iniciales}
-        </div>
-      )}
-
       <nav className={`mt-3 space-y-0.5 ${collapsed ? 'px-1.5' : 'px-3'}`}>
         {!collapsed && (
           <div className="px-3 pb-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
