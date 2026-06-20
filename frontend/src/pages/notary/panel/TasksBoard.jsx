@@ -172,10 +172,13 @@ export const TasksBoard = ({ operaciones }) => {
       }`}
     >
       <div className="flex items-start justify-between gap-3 flex-wrap mb-3 pr-1">
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-baseline gap-1.5 min-w-0">
           <h2 className="font-display font-bold text-[20px] text-foreground leading-tight">Tareas del día</h2>
-          <span className="text-slate-400 text-[16px]">·</span>
-          <span className="text-slate-400 font-semibold text-[15px] num-tabular" data-testid="tasks-pending-count">
+          <span className="font-display font-bold text-[20px] text-slate-400 leading-tight">·</span>
+          <span
+            className="font-display font-bold text-[20px] text-slate-400 leading-tight num-tabular"
+            data-testid="tasks-pending-count"
+          >
             {pendingTasks.length}
           </span>
         </div>
@@ -232,12 +235,15 @@ export const TasksBoard = ({ operaciones }) => {
             data-testid="done-toggle"
             className="w-full flex items-center justify-between gap-2 group pr-1"
           >
-            <div className="flex items-center gap-1.5">
-              <span className="text-[12.5px] font-semibold text-slate-700">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[12.5px] font-semibold leading-tight text-slate-700">
                 Completadas hoy
               </span>
-              <span className="text-slate-400 text-[12px]">·</span>
-              <span className="text-[12px] font-semibold text-slate-400 num-tabular" data-testid="tasks-done-count">
+              <span className="text-[12.5px] font-semibold leading-tight text-slate-400">·</span>
+              <span
+                className="text-[12.5px] font-semibold leading-tight text-slate-400 num-tabular"
+                data-testid="tasks-done-count"
+              >
                 {doneTasks.length}
               </span>
             </div>
