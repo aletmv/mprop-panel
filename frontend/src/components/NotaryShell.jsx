@@ -10,7 +10,7 @@ export const NotaryShell = ({ children }) => {
   const notary = NOTARIES.find((n) => n.id === notarySession);
 
   return (
-    <div className="min-h-screen bg-[#F0F2F7] font-body text-[#333333]">
+    <div className="min-h-screen bg-[#F0F2F7] text-[#333333] escribania-typography">
       <header className="sticky top-0 z-40 bg-[#142A5C] text-white shadow-md">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           <Link to={notarySession ? "/escribanos/panel" : "/escribanos"} data-testid="notary-header-logo" className="flex items-center min-w-0">

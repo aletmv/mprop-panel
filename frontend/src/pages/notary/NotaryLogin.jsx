@@ -27,7 +27,7 @@ export default function NotaryLogin() {
         <span className="inline-flex bg-[#142A5C] rounded-2xl p-4">
           <Scale className="h-10 w-10 text-[#FFE600]" />
         </span>
-        <h1 className="font-heading font-extrabold text-2xl tracking-tight mt-4">Portal de Escribanías</h1>
+        <h1 className="font-extrabold text-2xl tracking-tight mt-4">Portal de Escribanías</h1>
         <p className="text-sm text-[#666666] mt-1">
           Gestioná tu agenda, tus legajos y operaciones desde un solo lugar.
         </p>
