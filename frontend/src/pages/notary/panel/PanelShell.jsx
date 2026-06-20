@@ -3,12 +3,13 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FolderOpen, CalendarClock, FileSignature,
   Users, Settings, LogOut, Search, Bell, ChevronsUpDown, ShieldCheck, HelpCircle, Store,
-  PanelLeftClose, PanelLeftOpen, Handshake,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { escribania } from './mockData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
+import { ReactComponent as BrandMark } from '@/assets/mercadoprop-escribanias-mark.svg';
 
 const STORAGE_KEY = 'mp_notary_sidebar_collapsed';
 const NAVY = '#2D3277';
@@ -41,13 +42,7 @@ const useCollapsed = () => {
 
 const BrandLogo = ({ collapsed }) => (
   <span className="flex items-center gap-2.5 min-w-0">
-    <span
-      className="flex items-center justify-center rounded-full h-9 w-9 shrink-0 border-2 bg-[#FFE600]"
-      style={{ borderColor: NAVY }}
-      data-testid="brand-mark"
-    >
-      <Handshake className="h-4.5 w-4.5" style={{ color: NAVY }} strokeWidth={2.4} />
-    </span>
+    <BrandMark className="h-9 w-9 shrink-0" data-testid="brand-mark" />
     {!collapsed && (
       <span className="leading-none min-w-0">
         <span
