@@ -46,7 +46,7 @@ const Dashboard = () => {
           </div>
           <aside className="col-span-12 lg:col-span-4">
             <div className="card-surface p-5 h-full flex flex-col" data-testid="alerts-card-top">
-              <div className="flex items-start justify-between gap-2 mb-3">
+              <div className="flex items-start justify-between gap-2 mb-3 pr-1">
                 <div>
                   <h2 className="font-display font-bold text-[18px] text-foreground leading-tight">Alertas</h2>
                   <div className="text-[11.5px] text-muted-foreground">Ordenadas por prioridad e impacto</div>
