@@ -36,8 +36,11 @@ const Dashboard = () => {
   return (
     <PanelShell>
       <Topbar
-        title="Buen día, María Inés"
-        subtitle="Tenés 4 alertas críticas y 12 firmas en los próximos 7 días."
+        title={
+          <>
+            Buen día, <span className="text-slate-400">María Inés</span>
+          </>
+        }
       />
       <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-6" data-testid="notary-dashboard">
         <section className="grid grid-cols-12 gap-6">
