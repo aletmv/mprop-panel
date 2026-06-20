@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, ShieldAlert, FileText, Clock, ChevronRight, Plus, Calendar,
+  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, ShieldAlert, FileText, Clock, ChevronRight, Plus, Minus, Calendar,
   ArrowRight, ExternalLink,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
@@ -376,6 +376,13 @@ const KanbanCard = ({ op }) => {
     if (!isInBoard) dayTasks.addPending(op.id);
   };
 
+  const onRemoveClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (tasksState.pending.includes(op.id)) dayTasks.removePending(op.id);
+    else if (tasksState.done.includes(op.id)) dayTasks.removeDone(op.id);
+  };
+
   return (
     <Link
       to={`/escribanos/operaciones/${op.id}`}
@@ -401,7 +408,7 @@ const KanbanCard = ({ op }) => {
         <div
           className={`mt-2.5 flex items-center text-[11px] rounded-md pl-2 pr-1 py-1 transition-colors ${
             isInBoard
-              ? 'gap-3 bg-emerald-50 text-slate-700 border border-emerald-200 shadow-[0_1px_4px_rgba(16,185,129,0.18)]'
+              ? 'gap-3 bg-slate-100 text-slate-700 border border-slate-200'
               : 'gap-1.5 text-slate-700 bg-slate-50 border border-slate-200'
           }`}
           data-testid={`kanban-task-${op.id}`}
@@ -414,11 +421,7 @@ const KanbanCard = ({ op }) => {
             aria-hidden
           />
           <span className="leading-snug flex-1 min-w-0">
-            <span
-              className={`block text-[9.5px] uppercase tracking-[0.08em] font-semibold ${
-                isInBoard ? 'text-emerald-700' : 'text-slate-500'
-              }`}
-            >
+            <span className="block text-[9.5px] uppercase tracking-[0.08em] font-semibold text-slate-500">
               Tarea en curso
             </span>
             <span
@@ -429,7 +432,18 @@ const KanbanCard = ({ op }) => {
             </span>
             {isInBoard && <span className="sr-only">Ya está en tu día</span>}
           </span>
-          {!isInBoard && (
+          {isInBoard ? (
+            <button
+              type="button"
+              onClick={onRemoveClick}
+              data-testid={`kanban-remove-task-${op.id}`}
+              title="Quitar de mi día"
+              aria-label="Quitar de mi día"
+              className="shrink-0 w-7 h-7 grid place-items-center rounded-md transition-colors bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+            >
+              <Minus className="w-3.5 h-3.5" strokeWidth={2.2} />
+            </button>
+          ) : (
             <button
               type="button"
               onClick={onAddClick}
@@ -446,7 +460,15 @@ const KanbanCard = ({ op }) => {
 
       <div className="mt-2.5 h-1 rounded-full bg-slate-100 overflow-hidden">
         <div
-          className={`h-full ${op.estado === 'observado' ? 'bg-red-500' : op.estado === 'cerrado' ? 'bg-emerald-500' : 'bg-sky-500'}`}
+          className={`h-full ${
+            isInBoard
+              ? 'bg-emerald-500'
+              : op.estado === 'observado'
+                ? 'bg-red-500'
+                : op.estado === 'cerrado'
+                  ? 'bg-emerald-500'
+                  : 'bg-sky-500'
+          }`}
           style={{ width: `${op.progreso}%` }}
         />
       </div>
@@ -477,12 +499,12 @@ const Column = ({ hito, items }) => {
   return (
     <div
       data-testid={`kanban-column-${hito.id}`}
-      className="flex flex-col rounded-xl border border-slate-200 bg-slate-50/60 overflow-hidden"
+      className="flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden"
     >
       <Link
         to={`/escribanos/operaciones?hito=${hito.id}`}
         data-testid={`kanban-column-header-${hito.id}`}
-        className="px-3.5 py-3 flex items-center gap-2.5 border-b border-slate-200 bg-white hover:bg-slate-50 transition-colors group"
+        className="px-3.5 py-3 flex items-center gap-2.5 border-b-[3px] border-slate-400/90 bg-white hover:bg-slate-50 transition-colors group"
         title={`Ver todos los legajos en ${hito.label}`}
       >
         <span className={`w-8 h-8 rounded-lg grid place-items-center border ${hito.iconColor}`}>
@@ -499,7 +521,7 @@ const Column = ({ hito, items }) => {
           {items.length}
         </span>
       </Link>
-      <div className="p-2.5 flex flex-col gap-2 min-h-[260px] max-h-[460px] overflow-y-auto">
+      <div className="p-2.5 flex flex-col gap-2 min-h-[260px] max-h-[460px] overflow-y-auto bg-slate-50/60 flex-1">
         {items.length === 0 ? (
           <div className="flex-1 grid place-items-center text-[11.5px] text-slate-400 py-8">
             Sin legajos en este hito
