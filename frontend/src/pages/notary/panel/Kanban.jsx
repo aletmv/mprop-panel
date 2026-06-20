@@ -302,10 +302,6 @@ export const AlertChip = ({ op, size = 'sm' }) => {
   const data = getOpAlert(op);
   if (!data) return null;
   const cfg = NIVEL_CFG[data.nivel];
-  const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-4.5 h-4.5';
-  // Icono por nivel — coincide con el que muestra la card de Alertas para
-  // mantener consistencia visual entre Kanban y Dashboard.
-  const Icon = { critica: ShieldAlert, media: AlertTriangle, info: FileText }[data.nivel] || AlertTriangle;
 
   return (
     <HoverCard openDelay={120} closeDelay={80}>
@@ -316,9 +312,9 @@ export const AlertChip = ({ op, size = 'sm' }) => {
           data-testid={`alert-chip-${op.id}`}
           aria-label={`Alerta ${cfg.label.toLowerCase()}`}
           title={`Alerta ${cfg.label.toLowerCase()}`}
-          className="inline-flex items-center justify-center text-red-600 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-300 rounded"
+          className="inline-flex items-center justify-center w-6 h-6 -m-1 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-300 rounded"
         >
-          <Icon className={`${iconSize} fill-red-600 text-red-600`} strokeWidth={1.2} />
+          <span className="block w-2.5 h-2.5 rounded-full bg-red-600" aria-hidden />
         </button>
       </HoverCardTrigger>
       <HoverCardContent

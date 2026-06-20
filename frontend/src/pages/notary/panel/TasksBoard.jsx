@@ -172,14 +172,12 @@ export const TasksBoard = ({ operaciones }) => {
       }`}
     >
       <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
-        <div>
+        <div className="flex items-center gap-1.5">
           <h2 className="font-display font-bold text-[20px] text-foreground leading-tight">Tareas del día</h2>
-          <div className="text-[12px] text-muted-foreground mt-0.5 num-tabular">
-            <span className="font-semibold text-foreground" data-testid="tasks-pending-count">
-              {pendingTasks.length}
-            </span>{' '}
-            pendiente{pendingTasks.length === 1 ? '' : 's'}
-          </div>
+          <span className="text-slate-400 text-[16px]">·</span>
+          <span className="text-slate-400 font-semibold text-[15px] num-tabular" data-testid="tasks-pending-count">
+            {pendingTasks.length}
+          </span>
         </div>
         {pendingTasks.length > 0 && (
           <button
@@ -234,11 +232,12 @@ export const TasksBoard = ({ operaciones }) => {
             data-testid="done-toggle"
             className="w-full flex items-center justify-between gap-2 group"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-[12.5px] font-semibold text-slate-700">
                 Completadas hoy
               </span>
-              <span className="text-[10.5px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 tabular-nums">
+              <span className="text-slate-400 text-[12px]">·</span>
+              <span className="text-[12px] font-semibold text-slate-400 num-tabular" data-testid="tasks-done-count">
                 {doneTasks.length}
               </span>
             </div>
