@@ -19,7 +19,7 @@ const nav = [
   { to: '/escribanos/operaciones', label: 'Legajos', icon: FolderOpen, badge: '47' },
   { to: '/escribanos/agenda', label: 'Agenda de firmas', icon: CalendarClock },
   { to: '/escribanos/firmas', label: 'Firmas digitales', icon: FileSignature, soon: true },
-  { to: '/escribanos/partes', label: 'Partes', icon: Users, soon: true },
+  { to: '/escribanos/partes', label: 'Partes', icon: Users },
 ];
 
 const secondary = [

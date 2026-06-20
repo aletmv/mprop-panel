@@ -17,6 +17,8 @@ import NotaryDashboard from "@/pages/notary/panel/Dashboard";
 import NotaryOperacionesList from "@/pages/notary/panel/OperacionesList";
 import NotaryOperacionDetail from "@/pages/notary/panel/OperacionDetail";
 import NotaryAgenda from "@/pages/notary/panel/Agenda";
+import NotaryPartesList from "@/pages/notary/panel/PartesList";
+import NotaryPartesDetail from "@/pages/notary/panel/PartesDetail";
 
 function App() {
   return (
@@ -38,6 +40,8 @@ function App() {
             <Route path="/escribanos/operaciones" element={<NotaryOperacionesList />} />
             <Route path="/escribanos/operaciones/:id" element={<NotaryOperacionDetail />} />
             <Route path="/escribanos/agenda" element={<NotaryAgenda />} />
+            <Route path="/escribanos/partes" element={<NotaryPartesList />} />
+            <Route path="/escribanos/partes/:id" element={<NotaryPartesDetail />} />
             <Route path="/escribanos/carpeta/:resId" element={<NotaryDashboard />} />
           </Routes>
         </Layout>
