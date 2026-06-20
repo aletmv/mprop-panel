@@ -405,12 +405,12 @@ export const cargaMensual = [
 ];
 
 export const estadoLabel = {
-  apertura: { label: 'Apertura', color: 'info' },
-  documentos: { label: 'Documentos', color: 'info' },
-  analisis: { label: 'En análisis', color: 'warning' },
-  observado: { label: 'Observado', color: 'destructive' },
-  'en-firma': { label: 'En firma', color: 'success' },
-  cerrado: { label: 'Cerrado', color: 'muted' },
+  apertura: { label: 'Inicio', color: 'stage-inicio' },
+  documentos: { label: 'Expediente', color: 'stage-expediente' },
+  analisis: { label: 'Due diligence', color: 'stage-diligence' },
+  observado: { label: 'Observado', color: 'stage-diligence' },
+  'en-firma': { label: 'Pre-cierre', color: 'stage-precierre' },
+  cerrado: { label: 'Cerrado', color: 'stage-cierre' },
 };
 
 export const riesgoLabel = {

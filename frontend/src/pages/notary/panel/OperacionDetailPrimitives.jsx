@@ -6,6 +6,12 @@ export const StatusDot = ({ variant = 'muted', label, className = '' }) => {
     info: 'bg-info',
     muted: 'bg-slate-400',
     primary: 'bg-primary',
+
+    'stage-inicio': 'bg-[var(--stage-inicio)]',
+    'stage-expediente': 'bg-[var(--stage-expediente)]',
+    'stage-diligence': 'bg-[var(--stage-diligence)]',
+    'stage-precierre': 'bg-[var(--stage-precierre)]',
+    'stage-cierre': 'bg-[var(--stage-cierre)]',
   }[variant];
   return (
     <span className={`inline-flex items-center gap-2 text-sm font-medium text-slate-700 ${className}`}>

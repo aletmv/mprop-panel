@@ -248,6 +248,12 @@ const Dashboard = () => {
                     destructive: 'bg-destructive',
                     success: 'bg-success',
                     muted: 'bg-muted-foreground',
+
+                    'stage-inicio': 'bg-[var(--stage-inicio)]',
+                    'stage-expediente': 'bg-[var(--stage-expediente)]',
+                    'stage-diligence': 'bg-[var(--stage-diligence)]',
+                    'stage-precierre': 'bg-[var(--stage-precierre)]',
+                    'stage-cierre': 'bg-[var(--stage-cierre)]',
                   }[e.color];
                   return (
                     <div key={k}>

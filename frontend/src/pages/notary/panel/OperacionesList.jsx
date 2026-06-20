@@ -16,11 +16,11 @@ import { useApp } from '@/context/AppContext';
 
 const filtrosBase = [
   { id: 'todos', label: 'Todas' },
-  { id: 'apertura', label: 'Apertura' },
-  { id: 'documentos', label: 'Documentos' },
-  { id: 'analisis', label: 'Análisis' },
+  { id: 'apertura', label: 'Inicio' },
+  { id: 'documentos', label: 'Expediente' },
+  { id: 'analisis', label: 'Due diligence' },
   { id: 'observado', label: 'Observadas' },
-  { id: 'en-firma', label: 'En firma' },
+  { id: 'en-firma', label: 'Pre-cierre' },
 ];
 
 const OperacionesList = () => {
