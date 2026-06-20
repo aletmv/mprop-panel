@@ -401,33 +401,31 @@ const KanbanCard = ({ op }) => {
         <div
           className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-700 bg-slate-50 border border-slate-200 rounded-md pl-2 pr-1 py-1"
           data-testid={`kanban-task-${op.id}`}
+          title={isInBoard ? 'Ya está en tu día' : undefined}
         >
-          <span className="mt-0.5 inline-block w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" aria-hidden />
+          <span
+            className={`mt-0.5 inline-block w-1.5 h-1.5 rounded-full shrink-0 ${isInBoard ? 'pase-current-dot' : 'bg-slate-400'}`}
+            aria-hidden
+          />
           <span className="leading-snug flex-1 min-w-0">
             <span className="block text-[9.5px] uppercase tracking-[0.08em] text-slate-500 font-semibold">
               Tarea en curso
             </span>
             <span className="block font-medium truncate" title={op.tareaEnCursoFull || op.tareaEnCurso}>{op.tareaEnCurso}</span>
+            {isInBoard && <span className="sr-only">Ya está en tu día</span>}
           </span>
-          <button
-            type="button"
-            onClick={onAddClick}
-            disabled={isInBoard}
-            data-testid={`kanban-add-task-${op.id}`}
-            title={isInBoard ? 'Ya está en tu día' : 'Agregar a mi día'}
-            aria-label={isInBoard ? 'Ya está en tu día' : 'Agregar a mi día'}
-            className={`shrink-0 w-7 h-7 grid place-items-center rounded-md transition-colors ${
-              isInBoard
-                ? 'bg-foreground text-white cursor-default shadow-sm'
-                : 'bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5'
-            }`}
-          >
-            {isInBoard ? (
-              <HourglassFalling className="w-3.5 h-3.5" title="Ya está en tu día" />
-            ) : (
+          {!isInBoard && (
+            <button
+              type="button"
+              onClick={onAddClick}
+              data-testid={`kanban-add-task-${op.id}`}
+              title="Agregar a mi día"
+              aria-label="Agregar a mi día"
+              className="shrink-0 w-7 h-7 grid place-items-center rounded-md transition-colors bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5"
+            >
               <Plus className="w-3.5 h-3.5" strokeWidth={2.2} />
-            )}
-          </button>
+            </button>
+          )}
         </div>
       )}
 
