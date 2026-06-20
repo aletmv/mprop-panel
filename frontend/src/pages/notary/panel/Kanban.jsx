@@ -633,14 +633,15 @@ export const LegajosKanban = ({ operaciones }) => {
   return (
     <div className="card-surface p-5" data-testid="legajos-kanban">
       <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
-        <div>
+        <div className="flex items-baseline gap-1.5 min-w-0">
           <h2 className="font-display font-bold text-[20px] text-foreground leading-tight">Legajos</h2>
-          <div className="text-[12px] text-muted-foreground mt-0.5 num-tabular">
-            <span className="font-semibold text-foreground" data-testid="kanban-activos-count">
-              {totalActivos}
-            </span>{' '}
-            {actor === 'todos' ? 'activos' : `con acción de ${bloqueoLabel[actor]?.short.toLowerCase() || actor}`}
-          </div>
+          <span className="font-display font-bold text-[20px] text-slate-400 leading-tight">·</span>
+          <span
+            className="font-display font-bold text-[20px] text-slate-400 leading-tight num-tabular"
+            data-testid="kanban-activos-count"
+          >
+            {totalActivos}
+          </span>
         </div>
         <div className="inline-flex bg-muted rounded-lg p-1" data-testid="legajos-view-toggle" role="tablist">
           <button
