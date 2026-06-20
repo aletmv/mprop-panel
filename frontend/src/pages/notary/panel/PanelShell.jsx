@@ -104,7 +104,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       data-collapsed={collapsed ? 'true' : 'false'}
       className={`hidden lg:flex flex-col ${width} shrink-0 h-screen sticky top-0 border-r border-border bg-card transition-[width] duration-200`}
     >
-      <div className={`h-16 flex items-center border-b border-border ${collapsed ? 'justify-center px-2' : 'px-4'}`}>
+      <div className={`h-16 flex items-center border-b border-transparent ${collapsed ? 'justify-center px-2' : 'px-4'}`}>
         <BrandLogo collapsed={collapsed} />
       </div>
 
@@ -222,7 +222,7 @@ export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
 
   return (
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl">
-      <div className="h-16 pl-4 pr-6 lg:pr-8 flex items-center gap-4 border-b border-border">
+      <div className="h-16 pl-4 pr-6 lg:pr-8 flex items-center gap-4 border-b border-transparent">
         <div className="flex-1 min-w-0">
           {title && (
             <h1
@@ -242,7 +242,7 @@ export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
             placeholder="Buscar legajo, parte o documento…"
-            className="pl-9 w-[320px] h-9 rounded-[14px] bg-muted border-transparent focus-visible:bg-card focus-visible:border-border"
+            className="pl-9 w-[320px] h-9 rounded-[14px] bg-card border border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] focus-visible:border-ring"
           />
           <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-card border border-border text-muted-foreground">⌘K</kbd>
         </div>

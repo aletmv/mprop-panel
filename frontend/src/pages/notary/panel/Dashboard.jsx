@@ -39,17 +39,17 @@ const Dashboard = () => {
         greeting
         title={
           <>
-            <span className="text-muted-foreground font-semibold">Buen día,</span>{' '}
-            <span className="text-foreground font-bold">María Inés</span>
+            <span className="text-muted-foreground font-normal">Buen día,</span>{' '}
+            <span className="text-foreground font-medium">María Inés</span>
           </>
         }
       />
       <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-6" data-testid="notary-dashboard">
-        <section className="grid grid-cols-12 gap-6">
-          <div className="col-span-12 lg:col-span-8">
+        <section className="grid grid-cols-1 lg:grid-cols-[13fr_7fr] gap-6">
+          <div>
             <TasksBoard operaciones={operaciones} />
           </div>
-          <aside className="col-span-12 lg:col-span-4">
+          <aside>
             <div className="card-surface-lg p-6 h-full flex flex-col" data-testid="alerts-card-top">
               <div className="flex items-start justify-between gap-3 mb-[18px]">
                 <div>
