@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { PanelShell, Topbar } from './PanelShell';
 import { StatusBadge } from './StatusBadge';
 import {
-  Clock, CalendarDays, ChevronRight, Sparkles, ShieldAlert, AlertTriangle, FileText,
+  Clock, CalendarDays, ChevronRight, Sparkles, ShieldAlert, AlertTriangle, FileText, ArrowUpRight,
 } from 'lucide-react';
 import {
   alertas, proximasFirmas, estadoLabel, operaciones as MOCK_OPERACIONES,
@@ -48,26 +48,52 @@ const Dashboard = () => {
             <TasksBoard operaciones={operaciones} />
           </div>
           <aside className="col-span-12 lg:col-span-4">
-            <div className="card-surface p-5 h-full flex flex-col" data-testid="alerts-card-top">
-              <div className="flex items-start justify-between gap-3 mb-4 pr-1">
+            <div className="card-surface-lg p-6 h-full flex flex-col" data-testid="alerts-card-top">
+              <div className="flex items-start justify-between gap-3 mb-[18px]">
                 <div>
-                  <h2 className="font-display font-bold text-[18px] text-foreground leading-tight">Alertas</h2>
-                  <div className="text-[11.5px] text-muted-foreground">Ordenadas por prioridad e impacto</div>
+                  <h2 className="font-display font-semibold text-[19px] text-foreground leading-tight tracking-[-0.3px]">
+                    Alertas
+                  </h2>
+                  <div className="text-[12px] text-[#A6ABB3] mt-0.5">Ordenadas por prioridad e impacto</div>
                 </div>
                 <Link
                   to="/escribanos/operaciones"
                   data-testid="alerts-view-all"
-                  className="text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors shrink-0"
+                  className="text-[12.5px] font-semibold text-[#A6ABB3] hover:text-primary transition-colors shrink-0"
                 >
                   Ver todas
                 </Link>
               </div>
-              <div className="space-y-2 overflow-y-auto pr-1 flex-1 max-h-[420px]">
+              <div className="space-y-[11px] overflow-y-auto pr-1 flex-1 max-h-[420px]">
                 {alertas.map((a) => {
                   const cfg = {
-                    critica: { Icon: ShieldAlert, bg: 'bg-destructive-soft', border: 'border-destructive/15', boxBg: 'bg-destructive', boxBorder: 'border-destructive', iconClass: 'text-white' },
-                    media:   { Icon: AlertTriangle, bg: 'bg-card', border: 'border-border', boxBg: 'bg-card', boxBorder: 'border-warning/40', iconClass: 'text-warning-foreground' },
-                    info:    { Icon: FileText, bg: 'bg-card', border: 'border-border', boxBg: 'bg-card', boxBorder: 'border-info/30', iconClass: 'text-info' },
+                    critica: {
+                      Icon: ShieldAlert,
+                      rowBg: 'bg-destructive-soft',
+                      rowBorder: 'border-destructive/20',
+                      boxBg: 'bg-destructive',
+                      iconClass: 'text-white shadow-[0_4px_10px_rgba(229,86,75,0.3)]',
+                      descClass: 'text-destructive/70',
+                      idClass: 'text-destructive/80',
+                    },
+                    media: {
+                      Icon: AlertTriangle,
+                      rowBg: 'bg-card',
+                      rowBorder: 'border-[#EEEFF2] hover:border-warning/30',
+                      boxBg: 'bg-warning-soft',
+                      iconClass: 'text-warning-foreground',
+                      descClass: 'text-muted-foreground',
+                      idClass: 'text-[#A6ABB3]',
+                    },
+                    info: {
+                      Icon: FileText,
+                      rowBg: 'bg-card',
+                      rowBorder: 'border-[#EEEFF2] hover:border-info/30',
+                      boxBg: 'bg-info-soft',
+                      iconClass: 'text-info',
+                      descClass: 'text-muted-foreground',
+                      idClass: 'text-[#A6ABB3]',
+                    },
                   }[a.nivel];
                   const Icon = cfg.Icon;
                   return (
@@ -75,17 +101,19 @@ const Dashboard = () => {
                       to={`/escribanos/operaciones/${a.operacionId}`}
                       key={a.id}
                       data-testid={`alert-${a.id}`}
-                      className={`flex items-start gap-2.5 p-2.5 rounded-lg border ${cfg.bg} ${cfg.border} hover:shadow-sm transition-shadow group`}
+                      className={`flex items-start gap-[13px] ${cfg.rowBg} border ${cfg.rowBorder} rounded-[18px] px-4 py-[15px] transition-colors group`}
                     >
-                      <div className={`w-7 h-7 rounded-md grid place-items-center shrink-0 border ${cfg.boxBorder} ${cfg.boxBg}`}>
-                        <Icon className={`w-3.5 h-3.5 ${cfg.iconClass}`} strokeWidth={1.75} />
+                      <div className={`w-[34px] h-[34px] rounded-[11px] grid place-items-center shrink-0 ${cfg.boxBg}`}>
+                        <Icon className={`w-[18px] h-[18px] ${cfg.iconClass}`} strokeWidth={1.9} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-semibold text-foreground leading-snug">{a.titulo}</div>
-                        <div className="text-[11px] text-muted-foreground mt-1 leading-snug line-clamp-2">{a.descripcion}</div>
-                        <div className="text-[10px] text-muted-foreground mt-1 font-mono">{a.operacionId}</div>
+                        <div className="text-[14px] font-semibold text-foreground leading-snug">{a.titulo}</div>
+                        <div className={`text-[12.5px] mt-1 leading-snug line-clamp-2 ${cfg.descClass}`}>{a.descripcion}</div>
+                        <div className={`text-[11.5px] font-semibold mt-1.5 font-mono ${cfg.idClass}`}>{a.operacionId}</div>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      <span className="w-[30px] h-[30px] rounded-full grid place-items-center shrink-0 text-foreground group-hover:bg-foreground group-hover:text-white transition-colors">
+                        <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2.2} />
+                      </span>
                     </Link>
                   );
                 })}
@@ -98,23 +126,24 @@ const Dashboard = () => {
 
         <section className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8 space-y-6">
-            <div className="card-surface p-5" data-testid="agenda-card">
-              <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-                <div className="flex items-baseline gap-1.5 min-w-0">
-                  <h2 className="font-display font-bold text-[20px] text-foreground leading-tight flex items-center gap-2">
-                    <CalendarDays className="w-[18px] h-[18px] text-primary" />
+            <div className="card-surface-lg p-6" data-testid="agenda-card">
+              <div className="flex items-center justify-between gap-3 mb-[18px] flex-wrap">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="icon-chip">
+                    <CalendarDays className="w-[18px] h-[18px]" strokeWidth={1.9} />
+                  </span>
+                  <h2 className="font-display font-semibold text-[19px] text-foreground leading-tight tracking-[-0.3px]">
                     {agendaTab === 'hoy' ? 'Agenda del día' : 'Próximas firmas'}
                   </h2>
-                  <span className="font-display font-bold text-[20px] text-slate-400 leading-tight">·</span>
                   <span
-                    className="font-display font-bold text-[20px] text-slate-400 leading-tight num-tabular"
+                    className="font-display font-bold text-[22px] text-[#C5C9CF] leading-none -ml-0.5 num-tabular"
                     data-testid="agenda-count"
                   >
                     {firmasAMostrar.length}
                   </span>
                 </div>
                 <div
-                  className="inline-flex bg-muted rounded-lg p-1"
+                  className="inline-flex bg-[#F3F4F6] rounded-[11px] p-[3px] gap-0.5"
                   data-testid="agenda-toggle"
                   role="tablist"
                 >
@@ -123,8 +152,8 @@ const Dashboard = () => {
                     aria-selected={agendaTab === 'hoy'}
                     data-testid="agenda-tab-hoy"
                     onClick={() => setAgendaTab('hoy')}
-                    className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
-                      agendaTab === 'hoy' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    className={`px-4 py-[7px] text-[12.5px] font-semibold rounded-[9px] transition-colors ${
+                      agendaTab === 'hoy' ? 'bg-card text-foreground shadow-sm' : 'text-[#9AA0A8] hover:text-foreground'
                     }`}
                   >
                     Hoy
@@ -134,8 +163,8 @@ const Dashboard = () => {
                     aria-selected={agendaTab === 'proximas'}
                     data-testid="agenda-tab-proximas"
                     onClick={() => setAgendaTab('proximas')}
-                    className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
-                      agendaTab === 'proximas' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    className={`px-4 py-[7px] text-[12.5px] font-semibold rounded-[9px] transition-colors ${
+                      agendaTab === 'proximas' ? 'bg-card text-foreground shadow-sm' : 'text-[#9AA0A8] hover:text-foreground'
                     }`}
                   >
                     Próximas firmas
@@ -217,7 +246,7 @@ const Dashboard = () => {
           </div>
 
           <div className="col-span-12 lg:col-span-4 space-y-6">
-            <div className="rounded-2xl p-5 bg-gradient-to-br from-primary to-primary-glow text-primary-foreground relative overflow-hidden">
+            <div className="rounded-[22px] p-6 bg-gradient-to-br from-primary to-primary-glow text-primary-foreground relative overflow-hidden">
               <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-accent/25 blur-2xl" />
               <div className="relative">
                 <div className="flex items-center justify-between mb-3">
@@ -236,7 +265,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="card-surface p-5">
+            <div className="card-surface-lg p-6">
               <h3 className="font-display font-bold text-[15px] text-foreground mb-3">Por estado</h3>
               <div className="space-y-2.5">
                 {distribucion.map(({ k, n }) => {

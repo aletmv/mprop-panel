@@ -63,6 +63,27 @@ const HITOS = [
   },
 ];
 
+// Visual de etapa por estado (mismos tokens --stage-* ya usados en HITOS/estadoLabel),
+// para colorear acentos de card y pills dentro del Kanban sin depender del objeto HITO.
+const ESTADO_STAGE_VISUAL = {
+  apertura: { bg: 'var(--stage-inicio-soft)', text: 'var(--stage-inicio-text)', accent: 'var(--stage-inicio)' },
+  documentos: { bg: 'var(--stage-expediente-soft)', text: 'var(--stage-expediente-text)', accent: 'var(--stage-expediente)' },
+  analisis: { bg: 'var(--stage-diligence-soft)', text: 'var(--stage-diligence-text)', accent: 'var(--stage-diligence)' },
+  observado: { bg: 'var(--stage-diligence-soft)', text: 'var(--stage-diligence-text)', accent: 'var(--stage-diligence)' },
+  'en-firma': { bg: 'var(--stage-precierre-soft)', text: 'var(--stage-precierre-text)', accent: 'var(--stage-precierre)' },
+  cerrado: { bg: 'var(--stage-cierre-soft)', text: 'var(--stage-cierre-text)', accent: 'var(--stage-cierre)' },
+};
+
+// Tinte de hover por actor en los chips de "¿Quién tiene la pelota?" — solo estilo.
+const ACTOR_HOVER = {
+  comprador: 'hover:border-[#D0E1F5] hover:bg-[#F7FAFE]',
+  vendedor: 'hover:border-[#FADBCA] hover:bg-[#FEF8F4]',
+  escribania: 'hover:border-[#E4DFF5] hover:bg-[#FAF8FE]',
+  gestoria: 'hover:border-[#D9EBE0] hover:bg-[#F6FBF8]',
+  tercero: 'hover:border-slate-200 hover:bg-slate-50',
+  bloqueado: 'hover:border-red-200 hover:bg-red-50',
+};
+
 const NIVEL_CFG = {
   critica: { label: 'Crítica', tone: 'red', priority: 'Alta', barClass: 'bg-red-500', textClass: 'text-red-700', softBg: 'bg-red-50', softBorder: 'border-red-200' },
   media: { label: 'Media', tone: 'amber', priority: 'Media', barClass: 'bg-amber-500', textClass: 'text-amber-700', softBg: 'bg-amber-50', softBorder: 'border-amber-200' },
@@ -103,12 +124,14 @@ const jurisdiccionDe = (barrio) => {
 // "Pelota: Responsable" sin pill — solo el icono de fútbol y el nombre del responsable.
 // Se usa tanto en el Kanban (variante clickeable que abre el popover) como dentro
 // del popover mismo en el bloque "Responsable actual".
-export const BloqueoNameOnly = ({ actor, opId, className = '', iconClassName = 'w-3.5 h-3.5', textClassName = 'text-[12px]' }) => {
+export const BloqueoNameOnly = ({ actor, opId, className = '', iconClassName = 'w-3.5 h-3.5', textClassName = 'text-[12px]', tone }) => {
   if (!actor) return null;
   const meta = bloqueoLabel[actor];
   if (!meta) return null;
-  const colorText = actor === 'bloqueado' ? 'text-red-700' : 'text-slate-800';
-  const colorIcon = actor === 'bloqueado' ? 'text-red-600' : 'text-slate-700';
+  const isBloqueado = actor === 'bloqueado';
+  // Con `tone`, el color lo define el contenedor (pill) vía currentColor.
+  const colorText = isBloqueado ? 'text-red-700' : tone ? '' : 'text-slate-800';
+  const colorIcon = isBloqueado ? 'text-red-600' : tone ? '' : 'text-slate-700';
   return (
     <span
       data-testid={opId ? `bloqueo-name-${opId}` : `bloqueo-name-${actor}`}
@@ -212,6 +235,8 @@ const LineaDePasesContent = ({ op, onNavigate }) => {
 // con el Link envolvente del KanbanCard.
 const SoccerBloqueoTrigger = ({ op, navigate }) => {
   const [open, setOpen] = useState(false);
+  const isBloqueado = op.bloqueoActor === 'bloqueado';
+  const visual = ESTADO_STAGE_VISUAL[op.estado] || ESTADO_STAGE_VISUAL.apertura;
   const handleClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -228,9 +253,12 @@ const SoccerBloqueoTrigger = ({ op, navigate }) => {
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          className="inline-flex items-center gap-1.5 cursor-pointer rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-1"
+          style={isBloqueado ? undefined : { background: visual.bg, color: visual.text }}
+          className={`inline-flex items-center gap-1.5 cursor-pointer rounded-full px-2.5 py-1 transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-1 ${
+            isBloqueado ? 'bg-red-50' : ''
+          }`}
         >
-          <BloqueoNameOnly actor={op.bloqueoActor} opId={op.id} />
+          <BloqueoNameOnly actor={op.bloqueoActor} opId={op.id} tone textClassName="text-[11px]" iconClassName="w-3 h-3" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -319,7 +347,7 @@ export const AlertChip = ({ op, size = 'sm' }) => {
           title={`Alerta ${cfg.label.toLowerCase()}`}
           className="inline-flex items-center justify-center w-6 h-6 -m-1 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-300 rounded"
         >
-          <span className="block w-2.5 h-2.5 rounded-full bg-red-600" aria-hidden />
+          <span className="block w-2 h-2 rounded-full bg-destructive shadow-[0_0_0_3px_rgba(229,86,75,0.15)]" aria-hidden />
         </button>
       </HoverCardTrigger>
       <HoverCardContent
@@ -364,6 +392,7 @@ const KanbanCard = ({ op }) => {
   const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
   const tasksState = useDayTasks();
   const isInBoard = tasksState.pending.includes(op.id) || tasksState.done.includes(op.id);
+  const accent = (ESTADO_STAGE_VISUAL[op.estado] || ESTADO_STAGE_VISUAL.apertura).accent;
 
   const onDragStart = (e) => {
     e.dataTransfer.effectAllowed = 'copy';
@@ -390,9 +419,10 @@ const KanbanCard = ({ op }) => {
       draggable
       onDragStart={onDragStart}
       data-testid={`kanban-card-${op.id}`}
-      className="block bg-white border border-slate-200 rounded-lg p-3 hover:shadow-md hover:border-slate-300 transition-all group cursor-grab active:cursor-grabbing"
+      style={{ borderLeft: `3px solid ${accent}` }}
+      className="block bg-white border border-[#EEEFF2] rounded-2xl p-[15px] shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:shadow-[0_6px_16px_rgba(16,24,40,0.09)] hover:-translate-y-px transition-all group cursor-grab active:cursor-grabbing"
     >
-      <div className="flex items-start justify-between gap-2 mb-1.5">
+      <div className="flex items-center justify-between gap-2 mb-[11px]">
         {op.bloqueoActor ? (
           <BloqueoBadge op={op} variant="soccer" />
         ) : (
@@ -400,33 +430,33 @@ const KanbanCard = ({ op }) => {
         )}
         <AlertChip op={op} />
       </div>
-      <div className="text-[13px] font-semibold text-slate-900 leading-snug truncate" title={op.direccion}>
+      <div className="text-[15px] font-semibold text-slate-900 leading-snug truncate" title={op.direccion}>
         {op.direccion}
       </div>
-      <div className="text-[11px] text-slate-500 mt-0.5 truncate">{jurisdiccionDe(op.barrio)}</div>
+      <div className="text-[12px] text-slate-400 mt-0.5 truncate">{jurisdiccionDe(op.barrio)}</div>
 
       {op.tareaEnCurso && (
         <div
-          className={`mt-2.5 flex items-center text-[11px] rounded-md pl-2 pr-1 py-1 transition-colors ${
+          className={`mt-[13px] flex items-center text-[11px] rounded-[11px] pl-2.5 pr-1.5 py-[9px] transition-colors ${
             isInBoard
               ? 'gap-3 bg-slate-100 text-slate-700 border border-slate-200'
-              : 'gap-1.5 text-slate-700 bg-slate-50 border border-slate-200'
+              : 'gap-2 text-slate-700 bg-[#F7F8FA] border border-transparent'
           }`}
           data-testid={`kanban-task-${op.id}`}
           title={isInBoard ? 'Ya está en tu día' : undefined}
         >
           <span
             className={`inline-block rounded-full shrink-0 self-center ${
-              isInBoard ? 'w-2.5 h-2.5 pase-current-dot' : 'mt-0.5 w-1.5 h-1.5 bg-slate-400'
+              isInBoard ? 'w-2.5 h-2.5 pase-current-dot' : 'w-[7px] h-[7px] bg-emerald-500'
             }`}
             aria-hidden
           />
           <span className="leading-snug flex-1 min-w-0">
-            <span className="block text-[9.5px] uppercase tracking-[0.08em] font-semibold text-slate-500">
+            <span className="block text-[9.5px] uppercase tracking-[0.08em] font-semibold text-[#B3B8BF]">
               Tarea en curso
             </span>
             <span
-              className={`block font-medium truncate ${isInBoard ? 'text-slate-900' : ''}`}
+              className={`block font-semibold truncate text-[12.5px] mt-0.5 ${isInBoard ? 'text-slate-900' : 'text-[#3A4048]'}`}
               title={op.tareaEnCursoFull || op.tareaEnCurso}
             >
               {op.tareaEnCurso}
@@ -440,9 +470,9 @@ const KanbanCard = ({ op }) => {
               data-testid={`kanban-remove-task-${op.id}`}
               title="Quitar de mi día"
               aria-label="Quitar de mi día"
-              className="shrink-0 w-7 h-7 grid place-items-center rounded-md transition-colors bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+              className="shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
             >
-              <Minus className="w-3.5 h-3.5" strokeWidth={2.2} />
+              <Minus className="w-3.5 h-3.5" strokeWidth={2.4} />
             </button>
           ) : (
             <button
@@ -451,39 +481,39 @@ const KanbanCard = ({ op }) => {
               data-testid={`kanban-add-task-${op.id}`}
               title="Agregar a mi día"
               aria-label="Agregar a mi día"
-              className="shrink-0 w-7 h-7 grid place-items-center rounded-md transition-colors bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5"
+              className="shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5"
             >
-              <Plus className="w-3.5 h-3.5" strokeWidth={2.2} />
+              <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
             </button>
           )}
         </div>
       )}
 
-      <div className="mt-2.5 h-1 rounded-full bg-slate-100 overflow-hidden">
+      <div className="mt-[13px] h-[5px] rounded-full bg-[#EEF0F3] overflow-hidden">
         <div
-          className={`h-full ${
+          className={`h-full rounded-full ${
             isInBoard || op.estado === 'cerrado' ? 'bg-emerald-500' : 'bg-sky-500'
           }`}
           style={{ width: `${op.progreso}%` }}
         />
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between gap-2">
+      <div className="mt-[13px] flex items-center justify-between gap-2">
         <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" withPopover />
-        <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
+        <ChevronRight className="w-4 h-4 text-[#C5C9CF] group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
       </div>
 
-      <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+      <div className="mt-[11px] pt-[11px] border-t border-[#F1F2F4] flex items-center justify-between gap-2">
         <span
-          className={`inline-flex items-center gap-1 text-[10.5px] ${
-            urgente ? 'text-red-600 font-bold' : 'text-slate-500 font-medium'
+          className={`inline-flex items-center gap-1 text-[11.5px] ${
+            urgente ? 'text-destructive font-bold' : 'text-[#8A9099] font-medium'
           }`}
           title={`Firma tentativa ${op.firma}`}
         >
           <Clock className="w-3 h-3" />
           {op.diasFirma > 0 ? `${op.diasFirma}d` : op.diasFirma === 0 ? 'hoy' : `${Math.abs(op.diasFirma)}d`}
         </span>
-        <span className="font-mono text-[10px] text-slate-400 tracking-tight">{op.id}</span>
+        <span className="font-mono text-[11.5px] font-semibold text-[#B3B8BF] tracking-tight">{op.id}</span>
       </div>
     </Link>
   );
@@ -494,29 +524,29 @@ const Column = ({ hito, items }) => {
   return (
     <div
       data-testid={`kanban-column-${hito.id}`}
-      className="flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden"
+      className="flex flex-col rounded-[18px] border border-[#EEEFF2] bg-white overflow-hidden"
     >
       <Link
         to={`/escribanos/operaciones?hito=${hito.id}`}
         data-testid={`kanban-column-header-${hito.id}`}
-        className={`px-3.5 py-3 flex items-center gap-2.5 border-b-[3px] ${hito.borderColor} bg-white hover:bg-slate-50 transition-colors group`}
+        className={`px-3.5 py-3 flex items-center gap-2.5 border-b-2 ${hito.borderColor} bg-white hover:bg-slate-50 transition-colors group`}
         title={`Ver todos los legajos en ${hito.label}`}
       >
-        <span className={`w-8 h-8 rounded-lg grid place-items-center border ${hito.iconColor}`}>
+        <span className={`w-[30px] h-[30px] rounded-[9px] grid place-items-center border ${hito.iconColor}`}>
           <Icon className="w-4 h-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[12.5px] font-semibold text-slate-900 leading-tight truncate">{hito.label}</div>
-          <div className="text-[10.5px] text-slate-500 truncate">{hito.sub}</div>
+          <div className="text-[13.5px] font-semibold text-slate-900 leading-tight truncate">{hito.label}</div>
+          <div className="text-[11px] text-[#A6ABB3] truncate">{hito.sub}</div>
         </div>
         <span
-          className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 tabular-nums"
+          className="text-[12px] font-bold px-2.5 py-0.5 rounded-full bg-[#F3F4F6] text-[#7A818B] tabular-nums"
           data-testid={`kanban-count-${hito.id}`}
         >
           {items.length}
         </span>
       </Link>
-      <div className="p-2.5 flex flex-col gap-2 min-h-[260px] max-h-[460px] overflow-y-auto bg-slate-50/60 flex-1">
+      <div className="p-2.5 flex flex-col gap-2.5 min-h-[260px] max-h-[460px] overflow-y-auto bg-slate-50/60 flex-1">
         {items.length === 0 ? (
           <div className="flex-1 grid place-items-center text-[11.5px] text-slate-400 py-8">
             Sin legajos en este hito
@@ -630,29 +660,30 @@ export const LegajosKanban = ({ operaciones }) => {
   const totalActivos = filtradas.filter((o) => o.estado !== 'cerrado').length;
 
   return (
-    <div className="card-surface p-5" data-testid="legajos-kanban">
-      <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-        <div className="flex items-baseline gap-1.5 min-w-0">
-          <h2 className="font-display font-bold text-[20px] text-foreground leading-tight flex items-center gap-2">
-            <FolderOpen className="w-[18px] h-[18px] text-primary" />
+    <div className="card-surface-lg p-6" data-testid="legajos-kanban">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-[18px]">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="icon-chip" style={{ color: '#7C6CB8' }}>
+            <FolderOpen className="w-[18px] h-[18px]" strokeWidth={1.8} />
+          </span>
+          <h2 className="font-display font-semibold text-[19px] text-foreground leading-tight tracking-[-0.3px]">
             Legajos
           </h2>
-          <span className="font-display font-bold text-[20px] text-slate-400 leading-tight">·</span>
           <span
-            className="font-display font-bold text-[20px] text-slate-400 leading-tight num-tabular"
+            className="font-display font-bold text-[22px] text-[#C5C9CF] leading-none -ml-0.5 num-tabular"
             data-testid="kanban-activos-count"
           >
             {totalActivos}
           </span>
         </div>
-        <div className="inline-flex bg-muted rounded-lg p-1" data-testid="legajos-view-toggle" role="tablist">
+        <div className="inline-flex bg-[#F3F4F6] rounded-[11px] p-[3px] gap-0.5" data-testid="legajos-view-toggle" role="tablist">
           <button
             role="tab"
             aria-selected={view === 'kanban'}
             data-testid="legajos-view-kanban"
             onClick={() => setView('kanban')}
-            className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
-              view === 'kanban' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            className={`px-4 py-[7px] text-[12.5px] font-semibold rounded-[9px] transition-colors ${
+              view === 'kanban' ? 'bg-card text-foreground shadow-sm' : 'text-[#9AA0A8] hover:text-foreground'
             }`}
           >
             Kanban
@@ -662,8 +693,8 @@ export const LegajosKanban = ({ operaciones }) => {
             aria-selected={view === 'lista'}
             data-testid="legajos-view-lista"
             onClick={() => setView('lista')}
-            className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${
-              view === 'lista' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            className={`px-4 py-[7px] text-[12.5px] font-semibold rounded-[9px] transition-colors ${
+              view === 'lista' ? 'bg-card text-foreground shadow-sm' : 'text-[#9AA0A8] hover:text-foreground'
             }`}
           >
             Lista
@@ -671,27 +702,31 @@ export const LegajosKanban = ({ operaciones }) => {
         </div>
       </div>
 
-      <div className="mb-4 -mx-1 px-1 overflow-x-auto" data-testid="legajos-actor-filter">
-        <div className="inline-flex items-center gap-1.5">
-          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground pr-1.5 whitespace-nowrap">
+      <div className="mb-[22px] -mx-1 px-1 overflow-x-auto" data-testid="legajos-actor-filter">
+        <div className="inline-flex items-center gap-2.5">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-[#B3B8BF] pr-1 whitespace-nowrap">
             ¿Quién tiene la pelota?
           </span>
           {actorChips.map((c) => {
             const isActive = actor === c.id;
+            const hover = ACTOR_HOVER[c.id] || 'hover:border-slate-200 hover:bg-slate-50';
             return (
               <button
                 key={c.id}
                 type="button"
                 data-testid={`actor-chip-${c.id}`}
                 onClick={() => setActor(c.id)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11.5px] font-semibold transition-colors whitespace-nowrap ${
-                  isActive
-                    ? 'bg-slate-900 text-white border-slate-900'
-                    : 'bg-card text-slate-700 border-slate-200 hover:bg-slate-50'
+                style={isActive ? { background: '#242424' } : undefined}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-[7px] rounded-full border text-[12.5px] font-semibold transition-colors whitespace-nowrap ${
+                  isActive ? 'text-white border-transparent' : `bg-white text-[#5C636D] border-[#ECEDF0] font-medium ${hover}`
                 }`}
               >
                 {c.label}
-                <span className={`text-[10.5px] font-bold ${isActive ? 'opacity-80' : 'text-slate-500'}`}>
+                <span
+                  className={`text-[11px] font-bold rounded-full ${
+                    isActive ? 'px-1.5 py-px bg-white/20' : 'text-[#9AA0A8]'
+                  }`}
+                >
                   {c.count}
                 </span>
               </button>
@@ -701,7 +736,7 @@ export const LegajosKanban = ({ operaciones }) => {
       </div>
 
       {view === 'kanban' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {columnas.map(({ hito, items }) => (
             <Column key={hito.id} hito={hito} items={items} />
           ))}

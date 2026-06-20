@@ -229,6 +229,27 @@ code {
     border-radius: 0.75rem;
 }
 
+/* Cards "hero" del dashboard (Tareas, Alertas, Legajos, Agenda) — design system
+   Claude Design: radius mayor y sombra más presente que .card-surface base. */
+.escribania-panel .card-surface-lg {
+    background: hsl(var(--card));
+    border: 1px solid #EEEFF2;
+    border-radius: 22px;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+}
+
+.escribania-panel .icon-chip {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #F7F8FA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    color: #5C636D;
+}
+
 .escribania-panel .num-tabular {
     font-variant-numeric: tabular-nums;
 }
