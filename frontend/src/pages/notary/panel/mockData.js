@@ -50,7 +50,7 @@ const seedVault = (opId, economicStatus, eventTemplates, { price, firstHome = fa
 // (último pase activo marcado con `current: true`) + próximo paso a destrabar.
 // Vocabulario consistente con el modelo Bóveda — sin "comprobante", "transfirió", etc.
 const LINEA_PASES = {
-  'MP-475032': {
+  'MP-673033': {
     lineaDePases: [
       { actor: 'comprador',  accion: 'Identidad verificada',                 fecha: '04/06', hora: '09:30' },
       { actor: 'escribania', accion: 'Revisó documentación inicial',         fecha: '09/06', hora: '16:20' },
@@ -63,7 +63,7 @@ const LINEA_PASES = {
       impacto: 'Firma en riesgo si no se resuelve antes del 24/06.',
     },
   },
-  'MP-475011': {
+  'MP-328552': {
     lineaDePases: [
       { actor: 'comprador',  accion: 'Acreditó la seña en Bóveda',           fecha: '28/05', hora: '10:00' },
       { actor: 'gestoria',   accion: 'Verificación dominial completa',       fecha: '18/06', hora: '14:10' },
@@ -76,7 +76,7 @@ const LINEA_PASES = {
       impacto: 'Firma agendada en 2 días — no debe demorarse.',
     },
   },
-  'MP-474998': {
+  'MP-472736': {
     lineaDePases: [
       { actor: 'comprador',  accion: 'Identidad verificada',                       fecha: '12/06', hora: '10:11' },
       { actor: 'escribania', accion: 'Solicitó verificación biométrica al vendedor', fecha: '13/06', hora: '09:30' },
@@ -89,7 +89,7 @@ const LINEA_PASES = {
       impacto: 'Sin identidad verificada del vendedor no se puede avanzar.',
     },
   },
-  'MP-474870': {
+  'MP-780337': {
     lineaDePases: [
       { actor: 'comprador',  accion: 'Acreditó la reserva en Bóveda',        fecha: '22/06', hora: '10:09' },
       { actor: 'escribania', accion: 'Solicitó documentación inicial',       fecha: '23/06', hora: '11:00' },
@@ -102,7 +102,7 @@ const LINEA_PASES = {
       impacto: 'Bloquea apertura formal del legajo.',
     },
   },
-  'MP-474812': {
+  'MP-722069': {
     lineaDePases: [
       { actor: 'comprador',  accion: 'Acreditó la reserva en Bóveda',        fecha: '25/06', hora: '13:08' },
       { actor: 'escribania', accion: 'Inició apertura del legajo',           fecha: '26/06', hora: '10:00' },
@@ -115,7 +115,7 @@ const LINEA_PASES = {
       impacto: 'Validación es prerrequisito para habilitar la seña.',
     },
   },
-  'MP-474755': {
+  'MP-662480': {
     lineaDePases: [
       { actor: 'comprador',  accion: 'Identidad y pago acreditados',         fecha: '28/04', hora: '10:07' },
       { actor: 'escribania', accion: 'Firma de escritura ejecutada',         fecha: '14/06', hora: '16:00' },
@@ -145,7 +145,7 @@ export const kpis = [
 
 export const operaciones = [
   {
-    id: 'MP-475032',
+    id: 'MP-673033',
     direccion: 'Av. Santa Fe 1234, 4° B',
     barrio: 'Recoleta, CABA',
     tipo: 'Departamento PH',
@@ -167,7 +167,7 @@ export const operaciones = [
     matricula: 'FR 12-3456',
     partida: '1234567',
     catastro: 'Circ. 18 · Sec. 23 · Manz. 45 · Parc. 12',
-    ...seedVault('MP-475032', 'sena_pendiente_habilitacion', [
+    ...seedVault('MP-673033', 'sena_pendiente_habilitacion', [
       { type: 'vault_created',                    status: 'confirmado', occurredAt: '2025-06-04T10:00:00-03:00' },
       { type: 'reservation_accredited',           status: 'validado',   amount: 1300,  occurredAt: '2025-06-04T10:12:00-03:00' },
       { type: 'notary_assigned',                  status: 'confirmado', occurredAt: '2025-06-04T16:30:00-03:00' },
@@ -175,7 +175,7 @@ export const operaciones = [
     ], { price: 130000 }),
   },
   {
-    id: 'MP-475011',
+    id: 'MP-328552',
     direccion: 'Av. Cabildo 2890, 7° A',
     barrio: 'Belgrano, CABA',
     tipo: 'Departamento',
@@ -197,7 +197,7 @@ export const operaciones = [
     matricula: 'FR 14-8821',
     partida: '8821934',
     catastro: 'Circ. 16 · Sec. 18 · Manz. 22 · Parc. 04',
-    ...seedVault('MP-475011', 'sena_habilitada', [
+    ...seedVault('MP-328552', 'sena_habilitada', [
       { type: 'vault_created',                  status: 'confirmado', occurredAt: '2025-05-20T11:00:00-03:00' },
       { type: 'reservation_accredited',         status: 'validado',   amount: 2150,   occurredAt: '2025-05-20T11:14:00-03:00' },
       { type: 'notary_assigned',                status: 'confirmado', occurredAt: '2025-05-21T09:00:00-03:00' },
@@ -210,7 +210,7 @@ export const operaciones = [
     ], { price: 215000 }),
   },
   {
-    id: 'MP-474998',
+    id: 'MP-472736',
     direccion: 'Pueyrredón 1456, 3° C',
     barrio: 'Balvanera, CABA',
     tipo: 'Departamento',
@@ -232,7 +232,7 @@ export const operaciones = [
     matricula: 'FR 09-2210',
     partida: '2210556',
     catastro: 'Circ. 09 · Sec. 11 · Manz. 30 · Parc. 18',
-    ...seedVault('MP-474998', 'sena_pendiente_habilitacion', [
+    ...seedVault('MP-472736', 'sena_pendiente_habilitacion', [
       { type: 'vault_created',                   status: 'confirmado', occurredAt: '2025-06-12T10:00:00-03:00' },
       { type: 'reservation_accredited',          status: 'validado',   amount: 1000,  occurredAt: '2025-06-12T10:11:00-03:00' },
       { type: 'notary_assigned',                 status: 'confirmado', occurredAt: '2025-06-13T09:30:00-03:00' },
@@ -240,7 +240,7 @@ export const operaciones = [
     ], { price: 95000 }),
   },
   {
-    id: 'MP-474870',
+    id: 'MP-780337',
     direccion: 'Tucumán 875, 2° B',
     barrio: 'San Nicolás, CABA',
     tipo: 'Oficina',
@@ -262,14 +262,14 @@ export const operaciones = [
     matricula: 'FR 02-9981',
     partida: '9981230',
     catastro: 'Circ. 02 · Sec. 05 · Manz. 12 · Parc. 22',
-    ...seedVault('MP-474870', 'reserva_acreditada', [
+    ...seedVault('MP-780337', 'reserva_acreditada', [
       { type: 'vault_created',           status: 'confirmado', occurredAt: '2025-06-22T10:00:00-03:00' },
       { type: 'reservation_accredited',  status: 'validado',   amount: 1780, occurredAt: '2025-06-22T10:09:00-03:00' },
       { type: 'notary_assigned',         status: 'confirmado', occurredAt: '2025-06-23T11:00:00-03:00' },
     ], { price: 178000 }),
   },
   {
-    id: 'MP-474812',
+    id: 'MP-722069',
     direccion: 'Honduras 5544',
     barrio: 'Palermo, CABA',
     tipo: 'Casa',
@@ -291,14 +291,14 @@ export const operaciones = [
     matricula: 'FR 17-4421',
     partida: '4421889',
     catastro: 'Circ. 17 · Sec. 28 · Manz. 03 · Parc. 09',
-    ...seedVault('MP-474812', 'reserva_acreditada', [
+    ...seedVault('MP-722069', 'reserva_acreditada', [
       { type: 'vault_created',           status: 'confirmado', occurredAt: '2025-06-25T13:00:00-03:00' },
       { type: 'reservation_accredited',  status: 'validado',   amount: 3200, occurredAt: '2025-06-25T13:08:00-03:00' },
       { type: 'notary_assigned',         status: 'confirmado', occurredAt: '2025-06-26T10:00:00-03:00' },
     ], { price: 320000 }),
   },
   {
-    id: 'MP-474755',
+    id: 'MP-662480',
     direccion: 'Av. Corrientes 3400, 1° D',
     barrio: 'Almagro, CABA',
     tipo: 'Departamento',
@@ -320,7 +320,7 @@ export const operaciones = [
     matricula: 'FR 06-1192',
     partida: '1192337',
     catastro: 'Circ. 06 · Sec. 14 · Manz. 18 · Parc. 02',
-    ...seedVault('MP-474755', 'sena_habilitada', [
+    ...seedVault('MP-662480', 'sena_habilitada', [
       { type: 'vault_created',              status: 'confirmado', occurredAt: '2025-04-28T10:00:00-03:00' },
       { type: 'reservation_accredited',     status: 'validado',   amount: 880,   occurredAt: '2025-04-28T10:07:00-03:00' },
       { type: 'notary_assigned',            status: 'confirmado', occurredAt: '2025-04-29T11:00:00-03:00' },
@@ -338,7 +338,7 @@ export const pasos = ['Apertura', 'Documentos', 'Análisis', 'Pre-cierre', 'Firm
 
 export const alertas = [
   {
-    id: 1, operacionId: 'MP-475032',
+    id: 1, operacionId: 'MP-673033',
     nivel: 'critica',
     titulo: 'Certificado de dominio vence antes de la firma',
     descripcion: 'El certificado de dominio vence 24/06 y la firma tentativa es 25/06.',
@@ -348,7 +348,7 @@ export const alertas = [
     responsable: 'Gestoría', prioridad: 'Alta',
   },
   {
-    id: 2, operacionId: 'MP-475032',
+    id: 2, operacionId: 'MP-673033',
     nivel: 'media',
     titulo: 'Falta certificación de inhibición del vendedor',
     descripcion: 'No se registró la solicitud de inhibición en los últimos 30 días.',
@@ -356,7 +356,7 @@ export const alertas = [
     responsable: 'Gestoría', prioridad: 'Media',
   },
   {
-    id: 3, operacionId: 'MP-475032',
+    id: 3, operacionId: 'MP-673033',
     nivel: 'info',
     titulo: 'Seña pendiente de habilitación',
     descripcion: 'Seña acreditada en Bóveda. Habilitación requiere revisión notarial.',
@@ -373,7 +373,7 @@ export const eventos = [
   { fecha: '09/06', hora: '11:17', tipo: 'gestion', evento: 'Comprador solicitó libre deuda de expensas', responsable: 'Comprador', evidencia: 'solicitud' },
   { fecha: '06/06', hora: '15:48', tipo: 'documento', evento: 'Vendedor cargó título de propiedad escaneado', responsable: 'Vendedor', evidencia: 'archivo' },
   { fecha: '04/06', hora: '10:12', tipo: 'boveda', evento: 'Pago registrado · Reserva USD 1.300 · Trazado por MercadoPago', responsable: 'MercadoPago', evidencia: 'evento Bóveda' },
-  { fecha: '04/06', hora: '10:00', tipo: 'apertura', evento: 'Apertura del legajo MP-475032', responsable: 'Esc. Lagos', evidencia: 'sistema' },
+  { fecha: '04/06', hora: '10:00', tipo: 'apertura', evento: 'Apertura del legajo MP-673033', responsable: 'Esc. Lagos', evidencia: 'sistema' },
 ];
 
 export const documentos = [
@@ -388,11 +388,11 @@ export const documentos = [
 ];
 
 export const proximasFirmas = [
-  { fecha: '24/06', hora: '11:00', operacion: 'MP-475011', direccion: 'Av. Cabildo 2890, 7° A', escribano: 'Esc. Lagos', estado: 'confirmada' },
-  { fecha: '25/06', hora: '15:30', operacion: 'MP-475032', direccion: 'Av. Santa Fe 1234, 4° B', escribano: 'Esc. Lagos', estado: 'observada' },
-  { fecha: '27/06', hora: '10:00', operacion: 'MP-474900', direccion: 'Av. Las Heras 2110, 8° C', escribano: 'Esc. Lagos', estado: 'confirmada' },
-  { fecha: '01/07', hora: '12:00', operacion: 'MP-474870', direccion: 'Tucumán 875, 2° B', escribano: 'Esc. Lagos', estado: 'tentativa' },
-  { fecha: '02/07', hora: '16:00', operacion: 'MP-474998', direccion: 'Pueyrredón 1456, 3° C', escribano: 'Esc. Lagos', estado: 'tentativa' },
+  { fecha: '24/06', hora: '11:00', operacion: 'MP-328552', direccion: 'Av. Cabildo 2890, 7° A', escribano: 'Esc. Lagos', estado: 'confirmada' },
+  { fecha: '25/06', hora: '15:30', operacion: 'MP-673033', direccion: 'Av. Santa Fe 1234, 4° B', escribano: 'Esc. Lagos', estado: 'observada' },
+  { fecha: '27/06', hora: '10:00', operacion: 'MP-959314', direccion: 'Av. Las Heras 2110, 8° C', escribano: 'Esc. Lagos', estado: 'confirmada' },
+  { fecha: '01/07', hora: '12:00', operacion: 'MP-780337', direccion: 'Tucumán 875, 2° B', escribano: 'Esc. Lagos', estado: 'tentativa' },
+  { fecha: '02/07', hora: '16:00', operacion: 'MP-472736', direccion: 'Pueyrredón 1456, 3° C', escribano: 'Esc. Lagos', estado: 'tentativa' },
 ];
 
 export const cargaMensual = [

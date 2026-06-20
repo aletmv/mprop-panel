@@ -20,14 +20,14 @@ const buildMonth = () => {
 };
 
 const eventosMes = {
-  3: [{ id: 'MP-474755', label: 'MP-474755', estado: 'success', hora: '10:00' }],
-  10: [{ id: 'MP-474700', label: 'MP-474700', estado: 'success', hora: '11:30' }],
-  17: [{ id: 'MP-474612', label: 'MP-474612', estado: 'success', hora: '15:00' }],
-  18: [{ id: 'MP-474755', label: 'MP-474755', estado: 'success', hora: '12:00' }],
-  24: [{ id: 'MP-475011', label: 'MP-475011', estado: 'success', hora: '11:00' }],
-  25: [{ id: 'MP-475032', label: 'MP-475032', estado: 'destructive', hora: '15:30' }],
-  27: [{ id: 'MP-474900', label: 'MP-474900', estado: 'success', hora: '10:00' }],
-  30: [{ id: 'MP-474870', label: 'MP-474870', estado: 'warning', hora: '12:00' }],
+  3: [{ id: 'MP-662480', label: 'MP-662480', estado: 'success', hora: '10:00' }],
+  10: [{ id: 'MP-834068', label: 'MP-834068', estado: 'success', hora: '11:30' }],
+  17: [{ id: 'MP-509342', label: 'MP-509342', estado: 'success', hora: '15:00' }],
+  18: [{ id: 'MP-662480', label: 'MP-662480', estado: 'success', hora: '12:00' }],
+  24: [{ id: 'MP-328552', label: 'MP-328552', estado: 'success', hora: '11:00' }],
+  25: [{ id: 'MP-673033', label: 'MP-673033', estado: 'destructive', hora: '15:30' }],
+  27: [{ id: 'MP-959314', label: 'MP-959314', estado: 'success', hora: '10:00' }],
+  30: [{ id: 'MP-780337', label: 'MP-780337', estado: 'warning', hora: '12:00' }],
 };
 
 const Agenda = () => {

@@ -51,10 +51,10 @@ const seedState = {
 };
 
 const DEMO_RESERVATIONS_BASE = [
-  { id: "res-demo-1", propertyId: "p2", amount: 2480, paymentId: "MP-734120985", date: "05/06/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Valentina Ríos" },
-  { id: "res-demo-2", propertyId: "p3", amount: 1000, paymentId: "MP-712098344", date: "29/05/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Marcos Gutiérrez" },
-  { id: "res-demo-3", propertyId: "p5", amount: 1560, paymentId: "MP-698455201", date: "21/05/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Camila Funes" },
-  { id: "res-demo-4", propertyId: "p6", amount: 3200, paymentId: "MP-687014772", date: "12/05/2026", status: "escribania_asignada", notaryId: "n2", buyer: "Federico Paz" },
+  { id: "res-demo-1", propertyId: "p2", amount: 2480, paymentId: "MP-699143", date: "05/06/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Valentina Ríos" },
+  { id: "res-demo-2", propertyId: "p3", amount: 1000, paymentId: "MP-889580", date: "29/05/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Marcos Gutiérrez" },
+  { id: "res-demo-3", propertyId: "p5", amount: 1560, paymentId: "MP-204420", date: "21/05/2026", status: "escribania_asignada", notaryId: "n1", buyer: "Camila Funes" },
+  { id: "res-demo-4", propertyId: "p6", amount: 3200, paymentId: "MP-455901", date: "12/05/2026", status: "escribania_asignada", notaryId: "n2", buyer: "Federico Paz" },
 ];
 
 // Cada reserva del seed lleva su Bóveda inicializada (eventos económicos

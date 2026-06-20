@@ -25,7 +25,7 @@ export default function EscrowCheckout() {
   const pay = () => {
     setPhase("processing");
     setTimeout(() => {
-      const op = `MP-${Math.floor(100000000 + Math.random() * 900000000)}`;
+      const op = `MP-${Math.floor(100000 + Math.random() * 900000)}`;
       setOpNumber(op);
       const newId = addReservation({
         propertyId: property.id,

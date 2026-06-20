@@ -60,9 +60,9 @@ export const EVENT_STATUS = {
 };
 
 // ─── Identificadores ──────────────────────────────────────────────────────
-// vaultId interno; convención: MP-734120985 → MPV-734120985.
+// vaultId interno; convención: MP-699143 → MPV-699143.
 // El vaultId NO se muestra como label visible. La Bóveda se entiende
-// asociada a la operación MP-XXXXXXX.
+// asociada a la operación MP-XXXXXX.
 export const vaultIdFromOpId = (opId) => {
   if (!opId) return null;
   return opId.replace(/^MP-/, 'MPV-');

@@ -122,23 +122,23 @@ const ESTADO_TO_STAGE = {
 // Overrides puntuales por operación: marca específicos como observados, automáticos o pendientes
 // para contar historias coherentes con cada legajo de la demo.
 const OP_OVERRIDES = {
-  'MP-475032': {
+  'MP-673033': {
     cert_dominio: { status: 'observado', note: 'Vence 24/06 — vencimiento previo a la firma del 25/06.', accion: 'Solicitar nuevo certificado a la gestoría.' },
     cert_inhibicion: { status: 'pendiente', note: 'No se registró pedido en los últimos 30 días.' },
   },
-  'MP-475011': {
+  'MP-328552': {
     apto_firma: { status: 'pendiente', note: 'Pendiente confirmación de sala con las partes.' },
     fecha_lugar: { status: 'pendiente', note: 'Sala asignada, falta confirmar horario con vendedor.' },
   },
-  'MP-474998': {
+  'MP-472736': {
     dni_partes: { status: 'observado', note: 'Vendedor pendiente de validación biométrica.', accion: 'Reenviar invitación de validación al vendedor.' },
     estado_civil: { status: 'pendiente' },
   },
-  'MP-474870': {
+  'MP-780337': {
     dni_partes: { status: 'observado', note: 'Comprador no subió DNI ni constancia de domicilio.', accion: 'Recordatorio automático al comprador.' },
     libre_deuda: { status: 'pendiente' },
   },
-  'MP-474812': {
+  'MP-722069': {
     dni_partes: { status: 'pendiente', note: 'Comprador no completó validación biométrica.' },
   },
 };
