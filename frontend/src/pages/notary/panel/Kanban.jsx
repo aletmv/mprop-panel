@@ -21,7 +21,8 @@ const HITOS = [
     label: 'Inicio de operación',
     sub: 'Apertura del legajo',
     icon: PlayCircle,
-    iconColor: 'text-sky-600 bg-sky-50 border-sky-200',
+    iconColor: 'text-[var(--stage-inicio-text)] bg-[var(--stage-inicio-soft)] border-[var(--stage-inicio)]',
+    borderColor: 'border-[var(--stage-inicio)]',
     states: ['apertura'],
   },
   {
@@ -29,7 +30,8 @@ const HITOS = [
     label: 'Expediente documental',
     sub: 'Carga y revisión inicial',
     icon: FolderOpen,
-    iconColor: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+    iconColor: 'text-[var(--stage-expediente-text)] bg-[var(--stage-expediente-soft)] border-[var(--stage-expediente)]',
+    borderColor: 'border-[var(--stage-expediente)]',
     states: ['documentos'],
   },
   {
@@ -37,7 +39,8 @@ const HITOS = [
     label: 'Due diligence',
     sub: 'Análisis registral y dominial',
     icon: Search,
-    iconColor: 'text-amber-600 bg-amber-50 border-amber-200',
+    iconColor: 'text-[var(--stage-diligence-text)] bg-[var(--stage-diligence-soft)] border-[var(--stage-diligence)]',
+    borderColor: 'border-[var(--stage-diligence)]',
     states: ['analisis', 'observado'],
   },
   {
@@ -45,7 +48,8 @@ const HITOS = [
     label: 'Pre-cierre',
     sub: 'Listos para firma',
     icon: FileSignature,
-    iconColor: 'text-lime-600 bg-lime-50 border-lime-200',
+    iconColor: 'text-[var(--stage-precierre-text)] bg-[var(--stage-precierre-soft)] border-[var(--stage-precierre)]',
+    borderColor: 'border-[var(--stage-precierre)]',
     states: ['en-firma'],
   },
   {
@@ -53,7 +57,8 @@ const HITOS = [
     label: 'Cierre y post-cierre',
     sub: 'Inscripción y archivado',
     icon: CheckCircle2,
-    iconColor: 'text-emerald-600 bg-emerald-50 border-emerald-200',
+    iconColor: 'text-[var(--stage-cierre-text)] bg-[var(--stage-cierre-soft)] border-[var(--stage-cierre)]',
+    borderColor: 'border-[var(--stage-cierre)]',
     states: ['cerrado'],
   },
 ];
@@ -457,13 +462,7 @@ const KanbanCard = ({ op }) => {
       <div className="mt-2.5 h-1 rounded-full bg-slate-100 overflow-hidden">
         <div
           className={`h-full ${
-            isInBoard
-              ? 'bg-emerald-500'
-              : op.estado === 'observado'
-                ? 'bg-red-500'
-                : op.estado === 'cerrado'
-                  ? 'bg-emerald-500'
-                  : 'bg-sky-500'
+            isInBoard || op.estado === 'cerrado' ? 'bg-emerald-500' : 'bg-sky-500'
           }`}
           style={{ width: `${op.progreso}%` }}
         />
@@ -500,7 +499,7 @@ const Column = ({ hito, items }) => {
       <Link
         to={`/escribanos/operaciones?hito=${hito.id}`}
         data-testid={`kanban-column-header-${hito.id}`}
-        className="px-3.5 py-3 flex items-center gap-2.5 border-b-[3px] border-slate-400/90 bg-white hover:bg-slate-50 transition-colors group"
+        className={`px-3.5 py-3 flex items-center gap-2.5 border-b-[3px] ${hito.borderColor} bg-white hover:bg-slate-50 transition-colors group`}
         title={`Ver todos los legajos en ${hito.label}`}
       >
         <span className={`w-8 h-8 rounded-lg grid place-items-center border ${hito.iconColor}`}>
