@@ -171,7 +171,7 @@ export const TasksBoard = ({ operaciones }) => {
         isOver ? 'ring-2 ring-primary/40 border-primary/40 bg-primary/[0.02]' : ''
       }`}
     >
-      <div className="flex items-start justify-between gap-3 flex-wrap mb-3 pr-1">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-4 pr-1">
         <div className="flex items-baseline gap-1.5 min-w-0">
           <h2 className="font-display font-bold text-[20px] text-foreground leading-tight">Tareas del día</h2>
           <span className="font-display font-bold text-[20px] text-slate-400 leading-tight">·</span>

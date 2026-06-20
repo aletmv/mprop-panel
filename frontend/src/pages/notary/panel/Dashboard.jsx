@@ -49,7 +49,7 @@ const Dashboard = () => {
           </div>
           <aside className="col-span-12 lg:col-span-4">
             <div className="card-surface p-5 h-full flex flex-col" data-testid="alerts-card-top">
-              <div className="flex items-start justify-between gap-2 mb-3 pr-1">
+              <div className="flex items-start justify-between gap-3 mb-4 pr-1">
                 <div>
                   <h2 className="font-display font-bold text-[18px] text-foreground leading-tight">Alertas</h2>
                   <div className="text-[11.5px] text-muted-foreground">Ordenadas por prioridad e impacto</div>
@@ -98,8 +98,8 @@ const Dashboard = () => {
 
         <section className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8 space-y-6">
-            <div className="card-surface p-6" data-testid="agenda-card">
-              <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
+            <div className="card-surface p-5" data-testid="agenda-card">
+              <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
                 <div>
                   <h2 className="font-display font-bold text-[18px] text-foreground flex items-center gap-2">
                     <CalendarDays className="w-[18px] h-[18px] text-primary" />
