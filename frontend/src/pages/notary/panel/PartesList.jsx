@@ -12,7 +12,10 @@ const PartesList = () => {
   const ctx = useApp();
   const { notarySession } = ctx;
   const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
-  const partes = useMemo(() => buildPartesFromOperaciones(operaciones), [operaciones]);
+  const partes = useMemo(() => {
+    const derivadas = buildPartesFromOperaciones(operaciones);
+    return [...derivadas].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+  }, [operaciones]);
   const [busqueda, setBusqueda] = useState('');
 
   const lista = useMemo(() => {
