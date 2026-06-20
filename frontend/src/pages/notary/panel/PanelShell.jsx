@@ -221,9 +221,19 @@ export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
   const { notaryLogout } = useApp();
 
   return (
-    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl overflow-hidden">
       <div className="h-16 pl-4 pr-6 lg:pr-8 flex items-center gap-4 border-b border-transparent">
-        <div className="flex-1 min-w-0">
+        {greeting && (
+          <div
+            className="absolute left-[18px] right-[18px] -top-2.5 h-[120px] pointer-events-none blur-[6px] z-0"
+            style={{
+              background:
+                'radial-gradient(60% 80% at 20% 40%, rgba(228,223,245,.55), transparent 70%), radial-gradient(55% 80% at 60% 30%, rgba(208,225,245,.5), transparent 70%), radial-gradient(50% 80% at 85% 60%, rgba(250,219,202,.45), transparent 70%)',
+            }}
+            aria-hidden="true"
+          />
+        )}
+        <div className="flex-1 min-w-0 relative z-10">
           {title && (
             <h1
               className={`font-display leading-tight truncate ${
@@ -238,11 +248,11 @@ export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
           {subtitle && <div className="text-[12px] text-muted-foreground truncate">{subtitle}</div>}
         </div>
 
-        <div className="hidden md:flex relative">
+        <div className="hidden md:flex relative z-10">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
             placeholder="Buscar legajo, parte o documento…"
-            className="pl-9 w-[320px] h-9 rounded-[14px] bg-card border border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] focus-visible:border-ring"
+            className="pl-9 w-[320px] h-[42px] rounded-[14px] bg-card border border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] focus-visible:border-ring"
           />
           <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-card border border-border text-muted-foreground">⌘K</kbd>
         </div>
@@ -250,7 +260,7 @@ export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
         <Button
           variant="ghost"
           size="icon"
-          className="relative w-[42px] h-[42px] rounded-[13px] bg-card border border-border hover:bg-muted"
+          className="relative z-10 w-[42px] h-[42px] rounded-[13px] bg-card border border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:bg-muted"
           aria-label="Notificaciones"
           data-testid="topbar-notif-btn"
         >
