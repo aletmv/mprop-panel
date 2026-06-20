@@ -401,7 +401,7 @@ const KanbanCard = ({ op }) => {
         <div
           className={`mt-2.5 flex items-center text-[11px] rounded-md pl-2 pr-1 py-1 transition-colors ${
             isInBoard
-              ? 'gap-2.5 bg-foreground text-white border border-foreground shadow-md'
+              ? 'gap-3 bg-emerald-50 text-slate-700 border border-emerald-200 shadow-[0_1px_4px_rgba(16,185,129,0.18)]'
               : 'gap-1.5 text-slate-700 bg-slate-50 border border-slate-200'
           }`}
           data-testid={`kanban-task-${op.id}`}
@@ -416,13 +416,13 @@ const KanbanCard = ({ op }) => {
           <span className="leading-snug flex-1 min-w-0">
             <span
               className={`block text-[9.5px] uppercase tracking-[0.08em] font-semibold ${
-                isInBoard ? 'text-white/70' : 'text-slate-500'
+                isInBoard ? 'text-emerald-700' : 'text-slate-500'
               }`}
             >
               Tarea en curso
             </span>
             <span
-              className={`block font-medium truncate ${isInBoard ? 'text-white' : ''}`}
+              className={`block font-medium truncate ${isInBoard ? 'text-slate-900' : ''}`}
               title={op.tareaEnCursoFull || op.tareaEnCurso}
             >
               {op.tareaEnCurso}
