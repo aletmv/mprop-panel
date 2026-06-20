@@ -400,7 +400,7 @@ const KanbanCard = ({ op }) => {
       onDragStart={onDragStart}
       data-testid={`kanban-card-${op.id}`}
       style={{ borderLeft: `3px solid ${accent}` }}
-      className="block bg-white border border-[#EEEFF2] rounded-2xl p-[15px] shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:shadow-[0_6px_16px_rgba(16,24,40,0.09)] hover:-translate-y-px transition-all group cursor-grab active:cursor-grabbing"
+      className="block bg-[#FFFFFF0D] border border-[#EEEFF2] rounded-2xl p-[15px] shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:shadow-[0_6px_16px_rgba(16,24,40,0.09)] hover:-translate-y-px transition-all group cursor-grab active:cursor-grabbing"
     >
       <div className="flex items-center justify-between gap-2 mb-[11px]">
         {op.bloqueoActor ? (
@@ -502,7 +502,7 @@ const Column = ({ hito, items }) => {
   return (
     <div
       data-testid={`kanban-column-${hito.id}`}
-      className="flex flex-col rounded-[18px] border border-[#EEEFF2] bg-white overflow-hidden"
+      className="flex flex-col rounded-[18px] overflow-hidden"
     >
       <Link
         to={`/escribanos/operaciones?hito=${hito.id}`}
@@ -524,7 +524,7 @@ const Column = ({ hito, items }) => {
           {items.length}
         </span>
       </Link>
-      <div className="p-2.5 flex flex-col gap-2.5 min-h-[331px] max-h-[585px] overflow-y-auto bg-slate-50/60 flex-1">
+      <div className="p-2.5 flex flex-col gap-2.5 min-h-[331px] max-h-[585px] overflow-y-auto flex-1">
         {items.length === 0 ? (
           <div className="flex-1 grid place-items-center text-[11.5px] text-slate-400 py-8">
             Sin legajos en este hito
