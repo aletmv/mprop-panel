@@ -546,7 +546,7 @@ const Column = ({ hito, items }) => {
           {items.length}
         </span>
       </Link>
-      <div className="p-2.5 flex flex-col gap-2.5 min-h-[260px] max-h-[460px] overflow-y-auto bg-slate-50/60 flex-1">
+      <div className="p-2.5 flex flex-col gap-2.5 min-h-[331px] max-h-[585px] overflow-y-auto bg-slate-50/60 flex-1">
         {items.length === 0 ? (
           <div className="flex-1 grid place-items-center text-[11.5px] text-slate-400 py-8">
             Sin legajos en este hito
