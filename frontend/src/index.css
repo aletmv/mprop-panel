@@ -153,26 +153,47 @@ code {
     --accent-soft: 200 100% 95%;
 
     /* Semantic */
-    --success: 142 71% 38%;
+    --success: 152 46% 43%;
     --success-foreground: 0 0% 100%;
-    --success-soft: 142 71% 95%;
+    --success-soft: 152 46% 93%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 38 92% 20%;
-    --warning-soft: 38 92% 95%;
+    --warning-soft: 38 80% 95%;
 
-    --destructive: 0 78% 52%;
+    --destructive: 3 74% 55%;
     --destructive-foreground: 0 0% 100%;
-    --destructive-soft: 0 84% 96%;
+    --destructive-soft: 3 74% 95%;
 
-    --info: 200 100% 45%;
-    --info-soft: 200 100% 95%;
+    --info: 207 68% 55%;
+    --info-soft: 207 68% 95%;
 
     --border: 210 14% 89%;
     --input: 210 14% 89%;
     --ring: 200 100% 45%;
 
     --radius: 0.75rem;
+
+    /* ── Etapas del legajo (design system nuevo, sin consumidores todavía) ── */
+    --stage-inicio: #94A3B8;
+    --stage-inicio-soft: #F1F4F7;
+    --stage-inicio-text: #64748B;
+
+    --stage-expediente: #38BDF8;
+    --stage-expediente-soft: #E0F7FE;
+    --stage-expediente-text: #0284C7;
+
+    --stage-diligence: #E8A838;
+    --stage-diligence-soft: #FEF5E0;
+    --stage-diligence-text: #D97706;
+
+    --stage-precierre: #3B82F6;
+    --stage-precierre-soft: #DBEAFE;
+    --stage-precierre-text: #2563EB;
+
+    --stage-cierre: #10B981;
+    --stage-cierre-soft: #D1FAE5;
+    --stage-cierre-text: #059669;
 
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: hsl(var(--background));
