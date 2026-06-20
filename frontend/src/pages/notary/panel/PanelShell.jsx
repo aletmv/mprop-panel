@@ -239,7 +239,7 @@ export const Topbar = ({ title, subtitle, actions }) => {
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="h-16 px-6 lg:px-8 flex items-center gap-4">
         <div className="flex-1 min-w-0">
-          {title && <h1 className="font-display font-bold text-[18px] text-foreground leading-tight truncate">{title}</h1>}
+          {title && <h1 className="font-display font-bold text-[18px] text-foreground leading-tight">{title}</h1>}
           {subtitle && <div className="text-[12px] text-muted-foreground truncate">{subtitle}</div>}
         </div>
 
