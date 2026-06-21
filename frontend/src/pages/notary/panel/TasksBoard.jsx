@@ -29,7 +29,7 @@ const TaskItem = ({ op, idx, dragIdx, onDragStart, onDragOver, onDragEnd, onOpen
       onDragOver={(e) => onDragOver(e, idx)}
       onDragEnd={onDragEnd}
       data-testid={`task-item-${op.id}`}
-      className={`group relative overflow-hidden flex items-center gap-3.5 bg-white border border-[#EEEFF2] rounded-2xl pl-5 pr-4 py-4 hover:border-[#DDE6F5] hover:shadow-sm transition-all cursor-grab active:cursor-grabbing ${
+      className={`group relative shrink-0 overflow-hidden flex items-center gap-3.5 bg-white border border-[#EEEFF2] rounded-2xl pl-5 pr-4 py-4 hover:border-[#DDE6F5] hover:shadow-sm transition-all cursor-grab active:cursor-grabbing snap-start ${
         dragIdx === idx ? 'opacity-50' : ''
       }`}
     >
@@ -227,7 +227,7 @@ export const TasksBoard = ({ operaciones }) => {
         </div>
       ) : (
         <ol
-          className="flex flex-col gap-2.5 max-h-[420px] overflow-y-auto pr-1"
+          className="flex flex-col gap-2.5 max-h-[420px] overflow-y-auto pr-1 snap-y snap-mandatory scroll-pt-[2px]"
           data-testid="tasks-list"
         >
           {pendingTasks.map((opId, idx) => (
