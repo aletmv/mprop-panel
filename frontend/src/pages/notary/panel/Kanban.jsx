@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, ShieldAlert, FileText, Clock, ChevronRight, Plus, Minus, Calendar,
+  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, ShieldAlert, FileText, Clock, ChevronRight, Plus, Minus, Check, Calendar,
   ExternalLink,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { alertas as ALERTAS_MOCK, estadoLabel, riesgoLabel, bloqueoLabel } from './mockData';
 import { DND_TYPE } from './dndTypes';
 import { dayTasks, useDayTasks } from './dayTasksStore';
@@ -234,26 +233,19 @@ const LineaDePasesContent = ({ op, onNavigate }) => {
   );
 };
 
-// Trigger soccer del Kanban: badge sin pill clickeable que abre el popover
-// "Línea de pases". Popover controlado con useState para evitar conflictos
-// con el Link envolvente del KanbanCard.
+// Trigger soccer del Kanban: badge sin pill que abre con hover el popover
+// "Línea de pases".
 const SoccerBloqueoTrigger = ({ op, navigate }) => {
-  const [open, setOpen] = useState(false);
   const isBloqueado = op.bloqueoActor === 'bloqueado';
   const visual = ESTADO_STAGE_VISUAL[op.estado] || ESTADO_STAGE_VISUAL.apertura;
-  const handleClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setOpen((v) => !v);
-  };
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <HoverCard openDelay={120} closeDelay={80}>
+      <HoverCardTrigger asChild>
         <button
           type="button"
           data-testid={`bloqueo-badge-${op.id}`}
           title="Ver línea de pases"
-          onClick={handleClick}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
@@ -264,8 +256,8 @@ const SoccerBloqueoTrigger = ({ op, navigate }) => {
         >
           <BloqueoNameOnly actor={op.bloqueoActor} opId={op.id} tone textClassName="text-[11px]" iconClassName="w-3 h-3" />
         </button>
-      </PopoverTrigger>
-      <PopoverContent
+      </HoverCardTrigger>
+      <HoverCardContent
         align="start"
         side="bottom"
         sideOffset={6}
@@ -274,13 +266,10 @@ const SoccerBloqueoTrigger = ({ op, navigate }) => {
       >
         <LineaDePasesContent
           op={op}
-          onNavigate={() => {
-            setOpen(false);
-            navigate(`/escribanos/operaciones/${op.id}?tab=timeline`);
-          }}
+          onNavigate={() => navigate(`/escribanos/operaciones/${op.id}?tab=timeline`)}
         />
-      </PopoverContent>
-    </Popover>
+      </HoverCardContent>
+    </HoverCard>
   );
 };
 
@@ -397,7 +386,8 @@ export const AlertChip = ({ op, size = 'sm' }) => {
 const KanbanCard = ({ op }) => {
   const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
   const tasksState = useDayTasks();
-  const isInBoard = tasksState.pending.includes(op.id) || tasksState.done.includes(op.id);
+  const isDone = tasksState.done.includes(op.id);
+  const isInBoard = tasksState.pending.includes(op.id) || isDone;
   const accent = (ESTADO_STAGE_VISUAL[op.estado] || ESTADO_STAGE_VISUAL.apertura).accent;
 
   const onDragStart = (e) => {
@@ -426,8 +416,12 @@ const KanbanCard = ({ op }) => {
       onDragStart={onDragStart}
       data-testid={`kanban-card-${op.id}`}
       style={{ borderLeft: `3px solid ${accent}` }}
-      className={`block bg-[#FFFFFF0D] border border-[#EEEFF2] rounded-2xl p-[15px] transition-all group cursor-grab active:cursor-grabbing hover:shadow-[0_6px_16px_rgba(16,24,40,0.09)] hover:-translate-y-px ${
-        isInBoard ? 'shadow-[0_6px_16px_rgba(16,24,40,0.09)] -translate-y-px' : 'shadow-[0_1px_2px_rgba(16,24,40,0.04)]'
+      className={`block border border-[#EEEFF2] rounded-2xl p-[15px] transition-all group cursor-grab active:cursor-grabbing hover:shadow-[0_6px_16px_rgba(16,24,40,0.09)] hover:-translate-y-px ${
+        isDone
+          ? 'bg-slate-50 shadow-[0_1px_2px_rgba(16,24,40,0.04)]'
+          : isInBoard
+          ? 'bg-[#FFFFFF0D] shadow-[0_6px_16px_rgba(16,24,40,0.09)] -translate-y-px'
+          : 'bg-[#FFFFFF0D] shadow-[0_1px_2px_rgba(16,24,40,0.04)]'
       }`}
     >
       <div className="flex items-center justify-between gap-2 mb-[11px]">
@@ -455,7 +449,7 @@ const KanbanCard = ({ op }) => {
         >
           <span
             className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 self-center ${
-              isInBoard ? 'pase-current-dot' : 'bg-slate-300'
+              isDone ? 'bg-emerald-500' : isInBoard ? 'pase-current-dot' : 'bg-slate-300'
             }`}
             aria-hidden
           />
@@ -471,7 +465,18 @@ const KanbanCard = ({ op }) => {
             </span>
             {isInBoard && <span className="sr-only">Ya está en tu día</span>}
           </span>
-          {isInBoard ? (
+          {isDone ? (
+            <button
+              type="button"
+              onClick={onRemoveClick}
+              data-testid={`kanban-remove-task-${op.id}`}
+              title="Tarea completada"
+              aria-label="Tarea completada"
+              className="shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-emerald-50 border border-slate-200 text-emerald-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+            >
+              <Check className="w-3.5 h-3.5" strokeWidth={2.6} />
+            </button>
+          ) : isInBoard ? (
             <button
               type="button"
               onClick={onRemoveClick}
@@ -552,7 +557,7 @@ const Column = ({ hito, items }) => {
           {items.length}
         </span>
       </Link>
-      <div className="p-2.5 flex flex-col gap-2.5 min-h-[331px] max-h-[585px] overflow-y-auto flex-1">
+      <div className="py-2.5 flex flex-col gap-2.5 min-h-[331px] max-h-[585px] overflow-y-auto flex-1">
         {items.length === 0 ? (
           <div className="flex-1 grid place-items-center text-[11.5px] text-slate-400 py-8">
             Sin legajos en este hito

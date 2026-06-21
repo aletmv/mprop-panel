@@ -126,7 +126,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
       <nav className={`mt-3 space-y-0.5 ${collapsed ? 'px-1.5' : 'px-3'}`}>
         {!collapsed && (
-          <div className="px-3 pb-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+          <div className="px-3 pb-1 text-[10px] uppercase tracking-[0.16em] text-[#B3B8BF] font-semibold">
             Workspace
           </div>
         )}
@@ -137,7 +137,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
       <nav className={`mt-6 space-y-0.5 ${collapsed ? 'px-1.5' : 'px-3'}`}>
         {!collapsed && (
-          <div className="px-3 pb-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+          <div className="px-3 pb-1 text-[10px] uppercase tracking-[0.16em] text-[#B3B8BF] font-semibold">
             Sistema
           </div>
         )}

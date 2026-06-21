@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { parteIdFromPersona, telefonoDemoFromPersona, whatsappLinkFromTelefono } from './partesData';
 import { WhatsAppIcon } from './WhatsAppIcon';
 
@@ -114,7 +114,6 @@ const Circle = ({ size, parte, rol, opId, navigate, withPopover }) => {
   const hover = 'hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white focus:outline-none';
   const content = parte?.avatar || '—';
   const title = `${rol}: ${parte?.nombre || '—'}`;
-  const [open, setOpen] = useState(false);
 
   if (!opId) {
     return (
@@ -126,17 +125,12 @@ const Circle = ({ size, parte, rol, opId, navigate, withPopover }) => {
 
   if (withPopover) {
     const parteId = parteIdFromPersona(parte);
-    const handleTriggerClick = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setOpen((v) => !v);
-    };
     return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+      <HoverCard openDelay={120} closeDelay={80}>
+        <HoverCardTrigger asChild>
           <button
             type="button"
-            onClick={handleTriggerClick}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
             onMouseDown={(e) => e.stopPropagation()}
             onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
             title={title}
@@ -146,8 +140,8 @@ const Circle = ({ size, parte, rol, opId, navigate, withPopover }) => {
           >
             {content}
           </button>
-        </PopoverTrigger>
-        <PopoverContent
+        </HoverCardTrigger>
+        <HoverCardContent
           align="start"
           side="bottom"
           sideOffset={6}
@@ -158,13 +152,10 @@ const Circle = ({ size, parte, rol, opId, navigate, withPopover }) => {
             parte={parte}
             rol={rol}
             opId={opId}
-            onNavigate={() => {
-              setOpen(false);
-              navigate(`/escribanos/partes/${parteId}`);
-            }}
+            onNavigate={() => navigate(`/escribanos/partes/${parteId}`)}
           />
-        </PopoverContent>
-      </Popover>
+        </HoverCardContent>
+      </HoverCard>
     );
   }
 

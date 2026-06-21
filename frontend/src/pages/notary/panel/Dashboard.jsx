@@ -144,33 +144,46 @@ const Dashboard = () => {
                     {firmasAMostrar.length}
                   </span>
                 </div>
-                <div
-                  className="inline-flex bg-[#F3F4F6] rounded-[11px] p-[3px] gap-0.5"
-                  data-testid="agenda-toggle"
-                  role="tablist"
-                >
-                  <button
-                    role="tab"
-                    aria-selected={agendaTab === 'hoy'}
-                    data-testid="agenda-tab-hoy"
-                    onClick={() => setAgendaTab('hoy')}
-                    className={`px-4 py-[7px] text-[12.5px] font-semibold rounded-[9px] transition-colors ${
-                      agendaTab === 'hoy' ? 'bg-card text-foreground shadow-sm' : 'text-[#9AA0A8] hover:text-foreground'
-                    }`}
+                <div className="flex items-center gap-3.5">
+                  <div className="flex items-center gap-3.5" data-testid="agenda-status-legend">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-success">
+                      <span className="w-2 h-2 rounded-full bg-success" aria-hidden="true" /> Confirmada
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-destructive">
+                      <span className="w-2 h-2 rounded-full bg-destructive" aria-hidden="true" /> Observada
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-warning-foreground">
+                      <span className="w-2 h-2 rounded-full bg-warning" aria-hidden="true" /> Tentativa
+                    </span>
+                  </div>
+                  <div
+                    className="inline-flex bg-[#F3F4F6] rounded-[11px] p-[3px] gap-0.5"
+                    data-testid="agenda-toggle"
+                    role="tablist"
                   >
-                    Hoy
-                  </button>
-                  <button
-                    role="tab"
-                    aria-selected={agendaTab === 'proximas'}
-                    data-testid="agenda-tab-proximas"
-                    onClick={() => setAgendaTab('proximas')}
-                    className={`px-4 py-[7px] text-[12.5px] font-semibold rounded-[9px] transition-colors ${
-                      agendaTab === 'proximas' ? 'bg-card text-foreground shadow-sm' : 'text-[#9AA0A8] hover:text-foreground'
-                    }`}
-                  >
-                    Próximas firmas
-                  </button>
+                    <button
+                      role="tab"
+                      aria-selected={agendaTab === 'hoy'}
+                      data-testid="agenda-tab-hoy"
+                      onClick={() => setAgendaTab('hoy')}
+                      className={`px-4 py-[7px] text-[12.5px] font-semibold rounded-[9px] transition-colors ${
+                        agendaTab === 'hoy' ? 'bg-card text-foreground shadow-sm' : 'text-[#9AA0A8] hover:text-foreground'
+                      }`}
+                    >
+                      Hoy
+                    </button>
+                    <button
+                      role="tab"
+                      aria-selected={agendaTab === 'proximas'}
+                      data-testid="agenda-tab-proximas"
+                      onClick={() => setAgendaTab('proximas')}
+                      className={`px-4 py-[7px] text-[12.5px] font-semibold rounded-[9px] transition-colors ${
+                        agendaTab === 'proximas' ? 'bg-card text-foreground shadow-sm' : 'text-[#9AA0A8] hover:text-foreground'
+                      }`}
+                    >
+                      Próximas firmas
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -224,24 +237,13 @@ const Dashboard = () => {
                 </div>
               )}
 
-              <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-3.5" data-testid="agenda-status-legend">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-success">
-                    <span className="w-2 h-2 rounded-full bg-success" aria-hidden="true" /> Confirmada
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-destructive">
-                    <span className="w-2 h-2 rounded-full bg-destructive" aria-hidden="true" /> Observada
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-warning-foreground">
-                    <span className="w-2 h-2 rounded-full bg-warning" aria-hidden="true" /> Tentativa
-                  </span>
-                </div>
+              <div className="mt-4 flex items-center justify-end gap-3 flex-wrap">
                 <Link
                   to="/escribanos/agenda"
-                  className="text-[12px] font-semibold text-primary hover:underline"
+                  className="text-[12.5px] font-semibold text-[#A6ABB3] hover:text-primary transition-colors"
                   data-testid="agenda-card-link-agenda"
                 >
-                  Ver agenda completa →
+                  Ver agenda completa
                 </Link>
               </div>
             </div>
