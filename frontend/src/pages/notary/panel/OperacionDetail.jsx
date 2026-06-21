@@ -10,8 +10,9 @@ import {
   CalendarClock, ShieldCheck,
 } from 'lucide-react';
 import {
-  operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, eventos, documentos, estadoLabel, riesgoLabel,
+  operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, estadoLabel, riesgoLabel,
 } from './mockData';
+import { getDocumentosByOp, getEventosByOp } from './legajoDocsEventos';
 import { buildNotaryOperaciones } from './operacionesAdapter';
 import { BloqueoBadge } from './Kanban';
 import TimelineProceso from './TimelineProceso';
@@ -305,6 +306,15 @@ const OperacionDetail = () => {
   const r = riesgoLabel[op.riesgo];
   const observado = op.estado === 'observado';
   const opAlertas = alertasAll.filter((a) => a.operacionId === op.id);
+  // Documentos y eventos scoped por legajo (P0 demo integrity). Conteos y lista
+  // visible salen SIEMPRE del mismo array scoped.
+  const docs = getDocumentosByOp(op);
+  const evs = getEventosByOp(op);
+  const docCounts = {
+    revisado: docs.filter((d) => d.estado === 'revisado').length,
+    alerta: docs.filter((d) => d.estado === 'alerta').length,
+    pendiente: docs.filter((d) => d.estado === 'pendiente').length,
+  };
   const pasoIdx = pasos.findIndex((p) => p === op.pasoActual);
   const fase = pasoIdx >= 0 ? pasoIdx + 1 : 1;
   const [searchParams] = useSearchParams();
@@ -515,7 +525,7 @@ const OperacionDetail = () => {
               {[
                 { v: 'resumen', label: 'Resumen' },
                 { v: 'partes', label: 'Partes e inmueble' },
-                { v: 'documentos', label: `Documentos · ${documentos.length}` },
+                { v: 'documentos', label: `Documentos · ${docs.length}` },
                 { v: 'timeline', label: 'Actividad' },
                 { v: 'operativa', label: 'Operativa' },
                 { v: 'boveda', label: 'Bóveda' },
@@ -575,9 +585,9 @@ const OperacionDetail = () => {
                     </div>
                     <div className="p-5 space-y-2.5">
                       {[
-                        { label: 'Revisados', n: 6, v: 'success' },
-                        { label: 'Con alerta', n: 1, v: 'destructive' },
-                        { label: 'Pendientes', n: 1, v: 'warning' },
+                        { label: 'Revisados', n: docCounts.revisado, v: 'success' },
+                        { label: 'Con alerta', n: docCounts.alerta, v: 'destructive' },
+                        { label: 'Pendientes', n: docCounts.pendiente, v: 'warning' },
                       ].map((s) => (
                         <div key={s.label} className="flex items-center justify-between py-1">
                           <StatusDot variant={s.v} label={s.label} />
@@ -680,7 +690,7 @@ const OperacionDetail = () => {
                   <div>
                     <h2 className="text-base font-semibold text-slate-900">Checklist documental</h2>
                     <div className="text-xs text-slate-500 mt-0.5">
-                      8 documentos · 6 revisados · 1 con alerta · 1 pendiente
+                      {docs.length} documento{docs.length === 1 ? '' : 's'} · {docCounts.revisado} revisado{docCounts.revisado === 1 ? '' : 's'} · {docCounts.alerta} con alerta · {docCounts.pendiente} pendiente{docCounts.pendiente === 1 ? '' : 's'}
                     </div>
                   </div>
                   <Button
@@ -692,7 +702,7 @@ const OperacionDetail = () => {
                   </Button>
                 </div>
                 <div className="divide-y divide-slate-100">
-                  {documentos.map((d) => {
+                  {docs.map((d) => {
                     const cfg = {
                       revisado: { icon: CheckCircle2, dot: 'success', label: 'Revisado', tint: 'text-emerald-600' },
                       alerta: { icon: AlertTriangle, dot: 'destructive', label: 'Atención', tint: 'text-red-600' },
@@ -732,7 +742,7 @@ const OperacionDetail = () => {
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-semibold text-slate-900">Línea de tiempo</h2>
-                    <div className="text-xs text-slate-500 mt-0.5">{eventos.length} eventos auditables</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{evs.length} eventos auditables</div>
                   </div>
                   <Button
                     variant="ghost"
@@ -773,7 +783,7 @@ const OperacionDetail = () => {
 
                 <ol className="p-5 relative">
                   <span className="absolute left-[33px] top-7 bottom-7 w-px bg-slate-200" aria-hidden />
-                  {eventos.map((ev, idx) => {
+                  {evs.map((ev, idx) => {
                     const Icon = {
                       documento: FileText,
                       alerta: AlertTriangle,
