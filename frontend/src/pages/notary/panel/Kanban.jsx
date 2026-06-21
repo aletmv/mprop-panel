@@ -389,7 +389,35 @@ export const AlertChip = ({ op, size = 'sm' }) => {
   );
 };
 
-// Pill de "Tarea en curso" con el dot de estado + acción agregar/quitar/completar
+// Estado operativo derivado del pase formal (bloqueoActor) + estado de la
+// operación, independiente de si ya está o no en Tareas del día. Determina
+// el label y qué botón (si alguno) corresponde mostrar en el pill.
+// - "Requiere revisión" es un modificador de label (no de botón): un legajo
+//   observado/riesgo alto sigue mostrando +/- según a quién le toque actuar.
+const getTareaEstado = (op, isInBoard, isDone) => {
+  const isEscribania = op.bloqueoActor === 'escribania';
+  const enRevision = op.estado === 'observado' || op.riesgo === 'alto';
+
+  let label;
+  if (enRevision) label = 'Requiere revisión';
+  else if (isEscribania && isInBoard) label = 'En tu día';
+  else if (isEscribania) label = 'Acción requerida';
+  else label = 'En espera';
+
+  // Botón: +/- son exclusivos de la escribanía (es la única que puede sumar
+  // la tarea formal a su propio repo operativo). Si la pelota está en otro
+  // actor no se ofrece ninguna acción todavía — el "+ seguimiento" (tarea
+  // custom para destrabar) queda para una fase 2 con soporte real de texto
+  // propio, no como alias de agregar la tarea del flow duro.
+  let boton = 'none';
+  if (isDone) boton = 'check';
+  else if (isEscribania && isInBoard) boton = 'minus';
+  else if (isEscribania) boton = 'plus';
+
+  return { label, boton, enRevision };
+};
+
+// Pill de "Próximo paso" con el dot de estado + acción agregar/quitar/completar
 // al repo de tareas del día. Mismo componente para Kanban y Lista, así ambas
 // vistas comparten exactamente el mismo comportamiento.
 const TareaEnCursoPill = ({ op }) => {
@@ -398,6 +426,8 @@ const TareaEnCursoPill = ({ op }) => {
   const isInBoard = tasksState.pending.includes(op.id) || isDone;
 
   if (!op.tareaEnCurso) return null;
+
+  const { label, boton, enRevision } = getTareaEstado(op, isInBoard, isDone);
 
   const onAddClick = (e) => {
     e.preventDefault();
@@ -429,8 +459,12 @@ const TareaEnCursoPill = ({ op }) => {
         aria-hidden
       />
       <span className="leading-snug flex-1 min-w-0">
-        <span className="block text-[9.5px] uppercase tracking-[0.08em] font-semibold text-[#B3B8BF]">
-          Tarea en curso
+        <span
+          className={`block text-[9.5px] uppercase tracking-[0.08em] font-semibold ${
+            enRevision ? 'text-warning-foreground' : 'text-[#B3B8BF]'
+          }`}
+        >
+          {label}
         </span>
         <span
           className={`block font-semibold truncate text-[12.5px] mt-0.5 ${isInBoard ? 'text-slate-900' : 'text-[#3A4048]'}`}
@@ -440,7 +474,7 @@ const TareaEnCursoPill = ({ op }) => {
         </span>
         {isInBoard && <span className="sr-only">Ya está en tu día</span>}
       </span>
-      {isDone ? (
+      {boton === 'check' ? (
         <button
           type="button"
           onClick={onRemoveClick}
@@ -451,7 +485,7 @@ const TareaEnCursoPill = ({ op }) => {
         >
           <Check className="w-3.5 h-3.5" strokeWidth={2.6} />
         </button>
-      ) : isInBoard ? (
+      ) : boton === 'minus' ? (
         <button
           type="button"
           onClick={onRemoveClick}
@@ -462,7 +496,7 @@ const TareaEnCursoPill = ({ op }) => {
         >
           <Minus className="w-3.5 h-3.5" strokeWidth={2.4} />
         </button>
-      ) : (
+      ) : boton === 'plus' ? (
         <button
           type="button"
           onClick={onAddClick}
@@ -473,7 +507,7 @@ const TareaEnCursoPill = ({ op }) => {
         >
           <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
         </button>
-      )}
+      ) : null}
     </div>
   );
 };
@@ -601,7 +635,7 @@ const InlineList = ({ operaciones }) => {
         <table className="w-full text-[13px]" data-testid="legajos-inline-list">
           <thead className="sticky top-0 z-10">
             <tr className="bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
-              {['Etapa', 'Legajo', 'Responsable', 'Tarea en curso', 'Partes', 'Riesgo', 'Firma'].map((h) => (
+              {['Etapa', 'Legajo', 'Responsable', 'Próximo paso', 'Partes', 'Riesgo', 'Firma'].map((h) => (
                 <th
                   key={h}
                   className={`py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 ${
