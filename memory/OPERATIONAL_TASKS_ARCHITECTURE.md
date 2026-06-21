@@ -295,3 +295,109 @@ por la unidad `OperationalTask` que les da contexto y trazabilidad.
 - **Enviar WhatsApp/email directamente** sin pasar por una `OperationalTask` (que da contexto) ni por la
   aprobación humana que ya exige la sección 5, regla 5 — un envío automático nunca debe saltarse la unidad
   operativa ni el `requiresApproval`.
+
+## 10. `OperationalEvent` vs `OperationalTask`: event-informed, task-driven
+
+> Decisión cerrada tras evaluar si convenía invertir el modelo hacia "todo es un evento, la tarea es una
+> proyección derivada". **No se reemplaza `OperationalTask` por `OperationalEvent`.** La dirección es un modelo
+> híbrido: *event-informed, task-driven*. Esta sección documenta esa decisión — no implementa nada.
+
+### 10.1 Qué es `OperationalEvent`
+
+Un **hecho, detección o registro inmutable**: algo que pasó o algo que el sistema detectó, en un momento dado, sin
+estado propio que evolucione. Ejemplos: "el DNI del vendedor está vencido", "el comprador respondió un WhatsApp",
+"venció el plazo de un certificado", "el legajo entró a Pre-cierre". Un `OperationalEvent` no se completa, no se
+reabre, no se cancela — ocurrió o se detectó, y eso no cambia.
+
+### 10.2 Qué es `OperationalTask` / `OperationalWorkItem`
+
+La **unidad accionable con estado**: lo que organiza qué hay que hacer, qué está pendiente, qué se completó, qué
+se canceló, qué está agendado para hoy. Es exactamente el modelo ya definido en la sección 3.2 — esta sección no
+le cambia el shape, solo aclara su relación con `OperationalEvent`. `OperationalWorkItem` es un nombre alternativo
+para el mismo concepto (no una entidad distinta) — se usa indistintamente según convenga al hablar de "trabajo
+pendiente" vs "tarea".
+
+### 10.3 Por qué no hacemos event-only
+
+Si todo fuera `OperationalEvent` y la "tarea" fuera solo una proyección/función derivada en el momento de
+consultarla, se perdería la capacidad de responder con un dato simple y persistente preguntas como "¿esto ya
+está pendiente, completado o cancelado?", "¿está agendado para hoy?", "¿quién lo marcó como hecho y cuándo?".
+Esas respuestas requieren un registro que **vive y se actualiza in place**, no una proyección recalculada sobre
+un log de eventos inmutables. Un modelo event-only también complica innecesariamente lo simple: completar una
+tarea pasaría a ser "agregar un evento de tipo completado y inferir el estado actual reconstruyendo el historial",
+en vez de "cambiar un campo `status`".
+
+### 10.4 Por qué `OperationalTask` no puede ser solo una función derivada sin estado
+
+Una función derivada (ej. "calcular qué tareas existen a partir de los eventos") no tiene identidad propia ni
+puede persistir decisiones humanas como "completé esto", "lo cancelé", "lo reagendé para hoy" — esas son
+mutaciones de estado que necesitan vivir en algún lado entre una consulta y la siguiente. Sin una entidad con
+estado persistido, cada acción del usuario (completar, reabrir, eliminar) no tendría dónde escribirse.
+
+### 10.5 Cómo una función/regla/IA puede sugerir o crear tasks
+
+Una regla de negocio, un detector del sistema, o un modelo de IA puede **leer `OperationalEvent`s** y, a partir de
+ahí, **crear una `OperationalTask`** (con `origin: 'system'` o `'ai'`, ver sección 9.3) o una `AutomationSuggestion`
+asociada a una tarea ya existente. El evento informa la decisión; la tarea es la decisión materializada con
+estado propio. De ahí "event-informed, task-driven": los eventos alimentan la inteligencia que decide qué hacer,
+pero lo que efectivamente hay que hacer (y su ciclo de vida) vive en la tarea.
+
+### 10.6 Por qué una task necesita identidad y lifecycle
+
+```
+status: 'pending' | 'done' | 'cancelled'
+scheduledForDate   // cuándo se planeó trabajarla — separado de "existe"
+completedAt        // cuándo efectivamente se resolvió — separado de "está agendada"
+```
+
+Estos campos (ya implementados en `operationalTasksStore.js`, sección 7) son exactamente lo que un evento
+inmutable no puede ofrecer: una tarea puede pasar por varios estados a lo largo del tiempo, reagendarse,
+reabrirse — un evento no.
+
+### 10.7 Relación futura
+
+```
+Finding / OperationalEvent
+  → OperationalTask / OperationalWorkItem   (se decide que hay que actuar, con estado propio)
+    → AutomationSuggestion                   (se sugiere cómo, opcionalmente con aprobación)
+      → MessageDraft / Communication         (el contacto real, draft/enviado/fallido)
+        → Timeline                            (queda registrado lo que pasó)
+```
+
+(Misma cadena de la sección 9.6, con `OperationalEvent` ahora explícito como el primer eslabón — "Finding" y
+"OperationalEvent" son, en la práctica, el mismo concepto.)
+
+### 10.8 Separación de responsabilidades
+
+| Entidad | Responde a |
+|---|---|
+| `OperationalEvent` | ¿Qué pasó? ¿Qué se detectó? |
+| `OperationalTask` / `OperationalWorkItem` | ¿Qué hay que hacer? ¿Qué está pendiente? |
+| `Communication` / `MessageDraft` | ¿Hubo (o habrá) contacto real con alguien? |
+| `Timeline` | ¿Cuál es la narrativa/auditoría de todo esto? |
+| "Tareas del día" | ¿Qué de todo lo pendiente está seleccionado para trabajar hoy? (vista filtrada, no entidad) |
+
+### 10.9 Backend futuro orientativo (no implementar)
+
+Si esto migra a backend real, la separación de tablas/colecciones sugerida es:
+
+- `operational_events` — append-only, inmutable.
+- `operational_tasks` / `operational_work_items` — mutable, con `status`/`scheduledForDate`/`completedAt`.
+
+El `Timeline` que consume la UI se construye **a partir de** `operational_events` (y de los cambios de estado de
+tasks/communications que se quieran narrar), pero **nunca es la fuente de verdad operativa** — es una vista de
+lectura/auditoría, igual que "Tareas del día" es una vista filtrada sobre tasks.
+
+### 10.10 Anti-patterns (extienden la lista de la sección 9.7)
+
+- **Todo es timeline**: tratar el log de eventos como si fuera el lugar donde vive el estado operativo — el
+  Timeline es narrativa, no fuente de verdad (sección 10.8).
+- **Todo es evento**: el extremo opuesto — modelar la tarea como una proyección derivada sin estado propio
+  (sección 10.3/10.4). Ninguno de los dos extremos reemplaza al modelo híbrido.
+- **Task inflation** (ya en 9.7): generar una `OperationalTask` por cada `OperationalEvent` sin criterio.
+- **IA que manda WhatsApp directo** sin pasar por una `OperationalTask` ni por aprobación humana — un
+  `OperationalEvent` detectado por IA puede sugerir, nunca ejecutar una comunicación real por su cuenta.
+- **`follow_up` como entidad base**: sigue siendo un `subtype` de `OperationalTask`, nunca el modelo (regla 7,
+  sección 5, reafirmada acá).
+- **`dayTasks` (pending/done) como fuente de verdad**: sigue siendo una vista/selección de hoy sobre tareas
+  formales del checklist — no es ni debe convertirse en el almacén general de "qué hay que hacer" del sistema.
