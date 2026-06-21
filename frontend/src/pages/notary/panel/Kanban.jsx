@@ -480,12 +480,12 @@ const SeguimientoMenu = ({ op, compact = false }) => {
           </p>
         </div>
         <div className="p-2">
-          {followUpPresets(actorLabel).map((preset) => (
+          {followUpPresets(actorLabel).map((preset, idx) => (
             <button
               key={preset}
               type="button"
               onClick={() => crear(preset)}
-              data-testid={`seguimiento-preset-${op.id}`}
+              data-testid={`seguimiento-preset-${op.id}-${idx}`}
               className="w-full text-left px-2.5 py-2 rounded-md text-[12.5px] text-slate-700 hover:bg-sky-50 transition-colors"
             >
               {preset}

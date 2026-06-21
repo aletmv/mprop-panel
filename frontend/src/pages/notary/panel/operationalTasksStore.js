@@ -116,8 +116,20 @@ export const operationalTasks = {
     );
   },
 
+  // Restaurar = volver a poner la tarea en el día de hoy, no solo marcarla
+  // pending — por eso reagenda scheduledForDate/addedToTodayAt. Si no se
+  // reagendara, una tarea restaurada en un día distinto al que tenía
+  // agendado quedaría pending en el dato pero invisible en "Tareas del día"
+  // (que filtra por scheduledForDate === hoy).
   reopen(id) {
-    setState(state.map((t) => (t.id === id ? { ...t, status: 'pending', completedAt: null } : t)));
+    const now = new Date().toISOString();
+    setState(
+      state.map((t) =>
+        t.id === id
+          ? { ...t, status: 'pending', completedAt: null, scheduledForDate: todayDateString(), addedToTodayAt: now }
+          : t
+      )
+    );
   },
 
   cancel(id) {
