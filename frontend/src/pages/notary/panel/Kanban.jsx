@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, ShieldAlert, FileText, Clock, ChevronRight, Plus, Minus, Check, Calendar,
-  ExternalLink,
+  ExternalLink, MessageCirclePlus,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { alertas as ALERTAS_MOCK, riesgoLabel, bloqueoLabel } from './mockData';
 import { DND_TYPE } from './dndTypes';
 import { dayTasks, useDayTasks } from './dayTasksStore';
+import { operationalTasks } from './operationalTasksStore';
+import { followUpPresets } from './followUpPresets';
 import { HourglassFalling } from './HourglassFalling';
 import { PartiesPair } from './PartiesPair';
 
@@ -406,21 +409,117 @@ const getTareaEstado = (op, isInBoard, isDone) => {
 
   // Botón: +/- son exclusivos de la escribanía (es la única que puede sumar
   // la tarea formal a su propio repo operativo). Si la pelota está en otro
-  // actor no se ofrece ninguna acción todavía — el "+ seguimiento" (tarea
-  // custom para destrabar) queda para una fase 2 con soporte real de texto
-  // propio, no como alias de agregar la tarea del flow duro.
+  // actor no se ofrece esa acción — en su lugar se ofrece "+ seguimiento"
+  // (OperationalTask subtype: 'follow_up'), una tarea custom distinta del
+  // flow duro, nunca un alias de agregar la tarea formal.
   let boton = 'none';
   if (isDone) boton = 'check';
   else if (isEscribania && isInBoard) boton = 'minus';
   else if (isEscribania) boton = 'plus';
+  else boton = 'seguimiento';
 
-  return { label, boton, enRevision };
+  return { label, boton, enRevision, isEscribania };
+};
+
+// Menú de creación de OperationalTask subtype: 'follow_up'. Click (no hover:
+// es una acción deliberada), con presets interpolando el actor actual +
+// input libre. Nace agendada para hoy (scheduledForDate/addedToTodayAt) —
+// ver memory/OPERATIONAL_TASKS_ARCHITECTURE.md sección 7.
+const SeguimientoMenu = ({ op, compact = false }) => {
+  const [open, setOpen] = useState(false);
+  const [texto, setTexto] = useState('');
+  const actorLabel = bloqueoLabel[op.bloqueoActor]?.short || 'la otra parte';
+
+  const crear = (title) => {
+    if (!title.trim()) return;
+    operationalTasks.create({
+      opId: op.id,
+      title: title.trim(),
+      subtype: 'follow_up',
+      relatedActorId: null,
+      relatedActorRole: op.bloqueoActor,
+      relatedActorLabel: actorLabel,
+    });
+    setTexto('');
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((prev) => !prev); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          data-testid={`seguimiento-trigger-${op.id}`}
+          title="Crear seguimiento"
+          aria-label="Crear seguimiento"
+          className={
+            compact
+              ? 'shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5'
+              : 'shrink-0 inline-flex items-center gap-1 h-[26px] px-2 rounded-[8px] text-[10.5px] font-semibold transition-colors bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5'
+          }
+        >
+          <MessageCirclePlus className="w-3.5 h-3.5" strokeWidth={2.2} />
+          {!compact && 'Seguimiento'}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        sideOffset={6}
+        className="w-72 p-0 overflow-hidden border-slate-200 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+        data-testid={`seguimiento-popover-${op.id}`}
+      >
+        <div className="px-4 pt-3.5 pb-3 border-b border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-900">Crear seguimiento</h3>
+          <p className="text-[11.5px] text-slate-500 mt-0.5 leading-snug">
+            Tarea propia de la escribanía, no es la tarea formal del legajo.
+          </p>
+        </div>
+        <div className="p-2">
+          {followUpPresets(actorLabel).map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => crear(preset)}
+              data-testid={`seguimiento-preset-${op.id}`}
+              className="w-full text-left px-2.5 py-2 rounded-md text-[12.5px] text-slate-700 hover:bg-sky-50 transition-colors"
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+        <div className="px-3 pb-3 pt-1 flex items-center gap-1.5 border-t border-slate-100 mt-1">
+          <input
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') crear(texto); }}
+            placeholder="Otro seguimiento…"
+            data-testid={`seguimiento-input-${op.id}`}
+            className="flex-1 text-[12.5px] px-2.5 py-1.5 rounded-md border border-slate-200 focus:outline-none focus:border-primary"
+          />
+          <button
+            type="button"
+            onClick={() => crear(texto)}
+            disabled={!texto.trim()}
+            data-testid={`seguimiento-crear-${op.id}`}
+            className="text-[12px] font-semibold text-primary disabled:text-slate-300 px-2 py-1.5"
+          >
+            Crear
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 };
 
 // Pill de "Próximo paso" con el dot de estado + acción agregar/quitar/completar
 // al repo de tareas del día. Mismo componente para Kanban y Lista, así ambas
 // vistas comparten exactamente el mismo comportamiento.
-const TareaEnCursoPill = ({ op }) => {
+const TareaEnCursoPill = ({ op, compactSeguimiento = false }) => {
   const tasksState = useDayTasks();
   const isDone = tasksState.done.includes(op.id);
   const isInBoard = tasksState.pending.includes(op.id) || isDone;
@@ -507,6 +606,8 @@ const TareaEnCursoPill = ({ op }) => {
         >
           <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
         </button>
+      ) : boton === 'seguimiento' ? (
+        <SeguimientoMenu op={op} compact={compactSeguimiento} />
       ) : null}
     </div>
   );
@@ -555,7 +656,7 @@ const KanbanCard = ({ op }) => {
 
       {op.tareaEnCurso && (
         <div className="mt-[13px]">
-          <TareaEnCursoPill op={op} />
+          <TareaEnCursoPill op={op} compactSeguimiento />
         </div>
       )}
 

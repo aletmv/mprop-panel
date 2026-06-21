@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks, Trash2,
+  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks, Trash2, MessageCircle,
 } from 'lucide-react';
 import { dayTasks, useDayTasks } from './dayTasksStore';
+import { operationalTasks, useOperationalTasks, todayDateString, dateStringFromISO } from './operationalTasksStore';
 import { DND_TYPE } from './dndTypes';
 import { AlertChip } from './Kanban';
 
@@ -122,6 +123,100 @@ const DoneItem = ({ op }) => {
   );
 };
 
+// OperationalTask subtype: 'follow_up', pendiente. Sección propia, separada
+// de las tareas formales — no comparte drag/reorder ni el store de
+// dayTasksStore. Completar/eliminar acá nunca toca op.estado/bloqueoActor.
+const FollowUpItem = ({ task, op }) => (
+  <li
+    data-testid={`followup-item-${task.id}`}
+    className="relative shrink-0 overflow-hidden flex items-center gap-3.5 bg-white border border-[#EEEFF2] rounded-2xl pl-5 pr-4 py-3.5 hover:border-[#DDE6F5] hover:shadow-sm transition-all snap-start"
+  >
+    <span className="absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full bg-sky-300" aria-hidden />
+    <span className="flex items-center justify-center w-5 text-sky-400 shrink-0 self-center">
+      <MessageCircle className="w-4 h-4" />
+    </span>
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[9.5px] font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded">
+          Seguimiento
+        </span>
+        {task.relatedActorLabel && (
+          <span className="text-[11px] text-slate-400">relacionado: {task.relatedActorLabel}</span>
+        )}
+      </div>
+      <div className="text-[14.5px] font-semibold text-slate-900 leading-snug mt-1">{task.title}</div>
+      {op && (
+        <div className="text-[12.5px] text-slate-400 mt-1 truncate">
+          <span className="font-mono">{op.id}</span> · {op.direccion}
+        </div>
+      )}
+    </div>
+    <div className="flex items-center gap-1.5 shrink-0">
+      <button
+        onClick={() => operationalTasks.complete(task.id)}
+        data-testid={`followup-complete-${task.id}`}
+        title="Marcar como completado"
+        aria-label="Marcar como completado"
+        className="w-9 h-9 grid place-items-center rounded-[11px] bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
+      >
+        <Check className="w-[18px] h-[18px]" strokeWidth={2.4} />
+      </button>
+      <button
+        onClick={() => operationalTasks.remove(task.id)}
+        data-testid={`followup-remove-${task.id}`}
+        title="Eliminar seguimiento"
+        aria-label="Eliminar seguimiento"
+        className="w-9 h-9 grid place-items-center rounded-[11px] bg-slate-100 text-slate-400 hover:bg-destructive-soft hover:text-destructive transition-colors"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  </li>
+);
+
+// OperationalTask subtype: 'follow_up', completado hoy — no desaparece sin
+// rastro, queda visible (liviano) dentro de "Completadas hoy" con badge
+// propio para no confundirse con una tarea formal completada.
+const FollowUpDoneItem = ({ task, op }) => (
+  <li
+    data-testid={`followup-done-${task.id}`}
+    className="flex items-center gap-3.5 bg-[#F7F8FA] rounded-2xl px-4 py-3.5"
+  >
+    <span className="w-[30px] h-[30px] rounded-[9px] bg-sky-50 text-sky-400 grid place-items-center shrink-0">
+      <MessageCircle className="w-4 h-4" strokeWidth={2.2} />
+    </span>
+    <div className="flex-1 min-w-0">
+      <span className="text-[9.5px] font-bold uppercase tracking-wider text-sky-500">Seguimiento</span>
+      <div className="text-[14px] font-medium text-slate-400 line-through leading-snug">{task.title}</div>
+      {op && (
+        <div className="text-[12px] text-slate-400 mt-0.5 truncate">
+          <span className="font-mono">{op.id}</span> · {op.direccion}
+        </div>
+      )}
+    </div>
+    <div className="flex items-center gap-1.5 shrink-0">
+      <button
+        onClick={() => operationalTasks.reopen(task.id)}
+        data-testid={`followup-restore-${task.id}`}
+        title="Restaurar"
+        aria-label="Restaurar"
+        className="w-8 h-8 grid place-items-center rounded-[10px] bg-white border border-[#ECEDF0] text-slate-400 hover:text-primary transition-colors"
+      >
+        <RotateCcw className="w-[15px] h-[15px]" />
+      </button>
+      <button
+        onClick={() => operationalTasks.remove(task.id)}
+        data-testid={`followup-done-remove-${task.id}`}
+        title="Eliminar"
+        aria-label="Eliminar"
+        className="w-8 h-8 grid place-items-center rounded-[10px] bg-white border border-[#ECEDF0] text-slate-400 hover:text-destructive transition-colors"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  </li>
+);
+
 export const TasksBoard = ({ operaciones }) => {
   const navigate = useNavigate();
   const { pending, done } = useDayTasks();
@@ -136,6 +231,23 @@ export const TasksBoard = ({ operaciones }) => {
   }, {});
   const pendingTasks = pending.filter((id) => opMap[id]);
   const doneTasks = done.filter((id) => opMap[id]);
+
+  // OperationalTask subtype: 'follow_up'. "Tareas del día" es una vista
+  // filtrada por agenda, no "todas las que existen" — ver
+  // memory/OPERATIONAL_TASKS_ARCHITECTURE.md sección 7.
+  //
+  // Pendientes de hoy: por scheduledForDate (cuándo se planeó trabajarla).
+  // Completadas hoy: por completedAt (cuándo efectivamente se completó), NO
+  // por scheduledForDate — una tarea agendada para hoy pero completada ayer
+  // (o agendada para otro día y completada hoy) debe filtrarse por el
+  // momento real de completado, no por la agenda original.
+  const allOperationalTasks = useOperationalTasks();
+  const today = todayDateString();
+  const followUps = allOperationalTasks.filter((t) => t.subtype === 'follow_up');
+  const pendingFollowUps = followUps.filter((t) => t.status === 'pending' && t.scheduledForDate === today);
+  const doneFollowUpsToday = followUps.filter(
+    (t) => t.status === 'done' && t.completedAt && dateStringFromISO(t.completedAt) === today
+  );
 
   const handleDragOverBoard = (e) => {
     if (![...e.dataTransfer.types].includes(DND_TYPE)) return;
@@ -247,7 +359,26 @@ export const TasksBoard = ({ operaciones }) => {
         </ol>
       )}
 
-      {doneTasks.length > 0 && (
+      {pendingFollowUps.length > 0 && (
+        <div className="mt-3 pt-1" data-testid="followups-section">
+          <div className="flex items-baseline gap-2 mb-2.5 pr-1">
+            <span className="text-[13px] font-semibold leading-tight text-[#7A818B]">Seguimientos</span>
+            <span
+              className="text-[13px] font-bold leading-tight text-[#C5C9CF] num-tabular"
+              data-testid="followups-pending-count"
+            >
+              {pendingFollowUps.length}
+            </span>
+          </div>
+          <ul className="flex flex-col gap-2.5 max-h-[280px] overflow-y-auto pr-1" data-testid="followups-list">
+            {pendingFollowUps.map((task) => (
+              <FollowUpItem key={task.id} task={task} op={opMap[task.opId]} />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {(doneTasks.length > 0 || doneFollowUpsToday.length > 0) && (
         <div className="mt-3 pt-1" data-testid="done-section">
           <button
             onClick={() => setShowDone((v) => !v)}
@@ -262,11 +393,11 @@ export const TasksBoard = ({ operaciones }) => {
                 className="text-[13px] font-bold leading-tight text-[#C5C9CF] num-tabular"
                 data-testid="tasks-done-count"
               >
-                {doneTasks.length}
+                {doneTasks.length + doneFollowUpsToday.length}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {showDone && (
+              {showDone && doneTasks.length > 0 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); dayTasks.clearDone(); }}
                   data-testid="done-clear-all"
@@ -284,6 +415,9 @@ export const TasksBoard = ({ operaciones }) => {
             <ul className="space-y-2 max-h-[260px] overflow-y-auto pr-1" data-testid="done-list">
               {doneTasks.map((opId) => (
                 <DoneItem key={opId} op={opMap[opId]} />
+              ))}
+              {doneFollowUpsToday.map((task) => (
+                <FollowUpDoneItem key={task.id} task={task} op={opMap[task.opId]} />
               ))}
             </ul>
           )}
