@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GripVertical, X, Inbox, Clock, ChevronDown, CheckCircle2, RotateCcw, Check, ListChecks,
+  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks,
 } from 'lucide-react';
 import { dayTasks, useDayTasks } from './dayTasksStore';
 import { DND_TYPE } from './dndTypes';
@@ -89,8 +89,8 @@ const DoneItem = ({ op }) => {
       data-testid={`done-item-${op.id}`}
       className="flex items-center gap-3.5 bg-[#F7F8FA] rounded-2xl px-4 py-3.5"
     >
-      <span className="w-[30px] h-[30px] rounded-[9px] bg-emerald-50 text-emerald-600 grid place-items-center shrink-0">
-        <CheckCircle2 className="w-4 h-4" strokeWidth={2.2} />
+      <span className="w-[30px] h-[30px] rounded-[9px] bg-slate-100 text-slate-400 grid place-items-center shrink-0">
+        <Check className="w-4 h-4" strokeWidth={2.4} />
       </span>
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-medium text-slate-400 line-through leading-snug">{titulo}</div>
