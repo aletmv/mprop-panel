@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks,
+  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks, Trash2,
 } from 'lucide-react';
 import { dayTasks, useDayTasks } from './dayTasksStore';
 import { DND_TYPE } from './dndTypes';
@@ -203,9 +203,11 @@ export const TasksBoard = ({ operaciones }) => {
           <button
             onClick={() => dayTasks.clearPending()}
             data-testid="tasks-clear-all"
-            className="text-[12.5px] font-semibold text-[#A6ABB3] hover:text-destructive transition-colors shrink-0 whitespace-nowrap"
+            title="Vaciar pendientes"
+            aria-label="Vaciar pendientes"
+            className="shrink-0 w-7 h-7 grid place-items-center rounded-[8px] text-[#A6ABB3] hover:text-destructive hover:bg-destructive-soft transition-colors"
           >
-            Vaciar pendientes
+            <Trash2 className="w-[15px] h-[15px]" strokeWidth={2} />
           </button>
         )}
       </div>

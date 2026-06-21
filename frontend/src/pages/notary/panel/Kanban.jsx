@@ -416,7 +416,7 @@ const KanbanCard = ({ op }) => {
       onDragStart={onDragStart}
       data-testid={`kanban-card-${op.id}`}
       style={{ borderLeft: `3px solid ${accent}` }}
-      className={`block border border-[#EEEFF2] rounded-2xl p-[15px] transition-all group cursor-grab active:cursor-grabbing hover:shadow-[0_6px_16px_rgba(16,24,40,0.09)] hover:-translate-y-px ${
+      className={`block border border-[#EEEFF2] rounded-2xl p-[15px] transition-all group cursor-grab active:cursor-grabbing ${
         isDone
           ? 'bg-slate-50 shadow-[0_1px_2px_rgba(16,24,40,0.04)]'
           : isInBoard
@@ -576,7 +576,7 @@ const InlineList = ({ operaciones }) => (
       <table className="w-full text-[13px]" data-testid="legajos-inline-list">
         <thead>
           <tr className="bg-slate-50/70 border-b border-slate-200">
-            {['Acción', 'Legajo', 'Estado', 'Tarea en curso', 'Partes', 'Firma', 'Riesgo', ''].map((h) => (
+            {['Legajo', 'Estado', 'Tarea en curso', 'Partes', 'Firma', 'Riesgo', ''].map((h) => (
               <th key={h} className="px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
                 {h}
               </th>
@@ -596,20 +596,28 @@ const InlineList = ({ operaciones }) => (
                 className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition-colors"
               >
                 <td className="px-3.5 py-3 align-top">
-                  <BloqueoBadge op={op} />
-                </td>
-                <td className="px-3.5 py-3 align-top">
                   <Link to={`/escribanos/operaciones/${op.id}`} className="block">
                     <div className="font-mono text-[10.5px] text-slate-500">{op.id}</div>
                     <div className="font-semibold text-slate-900 truncate max-w-[260px]">{op.direccion}</div>
-                    <div className="text-[11px] text-slate-500">{jurisdiccionDe(op.barrio)}</div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[11px] text-slate-500">{jurisdiccionDe(op.barrio)}</span>
+                      {op.bloqueoActor && (
+                        <>
+                          <span className="text-slate-300">·</span>
+                          <BloqueoBadge op={op} />
+                        </>
+                      )}
+                    </div>
                   </Link>
                 </td>
                 <td className="px-3.5 py-3 align-top">
                   <StatusBadge variant={e.color}>{e.label}</StatusBadge>
                 </td>
                 <td className="px-3.5 py-3 align-top">
-                  <div className="text-[12px] text-slate-700 max-w-[220px] truncate">
+                  <div className="text-[9.5px] uppercase tracking-[0.06em] font-semibold text-slate-400">
+                    Tarea en curso
+                  </div>
+                  <div className="text-[12.5px] font-semibold text-slate-800 max-w-[220px] truncate mt-0.5">
                     {op.tareaEnCursoFull || op.tareaEnCurso || '—'}
                   </div>
                 </td>
@@ -626,7 +634,11 @@ const InlineList = ({ operaciones }) => (
                   </div>
                 </td>
                 <td className="px-3.5 py-3 align-top">
-                  <StatusBadge variant={r.color}>{riesgoShort}</StatusBadge>
+                  {op.riesgo === 'bajo' ? (
+                    <span className="text-[11px] text-slate-400">—</span>
+                  ) : (
+                    <StatusBadge variant={r.color}>{riesgoShort}</StatusBadge>
+                  )}
                 </td>
                 <td className="px-3.5 py-3 align-top text-right">
                   <Link

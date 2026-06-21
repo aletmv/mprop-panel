@@ -145,17 +145,6 @@ const Dashboard = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-3.5">
-                  <div className="flex items-center gap-3.5" data-testid="agenda-status-legend">
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-success">
-                      <span className="w-2 h-2 rounded-full bg-success" aria-hidden="true" /> Confirmada
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-destructive">
-                      <span className="w-2 h-2 rounded-full bg-destructive" aria-hidden="true" /> Observada
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-warning-foreground">
-                      <span className="w-2 h-2 rounded-full bg-warning" aria-hidden="true" /> Tentativa
-                    </span>
-                  </div>
                   <div
                     className="inline-flex bg-[#F3F4F6] rounded-[11px] p-[3px] gap-0.5"
                     data-testid="agenda-toggle"
@@ -237,7 +226,18 @@ const Dashboard = () => {
                 </div>
               )}
 
-              <div className="mt-4 flex items-center justify-end gap-3 flex-wrap">
+              <div className="mt-4 flex items-end justify-between gap-3 flex-wrap">
+                <div className="flex flex-col gap-1" data-testid="agenda-status-legend">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-success">
+                    <span className="w-2 h-2 rounded-full bg-success" aria-hidden="true" /> Confirmada
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-warning-foreground">
+                    <span className="w-2 h-2 rounded-full bg-warning" aria-hidden="true" /> Tentativa
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-destructive">
+                    <span className="w-2 h-2 rounded-full bg-destructive" aria-hidden="true" /> Observada
+                  </span>
+                </div>
                 <Link
                   to="/escribanos/agenda"
                   className="text-[12.5px] font-semibold text-[#A6ABB3] hover:text-primary transition-colors"
