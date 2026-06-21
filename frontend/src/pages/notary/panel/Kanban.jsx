@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, AlertTriangle, ShieldAlert, FileText, Clock, ChevronRight, Plus, Minus, Calendar,
-  ArrowRight, ExternalLink,
+  PlayCircle, FolderOpen, Search, FileSignature, CheckCircle2, ShieldAlert, FileText, Clock, ChevronRight, Plus, Minus, Calendar,
+  ExternalLink,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -135,7 +135,7 @@ const PaseRow = ({ pase, variant }) => {
     : `${pase.fecha || ''}${pase.hora ? ` · ${pase.hora}` : ''}`;
 
   const rowBg = isCurrent ? 'bg-transparent' : 'bg-slate-100/70';
-  const actorClass = isCurrent ? 'text-slate-900 font-semibold' : 'text-slate-400 font-semibold';
+  const actorClass = 'text-slate-900 font-semibold';
   const actionClass = isCurrent ? 'text-slate-700' : 'text-slate-400';
   const whenClass = isCurrent ? 'text-slate-500' : 'text-slate-400';
 
@@ -143,7 +143,7 @@ const PaseRow = ({ pase, variant }) => {
     <li className={`relative pl-7 pr-3 py-2 rounded-md ${rowBg}`}>
       <span className="absolute left-1.5 top-3.5 -translate-y-1/2">
         {isCurrent ? (
-          <span className="block w-2.5 h-2.5 rounded-full pase-current-dot ring-2 ring-white" aria-hidden />
+          <span className="block w-2.5 h-2.5 rounded-full bg-slate-300 pase-current-ring ring-2 ring-white" aria-hidden />
         ) : (
           <span className="block w-2 h-2 rounded-full bg-slate-300 ring-2 ring-white" />
         )}
@@ -182,9 +182,16 @@ const LineaDePasesContent = ({ op, onNavigate }) => {
 
       <div className="px-3 py-3">
         <ol className="relative space-y-1">
-          {/* línea de tiempo continua que conecta los 3 pasos */}
+          {/* línea de tiempo: se extiende y se desvanece arriba/abajo para indicar
+              que el legajo tiene más pasos antes y después de los 3 mostrados. */}
           <span
-            className="absolute left-[10px] top-3 bottom-3 w-px bg-slate-200"
+            className="absolute left-[10px] w-px"
+            style={{
+              top: '-14px',
+              bottom: '-14px',
+              background:
+                'linear-gradient(to bottom, transparent, #E2E8F0 16px, #E2E8F0 calc(100% - 16px), transparent)',
+            }}
             aria-hidden
           />
           {previousPase && <PaseRow pase={previousPase} variant="previous" />}
@@ -201,10 +208,9 @@ const LineaDePasesContent = ({ op, onNavigate }) => {
           onNavigate?.();
         }}
         data-testid={`linea-pases-cta-${op.id}`}
-        className="w-full px-4 py-2.5 text-[12px] font-semibold text-sky-700 hover:bg-sky-50 transition-colors border-t border-slate-100 flex items-center justify-center gap-1.5"
+        className="w-full px-4 py-2.5 text-[12px] font-semibold text-slate-900 hover:bg-sky-50 transition-colors border-t border-slate-100 flex items-center justify-center gap-1.5"
       >
         Ver timeline completo
-        <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
       </button>
     </div>
   );
@@ -327,7 +333,9 @@ export const AlertChip = ({ op, size = 'sm' }) => {
           title={`Alerta ${cfg.label.toLowerCase()}`}
           className="inline-flex items-center justify-center w-6 h-6 -m-1 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-300 rounded"
         >
-          <span className="block w-2 h-2 rounded-full bg-destructive shadow-[0_0_0_3px_rgba(229,86,75,0.15)]" aria-hidden />
+          <span className="grid place-items-center w-5 h-5 rounded-[7px] bg-destructive shadow-[0_2px_5px_rgba(229,86,75,0.35)]" aria-hidden>
+            <ShieldAlert className="w-3 h-3 text-white" strokeWidth={2} />
+          </span>
         </button>
       </HoverCardTrigger>
       <HoverCardContent
@@ -339,27 +347,27 @@ export const AlertChip = ({ op, size = 'sm' }) => {
         <div className={`h-1 ${cfg.barClass}`} />
         <div className="p-3.5 space-y-2.5">
           <div className="flex items-center justify-between gap-2">
-            <span className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider ${cfg.textClass}`}>
-              <AlertTriangle className="w-3 h-3" /> Alerta {cfg.label.toLowerCase()}
+            <span className={`text-[11px] font-bold uppercase tracking-wider ${cfg.textClass}`}>
+              Alerta {cfg.label.toLowerCase()}
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-900">
               Prioridad {data.prioridad || cfg.priority}
             </span>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.06em] text-slate-500 font-semibold">Título</div>
-            <div className="text-[13px] font-semibold text-slate-900 leading-snug">{data.titulo}</div>
+            <div className="text-[12.5px] font-semibold text-slate-900 leading-snug">Título</div>
+            <div className="text-[11.5px] text-slate-900 leading-snug mt-0.5">{data.titulo}</div>
           </div>
           {data.impacto && (
             <div>
-              <div className="text-[10px] uppercase tracking-[0.06em] text-slate-500 font-semibold">Impacto</div>
-              <div className="text-[12px] text-slate-700 leading-snug">{data.impacto}</div>
+              <div className="text-[12.5px] font-semibold text-slate-900 leading-snug">Impacto</div>
+              <div className="text-[11.5px] text-slate-700 leading-snug mt-0.5">{data.impacto}</div>
             </div>
           )}
           {data.accion && (
             <div className={`${cfg.softBg} border ${cfg.softBorder} rounded-md px-2.5 py-2`}>
-              <div className="text-[10px] uppercase tracking-[0.06em] text-slate-500 font-semibold">Acción sugerida</div>
-              <div className={`text-[12px] ${cfg.textClass} font-medium leading-snug`}>{data.accion}</div>
+              <div className="text-[12.5px] font-semibold text-slate-900 leading-snug">Acción sugerida</div>
+              <div className={`text-[11.5px] ${cfg.textClass} leading-snug mt-0.5`}>{data.accion}</div>
             </div>
           )}
         </div>

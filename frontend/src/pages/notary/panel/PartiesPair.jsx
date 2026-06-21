@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { parteIdFromPersona, telefonoDemoFromPersona, whatsappLinkFromTelefono } from './partesData';
 import { WhatsAppIcon } from './WhatsAppIcon';
@@ -49,15 +48,15 @@ const PartePopoverContent = ({ parte, rol, opId, onNavigate }) => {
 
     <div className="px-3 py-3 space-y-2">
       <div>
-        <div className="text-[11.5px] text-slate-500 leading-snug">DNI</div>
-        <div className="text-[12.5px] font-semibold leading-snug text-slate-900 font-mono mt-0.5">
+        <div className="text-[12.5px] font-semibold text-slate-900 leading-snug">DNI</div>
+        <div className="text-[11.5px] leading-snug text-slate-900 font-mono mt-0.5">
           {parte?.dni || '—'}
         </div>
       </div>
       <div>
-        <div className="text-[11.5px] text-slate-500 leading-snug">Estado</div>
+        <div className="text-[12.5px] font-semibold text-slate-900 leading-snug">Estado</div>
         <div
-          className={`text-[12.5px] font-semibold leading-snug mt-0.5 ${
+          className={`text-[11.5px] leading-snug mt-0.5 ${
             parte?.verificado ? 'text-emerald-600' : 'text-slate-400'
           }`}
         >
@@ -65,7 +64,7 @@ const PartePopoverContent = ({ parte, rol, opId, onNavigate }) => {
         </div>
       </div>
       <div>
-        <div className="text-[11.5px] text-slate-500 leading-snug">WhatsApp</div>
+        <div className="text-[12.5px] font-semibold text-slate-900 leading-snug">WhatsApp</div>
         <div className="mt-0.5">
           {whatsappLink ? (
             <a
@@ -100,10 +99,9 @@ const PartePopoverContent = ({ parte, rol, opId, onNavigate }) => {
         onNavigate?.();
       }}
       data-testid={`party-popover-cta-${rol.toLowerCase()}-${opId}`}
-      className="w-full px-4 py-2.5 text-[12px] font-semibold text-sky-700 hover:bg-sky-50 transition-colors border-t border-slate-100 flex items-center justify-center gap-1.5"
+      className="w-full px-4 py-2.5 text-[12px] font-semibold text-slate-900 hover:bg-sky-50 transition-colors border-t border-slate-100 flex items-center justify-center gap-1.5"
     >
       Ver ficha
-      <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
     </button>
   </div>
   );
