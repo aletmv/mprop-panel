@@ -570,33 +570,37 @@ const Column = ({ hito, items }) => {
   );
 };
 
-const InlineList = ({ operaciones }) => (
-  <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-    <div className="overflow-x-auto">
-      <table className="w-full text-[13px]" data-testid="legajos-inline-list">
-        <thead>
-          <tr className="bg-slate-50/70 border-b border-slate-200">
-            {['Legajo', 'Estado', 'Tarea en curso', 'Partes', 'Firma', 'Riesgo', ''].map((h) => (
-              <th key={h} className="px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {operaciones.map((op) => {
-            const e = estadoLabel[op.estado];
-            const r = riesgoLabel[op.riesgo];
-            const riesgoShort = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }[op.riesgo] || op.riesgo;
-            const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
-            return (
-              <tr
-                key={op.id}
-                data-testid={`inline-row-${op.id}`}
-                className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition-colors"
-              >
-                <td className="px-3.5 py-3 align-top">
-                  <Link to={`/escribanos/operaciones/${op.id}`} className="block">
+const InlineList = ({ operaciones }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div className="overflow-x-auto max-h-[640px] overflow-y-auto">
+        <table className="w-full text-[13px]" data-testid="legajos-inline-list">
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
+              {['Legajo', 'Estado', 'Tarea en curso', 'Partes', 'Firma', 'Riesgo', ''].map((h) => (
+                <th key={h} className="px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {operaciones.map((op, idx) => {
+              const e = estadoLabel[op.estado];
+              const r = riesgoLabel[op.riesgo];
+              const riesgoShort = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }[op.riesgo] || op.riesgo;
+              const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
+              return (
+                <tr
+                  key={op.id}
+                  data-testid={`inline-row-${op.id}`}
+                  onClick={() => navigate(`/escribanos/operaciones/${op.id}`)}
+                  className={`group border-b border-slate-100 last:border-0 hover:bg-sky-50/60 cursor-pointer transition-colors ${
+                    idx % 2 === 1 ? 'bg-slate-50/50' : ''
+                  }`}
+                >
+                  <td className="px-3.5 py-3 align-top">
                     <div className="font-mono text-[10.5px] text-slate-500">{op.id}</div>
                     <div className="font-semibold text-slate-900 truncate max-w-[260px]">{op.direccion}</div>
                     <div className="flex items-center gap-1.5 mt-0.5">
@@ -608,58 +612,67 @@ const InlineList = ({ operaciones }) => (
                         </>
                       )}
                     </div>
-                  </Link>
-                </td>
-                <td className="px-3.5 py-3 align-top">
-                  <StatusBadge variant={e.color}>{e.label}</StatusBadge>
-                </td>
-                <td className="px-3.5 py-3 align-top">
-                  <div className="text-[9.5px] uppercase tracking-[0.06em] font-semibold text-slate-400">
-                    Tarea en curso
-                  </div>
-                  <div className="text-[12.5px] font-semibold text-slate-800 max-w-[220px] truncate mt-0.5">
-                    {op.tareaEnCursoFull || op.tareaEnCurso || '—'}
-                  </div>
-                </td>
-                <td className="px-3.5 py-3 align-top">
-                  <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" />
-                </td>
-                <td className="px-3.5 py-3 align-top">
-                  <div className="flex items-center gap-1.5 text-[12px]">
-                    <Calendar className="w-3 h-3 text-slate-400" />
-                    <span className="font-semibold text-slate-900 tabular-nums">{op.firma}</span>
-                  </div>
-                  <div className={`text-[10.5px] mt-0.5 ${urgente ? 'text-red-600 font-semibold' : 'text-slate-500'}`}>
-                    {op.diasFirma > 0 ? `en ${op.diasFirma}d` : op.diasFirma === 0 ? 'hoy' : `hace ${-op.diasFirma}d`}
-                  </div>
-                </td>
-                <td className="px-3.5 py-3 align-top">
-                  {op.riesgo === 'bajo' ? (
-                    <span className="text-[11px] text-slate-400">—</span>
-                  ) : (
-                    <StatusBadge variant={r.color}>{riesgoShort}</StatusBadge>
-                  )}
-                </td>
-                <td className="px-3.5 py-3 align-top text-right">
-                  <Link
-                    to={`/escribanos/operaciones/${op.id}`}
-                    className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Link>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  </td>
+                  <td className="px-3.5 py-3 align-top">
+                    <StatusBadge variant={e.color}>{e.label}</StatusBadge>
+                  </td>
+                  <td className="px-3.5 py-3 align-top">
+                    <div className="text-[9.5px] uppercase tracking-[0.06em] font-semibold text-slate-400">
+                      Tarea en curso
+                    </div>
+                    <div className="text-[12.5px] font-semibold text-slate-800 max-w-[220px] truncate mt-0.5">
+                      {op.tareaEnCursoFull || op.tareaEnCurso || '—'}
+                    </div>
+                  </td>
+                  <td className="px-3.5 py-3 align-top">
+                    <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" />
+                  </td>
+                  <td className="px-3.5 py-3 align-top">
+                    <div className="flex items-center gap-1.5 text-[12px]">
+                      <Calendar className="w-3 h-3 text-slate-400" />
+                      <span className="font-semibold text-slate-900 tabular-nums">{op.firma}</span>
+                    </div>
+                    <div className={`text-[10.5px] mt-0.5 ${urgente ? 'text-red-600 font-semibold' : 'text-slate-500'}`}>
+                      {op.diasFirma > 0 ? `en ${op.diasFirma}d` : op.diasFirma === 0 ? 'hoy' : `hace ${-op.diasFirma}d`}
+                    </div>
+                  </td>
+                  <td className="px-3.5 py-3 align-top">
+                    {op.riesgo === 'bajo' ? (
+                      <span className="text-[11px] text-slate-400">—</span>
+                    ) : (
+                      <StatusBadge variant={r.color}>{riesgoShort}</StatusBadge>
+                    )}
+                  </td>
+                  <td className="px-3.5 py-3 align-top text-right">
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-300 group-hover:text-slate-500">
+                      <ChevronRight className="w-4 h-4" />
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
+const RIESGO_ORDER = { alto: 0, medio: 1, bajo: 2 };
+
+// Urgencia: firmas próximas primero; lo ya firmado/vencido (diasFirma negativo) al final.
+const urgenciaKey = (op) => (op.diasFirma < 0 ? Infinity : op.diasFirma);
+
+const SORTERS = {
+  urgencia: (a, b) => urgenciaKey(a) - urgenciaKey(b),
+  riesgo: (a, b) => (RIESGO_ORDER[a.riesgo] ?? 9) - (RIESGO_ORDER[b.riesgo] ?? 9),
+};
 
 export const LegajosKanban = ({ operaciones }) => {
   const [view, setView] = useState('kanban');
   const [actor, setActor] = useState('todos');
+  const [stage, setStage] = useState('todas');
+  const [sortBy, setSortBy] = useState('urgencia');
 
   // Conteo por actor (sólo legajos activos).
   const activas = operaciones.filter((o) => o.estado !== 'cerrado');
@@ -681,6 +694,10 @@ export const LegajosKanban = ({ operaciones }) => {
     items: filtradas.filter((o) => h.states.includes(o.estado)),
   }));
   const totalActivos = filtradas.filter((o) => o.estado !== 'cerrado').length;
+
+  // Solo para la vista Lista: filtro de etapa propio + orden.
+  const porEtapa = stage === 'todas' ? filtradas : filtradas.filter((o) => HITO_MAP[stage]?.states.includes(o.estado));
+  const listaOrdenada = [...porEtapa].sort(SORTERS[sortBy]);
 
   return (
     <div className="card-surface-lg p-6" data-testid="legajos-kanban">
@@ -765,7 +782,38 @@ export const LegajosKanban = ({ operaciones }) => {
           ))}
         </div>
       ) : (
-        <InlineList operaciones={filtradas} />
+        <>
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-3" data-testid="lista-controls">
+            <div className="inline-flex items-center gap-1.5 overflow-x-auto">
+              {[{ id: 'todas', label: 'Todas' }, ...HITOS.map((h) => ({ id: h.id, label: h.label }))].map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  data-testid={`lista-stage-${s.id}`}
+                  onClick={() => setStage(s.id)}
+                  className={`px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-colors ${
+                    stage === s.id ? 'bg-[#242424] text-white' : 'bg-white text-[#5C636D] border border-[#ECEDF0] hover:bg-slate-50'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <div className="inline-flex items-center gap-1.5 text-[12px] text-[#9AA0A8] shrink-0">
+              Ordenar por
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                data-testid="lista-sort"
+                className="font-semibold text-[#242424] bg-white border border-[#ECEDF0] rounded-md px-2 py-1 focus:outline-none"
+              >
+                <option value="urgencia">Urgencia (firma)</option>
+                <option value="riesgo">Riesgo</option>
+              </select>
+            </div>
+          </div>
+          <InlineList operaciones={listaOrdenada} />
+        </>
       )}
     </div>
   );
