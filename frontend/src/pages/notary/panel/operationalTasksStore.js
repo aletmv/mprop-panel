@@ -139,6 +139,12 @@ export const operationalTasks = {
   remove(id) {
     setState(state.filter((t) => t.id !== id));
   },
+
+  // Selector aditivo — no agrega estado nuevo, solo conveniencia para vistas
+  // que muestran la memoria operativa de un legajo puntual (ej. OperacionDetail).
+  byOpId(opId) {
+    return state.filter((t) => t.opId === opId);
+  },
 };
 
 export const useOperationalTasks = () =>

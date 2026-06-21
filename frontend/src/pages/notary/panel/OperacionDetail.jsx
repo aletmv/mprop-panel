@@ -25,6 +25,7 @@ import {
 import { formatUSD } from '@/data/mock';
 import { useApp } from '@/context/AppContext';
 import { StatusDot, Pill, SectionLabel, Card } from './OperacionDetailPrimitives';
+import { OperationalTaskMemory } from './OperationalTaskMemory';
 import { PagosItemRow, HitoRow } from './BovedaPrimitives';
 
 // ─── Bóveda de la operación ──────────────────────────────────────────────
@@ -516,6 +517,7 @@ const OperacionDetail = () => {
                 { v: 'partes', label: 'Partes e inmueble' },
                 { v: 'documentos', label: `Documentos · ${documentos.length}` },
                 { v: 'timeline', label: 'Actividad' },
+                { v: 'operativa', label: 'Operativa' },
                 { v: 'boveda', label: 'Bóveda' },
               ].map((t) => (
                 <TabsTrigger
@@ -805,14 +807,18 @@ const OperacionDetail = () => {
                   })}
                 </ol>
               </Card>
+
+              <TimelineProceso op={op} />
+            </TabsContent>
+
+            <TabsContent value="operativa" className="mt-6" data-testid="tab-content-operativa">
+              <OperationalTaskMemory op={op} />
             </TabsContent>
 
             <TabsContent value="boveda" className="mt-6" data-testid="tab-content-boveda">
               <BovedaTab op={op} />
             </TabsContent>
           </Tabs>
-
-          <TimelineProceso op={op} />
         </div>
       </div>
     </PanelShell>
