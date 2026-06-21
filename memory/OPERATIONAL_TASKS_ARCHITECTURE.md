@@ -209,3 +209,89 @@ Cuando se implemente, la migración recomendada (no ejecutar todavía) es:
   producto, no en este documento de arquitectura de datos.
 - No toca automatizaciones reales de WhatsApp/email (`MessageDraft`/`Communication`) más allá del modelo de datos —
   no hay integración real de envío en este prototipo.
+
+## 9. Framing de producto: `OperationalTask` no es una feature de tareas custom
+
+> Ajuste conceptual posterior a la Fase 2a (creación manual de seguimientos). No invalida lo implementado —
+> lo recontextualiza antes de seguir con Fase 2b.
+
+### 9.1 Por qué no debemos depender de la carga manual
+
+El supuesto de producto de partida es que **los escribanos van a cargar manualmente pocas tareas**. Si el valor de
+`OperationalTask` dependiera de que el usuario sea disciplinado creando seguimientos a mano, el modelo tendría
+poco impacto real — la mayoría de los legajos nunca tendrían una `OperationalTask` asociada, y la arquitectura
+quedaría subutilizada. La carga manual ("+ seguimiento") es una **puerta de entrada inicial y una herramienta de
+demo/prototipo**, útil para mostrar el concepto y para casos puntuales donde el escribano sí quiere anotar algo —
+pero no es, ni debe ser, el centro del modelo.
+
+### 9.2 `OperationalTask` como unidad operativa del sistema
+
+`OperationalTask` representa **una acción necesaria para destrabar o avanzar un legajo**, sin importar quién o qué
+la generó. Es la unidad mínima sobre la que el sistema (humano, regla de negocio, o IA) puede:
+- decidir que algo hay que hacer,
+- opcionalmente sugerir o ejecutar una acción concreta (`AutomationSuggestion`/`MessageDraft`),
+- mostrarla en "Tareas del día" si requiere atención hoy,
+- dejarla como memoria operativa visible en el legajo aunque no esté en la bandeja de hoy,
+- registrar su ciclo de vida en el `Timeline`.
+
+Sigue sin modificar por sí misma el flow duro, la línea de pases ni `op.estado` — esa regla (sección 5) no cambia.
+
+### 9.3 Posibles orígenes (`origin`)
+
+| `origin` | Quién/qué la crea | Estado en este prototipo |
+|---|---|---|
+| `manual` | El escribano, vía "+ seguimiento" | Implementado (Fase 2a) |
+| `system` | Una regla determinística (ej. "venció un plazo", "faltan 3 días para la firma") | No implementado |
+| `ai` | Un modelo que detecta una situación y sugiere actuar | No implementado |
+| `workflow_rule` | Disparada por una transición del checklist/flow duro (ej. al entrar a "Pre-cierre") | No implementado |
+| `communication_event` | Disparada por una comunicación previa (ej. el vendedor respondió un WhatsApp) | No implementado |
+
+El `origin: 'manual'` ya soportado por el store no cambia de shape — los demás son valores futuros del mismo
+campo, no una entidad distinta.
+
+### 9.4 Tarea operativa vs. comunicación vs. evento de timeline vs. checklist duro
+
+- **Tarea operativa (`OperationalTask`)**: la unidad de "hay que hacer algo". Puede no requerir nunca un mensaje.
+- **Comunicación (`MessageDraft`/`Communication`)**: el mensaje concreto (WhatsApp/email) que puede originarse a
+  partir de una tarea operativa (vía `AutomationSuggestion` o directo), pero no es la tarea — es una de las formas
+  posibles de resolverla.
+- **Evento de timeline**: el registro de que algo pasó (se creó una tarea, se completó, se envió un mensaje). Es
+  bitácora — no decide nada, no es accionable por sí mismo.
+- **Checklist duro (`ChecklistItem`)**: el paso formal del proceso. Una `OperationalTask` puede *referenciar* un
+  `ChecklistItem` (`relatedChecklistItemId`) para dar contexto, pero completarla nunca completa el paso formal.
+
+### 9.5 Qué implica para Fase 2b
+
+- Priorizar **visibilidad/memoria operativa en el legajo** (que una `OperationalTask` se pueda ver asociada a su
+  legajo aunque no esté agendada para "hoy") antes que seguir invirtiendo en UI manual de creación.
+- **No sobre-invertir todavía en UI manual compleja** (multi-step, edición avanzada, categorización fina) — la
+  creación manual ya cumple su rol de puerta de entrada/demo con lo que existe.
+- Mantener la creación manual **mínima**, tal como está, mientras se evalúa de dónde va a venir el volumen real de
+  `OperationalTask` (reglas, eventos, IA) en fases posteriores.
+
+### 9.6 Qué implica para automatización futura
+
+Cadena conceptual esperada, ninguno de estos pasos implementado todavía:
+
+```
+Finding (detección/regla/evento)
+  → OperationalTask (se decide que hay que actuar)
+    → AutomationSuggestion (se sugiere cómo, opcionalmente con aprobación requerida)
+      → MessageDraft / Communication (el mensaje concreto, draft o enviado)
+        → Timeline (queda registrado lo que pasó)
+```
+
+Cada flecha es una decisión propia (humana o de negocio) — ninguna etapa salta directo a la siguiente sin pasar
+por la unidad `OperationalTask` que les da contexto y trazabilidad.
+
+### 9.7 Anti-patterns a evitar
+
+- **Task inflation**: generar una `OperationalTask` por cada micro-evento, hasta que la bandeja operativa se vuelva
+  ruido y pierda señal.
+- **Burocracia manual**: diseñar fases futuras asumiendo que el escribano va a mantener disciplinadamente un
+  registro manual completo — contradice el supuesto de producto de la sección 9.1.
+- **Convertir cada llamada o gestión menor en una tarea formal** cuando no aporta memoria operativa real ni
+  contexto reutilizable.
+- **Enviar WhatsApp/email directamente** sin pasar por una `OperationalTask` (que da contexto) ni por la
+  aprobación humana que ya exige la sección 5, regla 5 — un envío automático nunca debe saltarse la unidad
+  operativa ni el `requiresApproval`.
