@@ -97,6 +97,23 @@ const BLOQUEO_TONE = {
   red:     { dot: 'bg-red-500',   bg: 'bg-red-50',    text: 'text-red-800',   border: 'border-red-200'   },
 };
 
+// Pelota de fútbol estilizada (SVG inline) para identificar al responsable
+// del próximo desbloqueo en el Kanban: "quién tiene la pelota".
+const SoccerBallIcon = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg
+    viewBox="0 0 122.88 122.88"
+    fill="currentColor"
+    className={className}
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M61.44,0c16.97,0,32.33,6.88,43.44,18c11.12,11.12,18,26.48,18,43.44c0,16.97-6.88,32.33-18,43.44 c-11.12,11.12-26.48,18-43.44,18S29.11,116,18,104.88C6.88,93.77,0,78.41,0,61.44C0,44.47,6.88,29.11,18,18 C29.11,6.88,44.47,0,61.44,0L61.44,0z M76.85,117.08L76.73,117l6.89-23.09L69.41,78.15L52.66,78L39.38,94.62l6.66,22.32l-0.15,0.1 c4.95,1.38,10.16,2.12,15.55,2.12C66.78,119.16,71.95,118.44,76.85,117.08L76.85,117.08z M12.22,91.61l24.34,0.12L49.28,75.8 l-5.26-16.12l-21.42-9.3L3.78,64.08C4.23,74.14,7.26,83.53,12.22,91.61L12.22,91.61z M16.77,24.88l7.4,22.14l19.98,8.68 l15.44-11.97V20.94L40.51,7.63c-7.52,2.93-14.28,7.39-19.89,13C19.27,21.98,17.98,23.4,16.77,24.88L16.77,24.88z M81.7,7.37 L63.3,20.77V43.7L77.8,54.91l20.81-8.92l7.18-21.49c-1.12-1.35-2.3-2.64-3.54-3.88C96.48,14.85,89.49,10.29,81.7,7.37L81.7,7.37z M119.09,64.36l-0.02,0.01L99.09,49.82l-19.81,8.49l-6.08,18.03l13.73,15.23c0.06,0.06,0.09,0.13,0.11,0.21l23.6-0.11 C115.56,83.65,118.59,74.34,119.09,64.36L119.09,64.36z"
+    />
+  </svg>
+);
+
 // Extrae sólo la jurisdicción (último segmento de "Recoleta, CABA").
 const jurisdiccionDe = (barrio) => {
   if (!barrio) return '—';
@@ -104,9 +121,9 @@ const jurisdiccionDe = (barrio) => {
   return parts[parts.length - 1] || barrio;
 };
 
-// Nombre del responsable del próximo paso, sin ícono. Se usa en el Kanban
-// (variante clickeable que abre el popover "Línea de pases").
-export const BloqueoNameOnly = ({ actor, opId, className = '', textClassName = 'text-[12px]', tone }) => {
+// "Pelota: Responsable" — icono de fútbol + nombre del responsable. Se usa
+// en el Kanban (variante clickeable que abre el popover "Línea de pases").
+export const BloqueoNameOnly = ({ actor, opId, className = '', textClassName = 'text-[12px]', iconClassName = 'w-3.5 h-3.5', tone }) => {
   if (!actor) return null;
   const meta = bloqueoLabel[actor];
   if (!meta) return null;
@@ -118,6 +135,7 @@ export const BloqueoNameOnly = ({ actor, opId, className = '', textClassName = '
       data-testid={opId ? `bloqueo-name-${opId}` : `bloqueo-name-${actor}`}
       className={`inline-flex items-center gap-1.5 ${colorText} ${textClassName} font-semibold whitespace-nowrap ${className}`}
     >
+      <SoccerBallIcon className={iconClassName} />
       {meta.short}
     </span>
   );
@@ -244,7 +262,7 @@ const SoccerBloqueoTrigger = ({ op, navigate }) => {
             isBloqueado ? 'bg-red-50' : ''
           }`}
         >
-          <BloqueoNameOnly actor={op.bloqueoActor} opId={op.id} tone textClassName="text-[11px]" />
+          <BloqueoNameOnly actor={op.bloqueoActor} opId={op.id} tone textClassName="text-[11px]" iconClassName="w-3 h-3" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -408,7 +426,9 @@ const KanbanCard = ({ op }) => {
       onDragStart={onDragStart}
       data-testid={`kanban-card-${op.id}`}
       style={{ borderLeft: `3px solid ${accent}` }}
-      className="block bg-[#FFFFFF0D] border border-[#EEEFF2] rounded-2xl p-[15px] shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:shadow-[0_6px_16px_rgba(16,24,40,0.09)] hover:-translate-y-px transition-all group cursor-grab active:cursor-grabbing"
+      className={`block bg-[#FFFFFF0D] border border-[#EEEFF2] rounded-2xl p-[15px] transition-all group cursor-grab active:cursor-grabbing hover:shadow-[0_6px_16px_rgba(16,24,40,0.09)] hover:-translate-y-px ${
+        isInBoard ? 'shadow-[0_6px_16px_rgba(16,24,40,0.09)] -translate-y-px' : 'shadow-[0_1px_2px_rgba(16,24,40,0.04)]'
+      }`}
     >
       <div className="flex items-center justify-between gap-2 mb-[11px]">
         {op.bloqueoActor ? (
