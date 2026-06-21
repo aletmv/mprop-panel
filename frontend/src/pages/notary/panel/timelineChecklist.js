@@ -1,7 +1,7 @@
 // timelineChecklist.js — Mock del checklist de hitos de la operación.
 //
 // Estructura de 5 hitos del proceso notarial inmobiliario MercadoProp:
-//   1. Inicio de operación
+//   1. Apertura
 //   2. Expediente documental
 //   3. Due diligence
 //   4. Pre-cierre
@@ -37,7 +37,7 @@ const mkItem = (id, label, origin, opts = {}) => ({
 const STAGES_TEMPLATE = [
   {
     id: 'inicio',
-    label: 'Inicio de operación',
+    label: 'Apertura',
     items: [
       mkItem('apertura',       'Apertura del legajo',                      'plataforma',  { blocksSigning: false }),
       mkItem('carga_inmueble', 'Carga inicial del inmueble',               'plataforma',  { blocksSigning: false }),

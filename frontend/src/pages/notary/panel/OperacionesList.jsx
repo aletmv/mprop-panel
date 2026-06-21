@@ -16,7 +16,7 @@ import { useApp } from '@/context/AppContext';
 
 const filtrosBase = [
   { id: 'todos', label: 'Todas' },
-  { id: 'apertura', label: 'Inicio' },
+  { id: 'apertura', label: 'Apertura' },
   { id: 'documentos', label: 'Expediente' },
   { id: 'analisis', label: 'Due diligence' },
   { id: 'observado', label: 'Observadas' },

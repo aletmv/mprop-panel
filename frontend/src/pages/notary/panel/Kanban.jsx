@@ -5,20 +5,19 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { alertas as ALERTAS_MOCK, estadoLabel, riesgoLabel, bloqueoLabel } from './mockData';
+import { alertas as ALERTAS_MOCK, riesgoLabel, bloqueoLabel } from './mockData';
 import { DND_TYPE } from './dndTypes';
 import { dayTasks, useDayTasks } from './dayTasksStore';
 import { HourglassFalling } from './HourglassFalling';
 import { PartiesPair } from './PartiesPair';
-import { StatusBadge } from './StatusBadge';
 
 // 5 hitos con progresión cromática lógica:
 // neutro-frío (Inicio) → fresco (Expediente) → análisis (Due diligence) → transición (Pre-cierre) → final/éxito (Cierre).
 const HITOS = [
   {
     id: 'inicio',
-    label: 'Inicio de operación',
-    sub: 'Apertura del legajo',
+    label: 'Apertura',
+    sub: 'Preparación del legajo',
     icon: PlayCircle,
     iconColor: 'text-[var(--stage-inicio-text)] bg-[var(--stage-inicio-soft)]',
     borderColor: 'border-[var(--stage-inicio)]',
@@ -61,6 +60,13 @@ const HITOS = [
     states: ['cerrado'],
   },
 ];
+
+// Hito (etapa) al que pertenece cada estado — usado en la vista Lista para
+// mostrar el mismo ícono/color/label que la columna del Kanban.
+const HITO_BY_ESTADO = HITOS.reduce((acc, h) => {
+  h.states.forEach((s) => { acc[s] = h; });
+  return acc;
+}, {});
 
 // Visual de etapa por estado (mismos tokens --stage-* ya usados en HITOS/estadoLabel),
 // para colorear acentos de card y pills dentro del Kanban sin depender del objeto HITO.
@@ -383,18 +389,15 @@ export const AlertChip = ({ op, size = 'sm' }) => {
   );
 };
 
-const KanbanCard = ({ op }) => {
-  const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
+// Pill de "Tarea en curso" con el dot de estado + acción agregar/quitar/completar
+// al repo de tareas del día. Mismo componente para Kanban y Lista, así ambas
+// vistas comparten exactamente el mismo comportamiento.
+const TareaEnCursoPill = ({ op }) => {
   const tasksState = useDayTasks();
   const isDone = tasksState.done.includes(op.id);
   const isInBoard = tasksState.pending.includes(op.id) || isDone;
-  const accent = (ESTADO_STAGE_VISUAL[op.estado] || ESTADO_STAGE_VISUAL.apertura).accent;
 
-  const onDragStart = (e) => {
-    e.dataTransfer.effectAllowed = 'copy';
-    e.dataTransfer.setData(DND_TYPE, op.id);
-    e.dataTransfer.setData('text/plain', op.id);
-  };
+  if (!op.tareaEnCurso) return null;
 
   const onAddClick = (e) => {
     e.preventDefault();
@@ -407,6 +410,85 @@ const KanbanCard = ({ op }) => {
     e.stopPropagation();
     if (tasksState.pending.includes(op.id)) dayTasks.removePending(op.id);
     else if (tasksState.done.includes(op.id)) dayTasks.removeDone(op.id);
+  };
+
+  return (
+    <div
+      className={`flex items-center text-[11px] rounded-[11px] pl-2.5 pr-1.5 py-[9px] transition-colors ${
+        isInBoard
+          ? 'gap-3 bg-slate-100 text-slate-700 border border-slate-200'
+          : 'gap-2 text-slate-700 bg-[#F7F8FA] border border-transparent'
+      }`}
+      data-testid={`tarea-en-curso-${op.id}`}
+      title={isInBoard ? 'Ya está en tu día' : undefined}
+    >
+      <span
+        className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 self-center ${
+          isDone ? 'bg-emerald-500' : isInBoard ? 'pase-current-dot' : 'bg-slate-300'
+        }`}
+        aria-hidden
+      />
+      <span className="leading-snug flex-1 min-w-0">
+        <span className="block text-[9.5px] uppercase tracking-[0.08em] font-semibold text-[#B3B8BF]">
+          Tarea en curso
+        </span>
+        <span
+          className={`block font-semibold truncate text-[12.5px] mt-0.5 ${isInBoard ? 'text-slate-900' : 'text-[#3A4048]'}`}
+          title={op.tareaEnCursoFull || op.tareaEnCurso}
+        >
+          {op.tareaEnCurso}
+        </span>
+        {isInBoard && <span className="sr-only">Ya está en tu día</span>}
+      </span>
+      {isDone ? (
+        <button
+          type="button"
+          onClick={onRemoveClick}
+          data-testid={`kanban-remove-task-${op.id}`}
+          title="Tarea completada"
+          aria-label="Tarea completada"
+          className="shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-emerald-50 border border-slate-200 text-emerald-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+        >
+          <Check className="w-3.5 h-3.5" strokeWidth={2.6} />
+        </button>
+      ) : isInBoard ? (
+        <button
+          type="button"
+          onClick={onRemoveClick}
+          data-testid={`kanban-remove-task-${op.id}`}
+          title="Quitar de mi día"
+          aria-label="Quitar de mi día"
+          className="shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+        >
+          <Minus className="w-3.5 h-3.5" strokeWidth={2.4} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onAddClick}
+          data-testid={`kanban-add-task-${op.id}`}
+          title="Agregar a mi día"
+          aria-label="Agregar a mi día"
+          className="shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5"
+        >
+          <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
+        </button>
+      )}
+    </div>
+  );
+};
+
+const KanbanCard = ({ op }) => {
+  const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
+  const tasksState = useDayTasks();
+  const isDone = tasksState.done.includes(op.id);
+  const isInBoard = tasksState.pending.includes(op.id) || isDone;
+  const accent = (ESTADO_STAGE_VISUAL[op.estado] || ESTADO_STAGE_VISUAL.apertura).accent;
+
+  const onDragStart = (e) => {
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData(DND_TYPE, op.id);
+    e.dataTransfer.setData('text/plain', op.id);
   };
 
   return (
@@ -438,67 +520,8 @@ const KanbanCard = ({ op }) => {
       <div className="text-[12px] text-slate-400 mt-0.5 truncate">{jurisdiccionDe(op.barrio)}</div>
 
       {op.tareaEnCurso && (
-        <div
-          className={`mt-[13px] flex items-center text-[11px] rounded-[11px] pl-2.5 pr-1.5 py-[9px] transition-colors ${
-            isInBoard
-              ? 'gap-3 bg-slate-100 text-slate-700 border border-slate-200'
-              : 'gap-2 text-slate-700 bg-[#F7F8FA] border border-transparent'
-          }`}
-          data-testid={`kanban-task-${op.id}`}
-          title={isInBoard ? 'Ya está en tu día' : undefined}
-        >
-          <span
-            className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 self-center ${
-              isDone ? 'bg-emerald-500' : isInBoard ? 'pase-current-dot' : 'bg-slate-300'
-            }`}
-            aria-hidden
-          />
-          <span className="leading-snug flex-1 min-w-0">
-            <span className="block text-[9.5px] uppercase tracking-[0.08em] font-semibold text-[#B3B8BF]">
-              Tarea en curso
-            </span>
-            <span
-              className={`block font-semibold truncate text-[12.5px] mt-0.5 ${isInBoard ? 'text-slate-900' : 'text-[#3A4048]'}`}
-              title={op.tareaEnCursoFull || op.tareaEnCurso}
-            >
-              {op.tareaEnCurso}
-            </span>
-            {isInBoard && <span className="sr-only">Ya está en tu día</span>}
-          </span>
-          {isDone ? (
-            <button
-              type="button"
-              onClick={onRemoveClick}
-              data-testid={`kanban-remove-task-${op.id}`}
-              title="Tarea completada"
-              aria-label="Tarea completada"
-              className="shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-emerald-50 border border-slate-200 text-emerald-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
-            >
-              <Check className="w-3.5 h-3.5" strokeWidth={2.6} />
-            </button>
-          ) : isInBoard ? (
-            <button
-              type="button"
-              onClick={onRemoveClick}
-              data-testid={`kanban-remove-task-${op.id}`}
-              title="Quitar de mi día"
-              aria-label="Quitar de mi día"
-              className="shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
-            >
-              <Minus className="w-3.5 h-3.5" strokeWidth={2.4} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onAddClick}
-              data-testid={`kanban-add-task-${op.id}`}
-              title="Agregar a mi día"
-              aria-label="Agregar a mi día"
-              className="shrink-0 w-[26px] h-[26px] grid place-items-center rounded-[8px] transition-colors bg-white border border-slate-200 text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5"
-            >
-              <Plus className="w-3.5 h-3.5" strokeWidth={2.4} />
-            </button>
-          )}
+        <div className="mt-[13px]">
+          <TareaEnCursoPill op={op} />
         </div>
       )}
 
@@ -578,8 +601,13 @@ const InlineList = ({ operaciones }) => {
         <table className="w-full text-[13px]" data-testid="legajos-inline-list">
           <thead className="sticky top-0 z-10">
             <tr className="bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
-              {['Legajo', 'Estado', 'Tarea en curso', 'Partes', 'Firma', 'Riesgo', ''].map((h) => (
-                <th key={h} className="px-3.5 py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+              {['Etapa', 'Legajo', 'Responsable', 'Tarea en curso', 'Partes', 'Riesgo', 'Firma'].map((h) => (
+                <th
+                  key={h}
+                  className={`py-2.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 ${
+                    h === 'Riesgo' ? 'px-2' : 'px-3.5'
+                  }`}
+                >
                   {h}
                 </th>
               ))}
@@ -587,45 +615,64 @@ const InlineList = ({ operaciones }) => {
           </thead>
           <tbody>
             {operaciones.map((op, idx) => {
-              const e = estadoLabel[op.estado];
-              const r = riesgoLabel[op.riesgo];
-              const riesgoShort = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto' }[op.riesgo] || op.riesgo;
+              const hito = HITO_BY_ESTADO[op.estado];
+              const HitoIcon = hito?.icon;
+              const accent = (ESTADO_STAGE_VISUAL[op.estado] || ESTADO_STAGE_VISUAL.apertura).accent;
               const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
+              const onRowDragStart = (e) => {
+                e.dataTransfer.effectAllowed = 'copy';
+                e.dataTransfer.setData(DND_TYPE, op.id);
+                e.dataTransfer.setData('text/plain', op.id);
+              };
               return (
                 <tr
                   key={op.id}
                   data-testid={`inline-row-${op.id}`}
+                  draggable
+                  onDragStart={onRowDragStart}
                   onClick={() => navigate(`/escribanos/operaciones/${op.id}`)}
-                  className={`group border-b border-slate-100 last:border-0 hover:bg-sky-50/60 cursor-pointer transition-colors ${
+                  className={`group border-b-2 border-slate-100 hover:bg-sky-50/60 cursor-grab active:cursor-grabbing transition-colors ${
                     idx % 2 === 1 ? 'bg-slate-50/50' : ''
                   }`}
                 >
+                  <td className="px-3.5 py-3 align-top" style={{ borderLeft: `4px solid ${accent}` }}>
+                    {hito && (
+                      <div className="flex items-center gap-2">
+                        <span className={`w-7 h-7 rounded-[8px] grid place-items-center shrink-0 ${hito.iconColor}`}>
+                          <HitoIcon className="w-3.5 h-3.5" />
+                        </span>
+                        <span className="text-[12px] font-semibold text-slate-700 leading-tight max-w-[110px]">
+                          {hito.label}
+                        </span>
+                      </div>
+                    )}
+                  </td>
                   <td className="px-3.5 py-3 align-top">
                     <div className="font-mono text-[10.5px] text-slate-500">{op.id}</div>
                     <div className="font-semibold text-slate-900 truncate max-w-[260px]">{op.direccion}</div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[11px] text-slate-500">{jurisdiccionDe(op.barrio)}</span>
-                      {op.bloqueoActor && (
-                        <>
-                          <span className="text-slate-300">·</span>
-                          <BloqueoBadge op={op} />
-                        </>
-                      )}
-                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">{jurisdiccionDe(op.barrio)}</div>
                   </td>
                   <td className="px-3.5 py-3 align-top">
-                    <StatusBadge variant={e.color}>{e.label}</StatusBadge>
+                    {op.bloqueoActor ? <BloqueoBadge op={op} variant="soccer" /> : <span className="text-[11px] text-slate-400">—</span>}
                   </td>
                   <td className="px-3.5 py-3 align-top">
-                    <div className="text-[9.5px] uppercase tracking-[0.06em] font-semibold text-slate-400">
-                      Tarea en curso
-                    </div>
-                    <div className="text-[12.5px] font-semibold text-slate-800 max-w-[220px] truncate mt-0.5">
-                      {op.tareaEnCursoFull || op.tareaEnCurso || '—'}
+                    {op.tareaEnCurso ? (
+                      <div className="max-w-[360px]">
+                        <TareaEnCursoPill op={op} />
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-slate-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-3.5 py-3 align-middle">
+                    <div className="flex justify-center">
+                      <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" withPopover />
                     </div>
                   </td>
-                  <td className="px-3.5 py-3 align-top">
-                    <PartiesPair vendedor={op.vendedor} comprador={op.comprador} opId={op.id} size="sm" />
+                  <td className="px-2 py-3 align-middle">
+                    <div className="flex justify-center">
+                      <RiesgoIndicator riesgo={op.riesgo} />
+                    </div>
                   </td>
                   <td className="px-3.5 py-3 align-top">
                     <div className="flex items-center gap-1.5 text-[12px]">
@@ -635,18 +682,6 @@ const InlineList = ({ operaciones }) => {
                     <div className={`text-[10.5px] mt-0.5 ${urgente ? 'text-red-600 font-semibold' : 'text-slate-500'}`}>
                       {op.diasFirma > 0 ? `en ${op.diasFirma}d` : op.diasFirma === 0 ? 'hoy' : `hace ${-op.diasFirma}d`}
                     </div>
-                  </td>
-                  <td className="px-3.5 py-3 align-top">
-                    {op.riesgo === 'bajo' ? (
-                      <span className="text-[11px] text-slate-400">—</span>
-                    ) : (
-                      <StatusBadge variant={r.color}>{riesgoShort}</StatusBadge>
-                    )}
-                  </td>
-                  <td className="px-3.5 py-3 align-top text-right">
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-300 group-hover:text-slate-500">
-                      <ChevronRight className="w-4 h-4" />
-                    </span>
                   </td>
                 </tr>
               );
@@ -659,11 +694,40 @@ const InlineList = ({ operaciones }) => {
 };
 
 const RIESGO_ORDER = { alto: 0, medio: 1, bajo: 2 };
+const RIESGO_LEVEL = { bajo: 1, medio: 2, alto: 3 };
+const RIESGO_BAR_HEIGHT = ['h-1.5', 'h-2.5', 'h-3.5'];
+
+// Indicador incremental de riesgo: 3 barras crecientes, rellenas según nivel,
+// con el mismo color semántico (success/warning/destructive) que el resto del panel.
+const RiesgoIndicator = ({ riesgo }) => {
+  const level = RIESGO_LEVEL[riesgo] || 1;
+  const color = riesgoLabel[riesgo]?.color || 'success';
+  return (
+    <div
+      className="inline-flex items-end gap-[2px]"
+      title={riesgoLabel[riesgo]?.label}
+      aria-label={riesgoLabel[riesgo]?.label}
+      role="img"
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className={`w-[3px] rounded-sm ${RIESGO_BAR_HEIGHT[i]} ${i < level ? `bg-${color}` : 'bg-slate-200'}`}
+        />
+      ))}
+    </div>
+  );
+};
+const HITO_ORDER = HITOS.reduce((acc, h, idx) => {
+  h.states.forEach((s) => { acc[s] = idx; });
+  return acc;
+}, {});
 
 // Urgencia: firmas próximas primero; lo ya firmado/vencido (diasFirma negativo) al final.
 const urgenciaKey = (op) => (op.diasFirma < 0 ? Infinity : op.diasFirma);
 
 const SORTERS = {
+  hito: (a, b) => (HITO_ORDER[a.estado] ?? 9) - (HITO_ORDER[b.estado] ?? 9),
   urgencia: (a, b) => urgenciaKey(a) - urgenciaKey(b),
   riesgo: (a, b) => (RIESGO_ORDER[a.riesgo] ?? 9) - (RIESGO_ORDER[b.riesgo] ?? 9),
 };
@@ -672,7 +736,7 @@ export const LegajosKanban = ({ operaciones }) => {
   const [view, setView] = useState('kanban');
   const [actor, setActor] = useState('todos');
   const [stage, setStage] = useState('todas');
-  const [sortBy, setSortBy] = useState('urgencia');
+  const [sortBy, setSortBy] = useState('hito');
 
   // Conteo por actor (sólo legajos activos).
   const activas = operaciones.filter((o) => o.estado !== 'cerrado');
@@ -783,21 +847,31 @@ export const LegajosKanban = ({ operaciones }) => {
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-3" data-testid="lista-controls">
-            <div className="inline-flex items-center gap-1.5 overflow-x-auto">
-              {[{ id: 'todas', label: 'Todas' }, ...HITOS.map((h) => ({ id: h.id, label: h.label }))].map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  data-testid={`lista-stage-${s.id}`}
-                  onClick={() => setStage(s.id)}
-                  className={`px-3 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap transition-colors ${
-                    stage === s.id ? 'bg-[#242424] text-white' : 'bg-white text-[#5C636D] border border-[#ECEDF0] hover:bg-slate-50'
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
+          <div className="flex items-center justify-end gap-3 flex-wrap mb-3" data-testid="lista-controls">
+            <div className="inline-flex items-center gap-1.5 text-[12px] text-[#9AA0A8] shrink-0">
+              Filtrar por
+              <select
+                value={stage}
+                onChange={(e) => setStage(e.target.value)}
+                data-testid="lista-filter-stage"
+                className="font-semibold text-[#242424] bg-white border border-[#ECEDF0] rounded-md px-2 py-1 focus:outline-none"
+              >
+                <option value="todas">Todas las etapas</option>
+                {HITOS.map((h) => (
+                  <option key={h.id} value={h.id}>{h.label}</option>
+                ))}
+              </select>
+              <select
+                value={actor}
+                onChange={(e) => setActor(e.target.value)}
+                data-testid="lista-filter-responsable"
+                className="font-semibold text-[#242424] bg-white border border-[#ECEDF0] rounded-md px-2 py-1 focus:outline-none"
+              >
+                <option value="todos">Todos los responsables</option>
+                {Object.entries(bloqueoLabel).map(([id, meta]) => (
+                  <option key={id} value={id}>{meta.short}</option>
+                ))}
+              </select>
             </div>
             <div className="inline-flex items-center gap-1.5 text-[12px] text-[#9AA0A8] shrink-0">
               Ordenar por
@@ -807,6 +881,7 @@ export const LegajosKanban = ({ operaciones }) => {
                 data-testid="lista-sort"
                 className="font-semibold text-[#242424] bg-white border border-[#ECEDF0] rounded-md px-2 py-1 focus:outline-none"
               >
+                <option value="hito">Hito (etapa)</option>
                 <option value="urgencia">Urgencia (firma)</option>
                 <option value="riesgo">Riesgo</option>
               </select>

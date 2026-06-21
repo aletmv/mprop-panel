@@ -405,7 +405,7 @@ export const cargaMensual = [
 ];
 
 export const estadoLabel = {
-  apertura: { label: 'Inicio', color: 'stage-inicio' },
+  apertura: { label: 'Apertura', color: 'stage-inicio' },
   documentos: { label: 'Expediente', color: 'stage-expediente' },
   analisis: { label: 'Due diligence', color: 'stage-diligence' },
   observado: { label: 'Observado', color: 'stage-diligence' },
