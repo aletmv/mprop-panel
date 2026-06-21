@@ -222,10 +222,10 @@ export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
 
   return (
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl overflow-hidden">
-      <div className="h-16 pl-4 pr-6 lg:pr-8 flex items-center gap-4 border-b border-transparent">
+      <div className="h-16 px-9 flex items-center gap-4 border-b border-transparent">
         {greeting && (
           <div
-            className="absolute left-[18px] right-[18px] -top-2.5 h-[120px] pointer-events-none blur-[6px] z-0"
+            className="absolute left-0 right-0 -top-2.5 h-[120px] pointer-events-none blur-[6px] z-0"
             style={{
               background:
                 'radial-gradient(60% 80% at 20% 40%, rgba(228,223,245,.55), transparent 70%), radial-gradient(55% 80% at 60% 30%, rgba(208,225,245,.5), transparent 70%), radial-gradient(50% 80% at 85% 60%, rgba(250,219,202,.45), transparent 70%)',
@@ -238,7 +238,7 @@ export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
             <h1
               className={`font-display leading-tight truncate ${
                 greeting
-                  ? 'font-semibold text-[30px] tracking-[-0.6px]'
+                  ? 'font-semibold text-[22px] tracking-[-0.6px]'
                   : 'font-bold text-[18px] text-foreground'
               }`}
             >
@@ -269,8 +269,8 @@ export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
         </Button>
 
         <Button
-          size="sm"
-          className="gap-2 rounded-[13px] bg-foreground text-background hover:bg-black"
+          variant="ghost"
+          className="relative z-10 h-[42px] gap-2 rounded-[13px] bg-card border border-border text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:bg-muted"
           aria-label="Cerrar sesión"
           data-testid="topbar-logout-btn"
           onClick={() => {
