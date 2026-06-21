@@ -36,7 +36,7 @@ const PartesList = () => {
     <PanelShell>
       <Topbar title="Partes" subtitle="Compradores y vendedores de tus legajos" />
 
-      <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-5" data-testid="partes-list">
+      <div className="px-9 py-6 lg:py-8 space-y-5" data-testid="partes-list">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="text-[12px] text-muted-foreground tabular-nums">
             <span className="font-semibold text-foreground">{lista.length}</span>{' '}

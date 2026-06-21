@@ -336,7 +336,7 @@ const OperacionDetail = () => {
           className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200"
           data-testid="legajo-detail-header"
         >
-          <div className="max-w-[1280px] mx-auto px-6 md:px-8 py-3 flex items-center gap-4">
+          <div className="px-9 py-3 flex items-center gap-4">
             <Link
               to="/escribanos/operaciones"
               className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 transition-colors"
@@ -391,7 +391,7 @@ const OperacionDetail = () => {
           </div>
         </header>
 
-        <div className="max-w-[1280px] mx-auto px-6 md:px-8 py-6 md:py-8 space-y-6">
+        <div className="px-9 py-6 md:py-8 space-y-6">
           {opAlertas.length > 0 && (
             <div className="space-y-3" data-testid="alerts-zone">
               {opAlertas

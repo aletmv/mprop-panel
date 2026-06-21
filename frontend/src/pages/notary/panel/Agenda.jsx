@@ -41,7 +41,7 @@ const Agenda = () => {
     <PanelShell>
       <Topbar title="Agenda de firmas" subtitle="Planificá y reprogramá las firmas de tu escribanía" />
 
-      <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-5" data-testid="agenda-page">
+      <div className="px-9 py-6 lg:py-8 space-y-5" data-testid="agenda-page">
         <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex items-center bg-card border border-border rounded-lg h-10">
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-r-none">

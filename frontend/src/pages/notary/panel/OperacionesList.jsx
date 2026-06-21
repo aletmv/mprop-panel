@@ -72,7 +72,7 @@ const OperacionesList = () => {
         subtitle={hito ? hito.sub : 'Todos los legajos en gestión por tu escribanía'}
       />
 
-      <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-5" data-testid="operaciones-list">
+      <div className="px-9 py-6 lg:py-8 space-y-5" data-testid="operaciones-list">
         {hito && (
           <div
             className="card-surface p-4 flex items-center justify-between gap-3 flex-wrap"

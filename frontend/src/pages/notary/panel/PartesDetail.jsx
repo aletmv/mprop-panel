@@ -34,7 +34,7 @@ const PartesDetail = () => {
     <PanelShell>
       <Topbar title="Ficha de parte" subtitle="Datos personales, documentación y legajos asociados" />
 
-      <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-5" data-testid="parte-detail">
+      <div className="px-9 py-6 lg:py-8 space-y-5" data-testid="parte-detail">
         <Link
           to="/escribanos/partes"
           className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 transition-colors"

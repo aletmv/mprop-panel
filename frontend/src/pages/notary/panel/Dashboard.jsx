@@ -44,7 +44,7 @@ const Dashboard = () => {
           </>
         }
       />
-      <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-6" data-testid="notary-dashboard">
+      <div className="px-9 py-4 pb-10 space-y-[22px]" data-testid="notary-dashboard">
         <section className="grid grid-cols-1 lg:grid-cols-[13fr_7fr] gap-6">
           <div>
             <TasksBoard operaciones={operaciones} />
