@@ -3,6 +3,22 @@
 > Documento **accionable y con fecha de vencimiento** (a diferencia de la arquitectura, que es permanente).
 > Mapea, pantalla por pantalla, qué existe / qué falta / con qué prioridad para que la demo se sienta completa.
 > Para el mapa conceptual ver [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md).
+>
+> **Estado:** los dos **P0** (integridad de demo) están **cerrados** en la rama `demo-integrity-claude`.
+> Quedan pendientes P1/P2. Ver §0 (resueltos) y §5 (próximo paso).
+
+---
+
+## 0. Cerrado en `demo-integrity-claude`
+
+Los dos gaps P0 que rompían la ilusión de demo ya están resueltos:
+
+| Gap | Resuelto por | Cómo |
+|---|---|---|
+| **T1 — `documentos` y `eventos` globales** (idénticos en todo legajo) | commit *"Scope legajo documents and events by operation"* | `legajoDocsEventos.js`: generadores stage-aware por `op` (`getDocumentosByOp` / `getEventosByOp`), determinísticos. Conteos coherentes en Documentos y Resumen; IDs correctos en eventos; montos económicos variables por operación |
+| **T2 — Resumen hardcodeado** (no derivado de `op`) | commit *"Derive legajo summary from operation data"* | Próxima acción ← `op.proximoPaso`/fallback · Responsable ← `bloqueoActor`/`proximoPaso` · Condición ← estado/riesgo/`bloqueoMotivo` (color correcto) · snapshot "Próxima" alineado con la card · hardcodes principales eliminados |
+
+Quedan **fuera** de este cierre (siguen pendientes): la card "Responsables" del snapshot (equipo notarial, genérica, P2) y todos los verbos stub (T3) y el search/notifs (T4).
 
 ---
 
@@ -25,8 +41,8 @@ backend real. La ausencia de backend es un gap de *backend-readiness* (futuro `D
 
 | # | Gap | Impacto | Prioridad |
 |---|---|---|---|
-| T1 | **`documentos` y `eventos` son listas mock globales**, no filtradas por `op.id`: cada legajo muestra los mismos documentos y el mismo timeline | Abrir dos legajos revela que es maqueta al instante | **P0** |
-| T2 | **Tab Resumen hardcodeado**, no derivado de `op`: "Solicitar inhibición del vendedor", conteos 6/1/1 de documentos son fijos | El resumen no concuerda con el legajo abierto | **P0** |
+| ~~T1~~ | ~~`documentos` y `eventos` listas mock globales~~ | — | ✅ **RESUELTO** (ver §0) |
+| ~~T2~~ | ~~Tab Resumen hardcodeado, no derivado de `op`~~ | — | ✅ **RESUELTO** (ver §0) |
 | T3 | **Verbos primarios son stubs visuales** (sin `onClick`): Programar firma, Subir documento, Resolver alerta, Nuevo legajo, Nota, Exportar, copiar ID | Las acciones centrales del producto no responden | **P1** |
 | T4 | **Búsqueda global (⌘K) y campana de notificaciones**: inputs/botones decorativos sin comportamiento | Dos elementos prominentes del topbar no hacen nada | **P1** |
 
@@ -54,10 +70,10 @@ backend real. La ausencia de backend es un gap de *backend-readiness* (futuro `D
 |---|---|---|
 | Header | copiar ID, Nota, Exportar, **Programar firma** → todos stub | Programar firma **P1**, resto P2 |
 | Alertas | "Resolver" stub | **P1** (tie-in IA, ver §5) |
-| Resumen | Hardcodeado, no derivado de `op` (T2) | **P0** |
+| Resumen | ✅ Derivado de `op` (T2 resuelto). Pendiente menor: card "Responsables" genérica | listo · resto **P2** |
 | Partes e inmueble | Datos reales de `op`; botones teléfono/mail stub | P2 |
-| Documentos | Lista mock **global** (T1); Subir/Descargar stub | **P0** + P1 |
-| Actividad | Timeline mock **global** (T1); TimelineProceso sí deriva de `op`; Exportar log stub | **P0** |
+| Documentos | ✅ Lista scoped por `op` (T1 resuelto); Subir/Descargar aún stub | scoping **listo** · verbos **P1** |
+| Actividad | ✅ Eventos scoped por `op` (T1 resuelto); TimelineProceso ya derivaba; Exportar log stub | scoping **listo** · export **P2** |
 | **Operativa** | **Funciona** (completar/cancelar/reabrir, persistente). Creación solo desde Kanban/Lista | **listo** |
 | Bóveda | **Funciona**, derivada de datos económicos de `op`; toggle vivienda única | **listo** |
 
@@ -77,37 +93,36 @@ backend real. La ausencia de backend es un gap de *backend-readiness* (futuro `D
 
 ## 4. Priorización consolidada
 
-**P0 — sin esto la demo se nota maqueta (arreglar primero):**
-1. Filtrar `documentos` por legajo (T1)
-2. Filtrar `eventos`/timeline por legajo (T1)
-3. Derivar el tab Resumen de `op` en vez de hardcodear (T2)
+**P0 — ✅ CERRADO** (rama `demo-integrity-claude`, ver §0):
+- ~~Filtrar `documentos` por legajo~~ · ~~Filtrar `eventos`/timeline por legajo~~ · ~~Derivar el Resumen de `op`~~
 
-**P1 — interacciones esperadas que hoy no responden:**
-4. Resolver alerta → **crear una `OperationalTask`** (tie-in IA, ver §5)
-5. Programar firma → feedback/estado coherente
-6. Subir documento → agregar al listado del legajo (mock persistente)
-7. Nuevo legajo → alta mínima
-8. Búsqueda global ⌘K (T4)
+**P1 — interacciones esperadas que hoy no responden (siguiente foco):**
+1. Resolver alerta → **crear una `OperationalTask`** (tie-in IA, ver §5) ← **próximo paso recomendado**
+2. Programar firma → feedback/estado coherente
+3. Subir documento → agregar al listado scoped del legajo (mock persistente)
+4. Nuevo legajo → alta mínima
+5. Búsqueda global ⌘K (T4)
 
 **P2 — puede esperar / se narra:**
-9. Agenda interactiva · Partes detalle · notificaciones · exportar · paginación · "Ver sugerencias"
+6. Agenda interactiva · Partes detalle · card "Responsables" del Resumen · notificaciones · exportar · paginación · "Ver sugerencias"
 
 ---
 
 ## 5. Recomendación de próximo paso
 
-El gap de mayor ROI para la demo **y** alineado con la tesis del producto es el **P1 #4: "Resolver alerta →
-crear OperationalTask"**. Hoy ya existe `getOpAlert(op)` (una detección/*finding*) y la capa Operativa funciona —
-conectar ambos materializa en vivo la cadena **event-informed, task-driven** (`Finding → OperationalTask`) sin
-construir backend ni IA. Es la demostración más barata de la tesis central.
+Con los P0 cerrados, la base de credibilidad ya está: dos legajos distintos se ven distintos. El gap de mayor ROI
+ahora es **P1 #1: "Resolver alerta → crear OperationalTask"**.
 
-Pero **antes** conviene cerrar los **P0 (T1/T2)**: si los documentos y el timeline son idénticos en todo legajo,
-cualquier recorrido de dos legajos delata la maqueta y le quita credibilidad a lo demás. Orden sugerido:
+Por qué es el siguiente paso lógico:
+- **Conecta la cadena central del producto** end-to-end y visible: alerta/problema detectado (`getOpAlert(op)`,
+  un *finding*) → acción → `OperationalTask` → tab Operativa → Tareas del día. Es la demostración en vivo de
+  **event-informed, task-driven** (ver [`SYSTEM_OVERVIEW.md` §5](SYSTEM_OVERVIEW.md)).
+- **Reusa lo que ya existe y funciona:** `getOpAlert(op)` ya detecta; `operationalTasks.create(...)` ya crea y
+  persiste; la Operativa y Tareas del día ya renderizan. No requiere backend ni IA.
+- **Convierte un stub (T3 "Resolver") en el momento más narrable de la demo:** el botón pasa de decorativo a
+  disparar la tesis del producto.
 
-1. **P0** (legajo-scoping de documentos/eventos + Resumen derivado) — credibilidad base.
-2. **P1 #4** (Resolver alerta → OperationalTask) — muestra la tesis.
-3. Resto de P1 según tiempo.
+Costo bajo, impacto narrativo alto, cero arquitectura nueva.
 
-Decisión abierta para la próxima sesión: ¿avanzar con **cierre de gaps de demo** (este documento) o con
-**backend-readiness** (futuro `DOMAIN_MODEL.md`)? La recomendación es **demo primero**: es más barato, da algo
-mostrable, y al cerrar gaps se entiende mejor el dominio real antes de modelar el backend.
+Decisión abierta (sin cambios): ¿seguir con **cierre de gaps de demo** o arrancar **backend-readiness**
+(`DOMAIN_MODEL.md`)? La recomendación sigue siendo **demo primero** — y dentro de demo, P1 #1 antes que el resto.
