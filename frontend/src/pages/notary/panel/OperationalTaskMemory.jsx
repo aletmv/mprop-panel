@@ -48,7 +48,6 @@ const TaskMemoryItem = ({ task, onComplete, onCancel, onReopen }) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap mb-1">
           <Pill variant={BADGE_VARIANT[badge.severity]}>{badge.label}</Pill>
-          <Pill variant="muted">{ORIGIN_LABEL[task.origin] || task.origin}</Pill>
           {task.scheduledForDate === today && <Pill variant="info">En tu día</Pill>}
         </div>
         <div className={`text-sm font-medium text-slate-900 ${task.status !== 'pending' ? 'text-slate-500' : ''}`}>
@@ -57,6 +56,8 @@ const TaskMemoryItem = ({ task, onComplete, onCancel, onReopen }) => {
         <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
           {task.relatedActorLabel && <span>Responsable: {task.relatedActorLabel}</span>}
           {task.relatedActorLabel && <span className="text-slate-300">·</span>}
+          <span>origen {(ORIGIN_LABEL[task.origin] || task.origin || 'manual').toLowerCase()}</span>
+          <span className="text-slate-300">·</span>
           <span>creada {formatDateTime(task.createdAt)}</span>
           {task.completedAt && (
             <>
