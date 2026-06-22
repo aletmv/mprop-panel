@@ -272,7 +272,7 @@ const TimelineProceso = ({ op }) => {
       className="mt-8 card-surface p-5"
     >
       <header className="mb-5">
-        <h2 className="font-display font-bold text-[18px] text-slate-900">Timeline de la operación</h2>
+        <h2 className="font-display font-bold text-[18px] text-slate-900">Avance del proceso</h2>
         <p className="text-[12px] text-slate-500 mt-0.5">
           Progreso por hitos del proceso notarial. Expandí cada bloque para revisar el checklist.
         </p>
