@@ -108,6 +108,55 @@ detalle vs bespoke de TasksBoard — ver §8). Especificación objetivo:
 La **severidad es la señal principal** de la tarjeta cuando la task nació de una alerta; el azul genérico de tarea
 operativa no debe dominar en ese caso.
 
+> ⚠️ **El enfoque de "badge compuesto" (`Revisión · Alerta crítica`) de esta sección está en revisión.** Ver
+> **§4·WIP**, que propone separar tipo (badge) de severidad (tratamiento) y de origen (detalle). Hasta validar §4·WIP
+> con implementación real, esta §4 queda como referencia previa, no como regla cerrada.
+
+---
+
+## 4·WIP — Task Card Grammar (pendiente de validación)
+
+> 🚧 **WIP / dirección provisional — NO es diseño final.** Reemplazaría el enfoque de badge compuesto de §4.
+> No está implementada ni vista en UI real. Debe validarse implementando un renderer/primitive único de Task
+> Card / `TaskRow` y puede cambiar (o descartarse) si en la UI real no funciona. **No representa una regla cerrada.**
+
+**Decisión provisional:** `badge = tipo` · `severidad = tratamiento visual` · `origen = detalle`.
+
+Tres dimensiones, tres canales separados (hoy el badge compuesto las mezcla):
+
+| Dimensión | Canal |
+|---|---|
+| **Tipo** de tarea | **Badge** (única función del badge) |
+| **Severidad** (crítica/media/none) | **Tratamiento de tarjeta**: acento lateral + ícono + borde/fondo suave + tono |
+| **Origen/procedencia** | **Solo vista expandida/detalle** |
+
+**Reglas propuestas (todavía no finales):**
+- El badge principal identifica **solo el tipo**: `Proceso` · `Seguimiento` · `Revisión` · `Tarea` (fallback).
+- El badge **no** mezcla tipo + origen + severidad. Evitar como formato base: `[Revisión · Alerta crítica]`.
+- Para una `review` creada desde alerta crítica/media:
+  - badge: `Revisión`
+  - severidad: acento lateral / ícono / borde-fondo suave (rojo crítica, ámbar media)
+  - origen: detalle/expand, **no** en la tarjeta compacta.
+- **Tarjeta compacta** centrada en la acción:
+  ```
+  [BADGE]  Acción concreta
+           Dirección simplificada
+           MP-ID
+  ```
+- La tarjeta compacta **no** debería mostrar: Responsable como pill · origin/manual como pill · sourceLabel como
+  pill · metadata secundaria de más.
+- **pending / done / cancelled** mantienen la **misma estructura**; difieren solo por atenuación/tachado y la acción
+  primaria (completar vs reabrir). La severidad **persiste** (atenuada) en done/cancelled, no se pierde.
+- Una tarea **formal** (`Proceso`) y una **operativa** deberían compartir **gramática mínima** si conviven en la
+  misma sección (ej. "Completadas hoy").
+- **Operativa** puede ser la vista más **expandida/contextual**: muestra origen, responsable, fechas,
+  `sourceType`/`sourceId`, historial, subtareas — lo que la tarjeta compacta omite.
+
+**Implementación:** esto **no** debe hacerse como parche dentro del PR actual de cleanup semántico. Queda para una
+**fase futura de refactor**, probablemente creando un **renderer/primitive único de Task Card / `TaskRow`** que
+aplique esta gramática a formal + operativa y a pending/done/cancelled. Recién ahí, validado en UI real, esta
+sección podría promoverse de WIP a regla y absorber/reemplazar §4.
+
 ---
 
 ## 5. Alertas
