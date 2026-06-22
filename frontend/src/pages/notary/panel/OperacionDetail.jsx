@@ -10,7 +10,7 @@ import {
   CalendarClock, ShieldCheck,
 } from 'lucide-react';
 import {
-  operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, estadoLabel, riesgoLabel,
+  operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, estadoLabel, riesgoLabel, bloqueoLabel,
 } from './mockData';
 import { getDocumentosByOp, getEventosByOp } from './legajoDocsEventos';
 import { buildNotaryOperaciones } from './operacionesAdapter';
@@ -315,6 +315,19 @@ const OperacionDetail = () => {
     alerta: docs.filter((d) => d.estado === 'alerta').length,
     pendiente: docs.filter((d) => d.estado === 'pendiente').length,
   };
+  // Resumen derivado del legajo (P0 demo integrity). `proxima` se usa tanto en la
+  // card "Condición del legajo" como en el snapshot "Estado actual" → no pueden
+  // divergir. No muta estado/pelota/línea de pases: solo lee.
+  const proxima = op.proximoPaso?.descripcion || op.tareaEnCursoFull || op.tareaEnCurso || '—';
+  const responsableLabel = bloqueoLabel[op.proximoPaso?.responsable || op.bloqueoActor]?.short || '—';
+  const titulo = `${e.label} · ${op.pasoActual}`;
+  const condicion = observado
+    ? { text: `Observado · ${op.bloqueoMotivo || 'requiere revisión'}`, cls: 'text-red-600' }
+    : op.riesgo === 'alto'
+    ? { text: 'Riesgo alto · requiere validación', cls: 'text-amber-600' }
+    : op.riesgo === 'medio'
+    ? { text: 'Riesgo medio · monitorear', cls: 'text-amber-600' }
+    : { text: 'Sin observaciones', cls: 'text-slate-600' };
   const pasoIdx = pasos.findIndex((p) => p === op.pasoActual);
   const fase = pasoIdx >= 0 ? pasoIdx + 1 : 1;
   const [searchParams] = useSearchParams();
@@ -470,7 +483,7 @@ const OperacionDetail = () => {
                 <div className="text-sm font-medium text-slate-900 mt-1">{op.pasoActual}</div>
                 <div className="text-sm text-slate-600 mt-2 leading-relaxed">
                   <span className="text-slate-500">Próxima · </span>
-                  Solicitar inhibición del vendedor
+                  {proxima}
                 </div>
               </div>
             </Card>
@@ -551,20 +564,20 @@ const OperacionDetail = () => {
                     <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                       <div>
                         <SectionLabel>Título</SectionLabel>
-                        <div className="text-sm font-medium text-slate-900 mt-1">En estudio · Análisis notarial</div>
+                        <div className="text-sm font-medium text-slate-900 mt-1">{titulo}</div>
                       </div>
                       <div>
                         <SectionLabel>Próxima acción</SectionLabel>
-                        <div className="text-sm font-medium text-slate-900 mt-1">Solicitar inhibición del vendedor</div>
+                        <div className="text-sm font-medium text-slate-900 mt-1">{proxima}</div>
                       </div>
                       <div>
                         <SectionLabel>Responsable de la acción</SectionLabel>
-                        <div className="text-sm font-medium text-slate-900 mt-1">Gestoría asignada</div>
+                        <div className="text-sm font-medium text-slate-900 mt-1">{responsableLabel}</div>
                       </div>
                       <div>
                         <SectionLabel>Condición</SectionLabel>
-                        <div className="text-sm font-medium text-red-600 mt-1">
-                          {observado ? 'Observado · Dominio vence antes de la firma' : 'Sin observaciones'}
+                        <div className={`text-sm font-medium mt-1 ${condicion.cls}`}>
+                          {condicion.text}
                         </div>
                       </div>
                     </div>
