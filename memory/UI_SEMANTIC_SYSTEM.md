@@ -43,8 +43,12 @@ tarjeta.**
 | **Ámbar** (`warning`) | Precaución / atención | riesgo medio, alerta media, firma tentativa, "Requiere revisión" | confirmaciones positivas |
 | **Verde** (`success`/emerald) | Estado positivo **o** acción completar — **diferenciar por forma** | riesgo bajo, firma confirmada, parte verificada (estado, en *pill/dot*); completar tarea (acción, en *botón con ícono*) | mezclar verde-estado y verde-acción sin que la **forma** los distinga |
 | **Sky / Azul** | Marca/primary **y** dominio Bóveda | botones primary, links, trazabilidad económica (Bóveda) | ⚠️ color genérico de "tarea operativa"/subtype; el sky no es el default de todo |
-| **Gris / Slate** | Neutro / metadata / sin señal | "Sin observaciones", labels secundarios, metadata (origin) | comunicar un estado que sí importa |
+| **Gris / Slate** | Neutro / metadata / sin señal | "Sin observaciones", labels secundarios, metadata (origin), **responsable/actor** | comunicar un estado que sí importa |
 | **Stage colors** (`--stage-*`) | **Solo etapa del flow** | borde de columna Kanban, celda Etapa de Lista, barra de progreso | ⚠️ teñir el pill de responsable (hoy lo hace → lee como etapa, no actor) |
+| **(Rol / actor)** | **No existe familia de color de rol** | — | dar a Comprador/Vendedor/Gestoría/Tercero/Escribanía un color propio |
+
+**El color responde "¿qué tan urgente/crítico?", "¿en qué etapa?", "¿completado?", "¿es alerta?", "¿es acción
+primaria?" — nunca "¿quién es el actor?".** Los roles se identifican por **label/copy** (ver §3), no por color.
 
 **Reglas de color:**
 1. Rojo y ámbar se **reservan** a severidad/riesgo/alerta. No decorativos.
@@ -52,6 +56,11 @@ tarjeta.**
 3. Verde requiere cuidado: estado-positivo y acción-completar pueden coexistir solo si la **forma** los separa
    (pill/dot = estado; botón con ✓ = acción).
 4. Sky pertenece a Bóveda + primary. Las tareas operativas toman color de su **severidad/origen**, no sky por defecto.
+5. **Los roles no se codifican por color.** Ningún actor tiene color semántico propio (Comprador ≠ azul,
+   Vendedor ≠ naranja, Gestoría ≠ violeta, etc.). El responsable/pelota usa tratamiento **neutral**; se distingue
+   por el copy ("Responsable: Vendedor", "Acción: Comprador"). **Excepción controlada:** "Escribanía" / acción
+   propia puede llevar un **énfasis leve** (borde más marcado, fondo neutral algo destacado, ícono sutil) porque
+   comunica accionabilidad propia — nunca un color fuerte que compita con alerta/riesgo/etapa.
 
 ---
 
@@ -67,6 +76,9 @@ tarjeta.**
    con la severidad. ⚠️ Hoy "Manual" se muestra como Pill en Operativa.
 4. **subtype / severity / origin / scheduling no compiten:** jerarquía fija → severidad/subtype (principal) >
    scheduling ("En tu día") > origin (metadata, tenue).
+5. **Roles se identifican por label, no por color** (ver §2 regla 5). El pill de responsable/pelota es **neutral**;
+   el dato lo da el copy ("Responsable: Gestoría", "Acción: Comprador"). Excepción: "Escribanía"/acción propia con
+   énfasis leve (borde/fondo neutral algo destacado), nunca color fuerte.
 
 ---
 
@@ -179,7 +191,8 @@ y en Operativa, debe verse igual (ver refactor §11 / quick wins).
 2. **Actividad/bitácora ≠ task accionable.** Un evento es registro; una tarea tiene estado y acciones. No se
    muestran como lo mismo. ⚠️ Hoy el tab "Actividad" mezcla bitácora (Línea de tiempo) + checklist (Timeline de la operación).
 3. **Bóveda ≠ tarea operativa.** La economía es su propio dominio (sky); no se cruza con Operativa.
-4. **Responsable/pelota ≠ etapa.** Distintos ejes, distintos colores.
+4. **Responsable/pelota ≠ etapa.** Distintos ejes. El responsable es **neutral** (no toma color de etapa ni color
+   de rol); la etapa tiene su propio color en columnas/barras/labels.
 5. **Alerta ≠ estado resuelto.** Crear una tarea desde una alerta no la resuelve.
 
 ---
@@ -195,6 +208,8 @@ backend-copiando-React). **Acá se suman los visuales/semánticos:**
 - **Acciones que prometen más de lo que hacen** (verbo > efecto, ej. "Resolver").
 - **Stubs con peso visual primario** (parecen funcionales y no responden).
 - **Stage color usado para no-etapa** (responsable teñido por etapa).
+- **Codificar roles por color** (dar a Comprador/Vendedor/Gestoría/Tercero/Escribanía un color semántico propio):
+  multiplica los códigos de color y compite con severidad/etapa. Los roles se identifican por **label**, no por color.
 - **Una entidad con dos lenguajes de card** según pantalla.
 
 ---
@@ -203,9 +218,11 @@ backend-copiando-React). **Acá se suman los visuales/semánticos:**
 
 En orden sugerido — todas derivadas de la auditoría:
 
-1. **Renombrar "Resolver"** (alerta) → verbo literal ("Crear tarea" / "Atender"). *Riesgo cero, copy.*
-2. **Renombrar "Timeline de la operación"** → refleja que es checklist/avance del proceso, no bitácora. *Copy + decisión de nombre.*
-3. **No usar color de etapa para el pill de responsable** → tono neutro propio. *Visual acotado.*
+1. ✅ **Renombrar "Resolver"** (alerta) → "Crear tarea" (QW1, hecho).
+2. ✅ **Renombrar "Timeline de la operación"** → "Avance del proceso" (QW2, hecho).
+3. **Neutralizar el pill de responsable/pelota** (QW4): que **no** use color de etapa **ni** color de rol — tono
+   neutral; el actor lo comunica el copy. Excepción leve para "Escribanía"/acción propia (borde/fondo neutral algo
+   destacado, sin color fuerte). *Visual acotado.*
 4. **Despromover stubs** (Programar firma, etc.) a secundario hasta que funcionen. *Visual.*
 5. **Quitar "Manual" como Pill** en Operativa → metadata secundaria. *Visual menor.*
 6. **Unificar el rendering de `OperationalTask`** en un primitive compartido (TasksBoard + Operativa) y un helper
