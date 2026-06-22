@@ -245,8 +245,17 @@ const LineaDePasesContent = ({ op, onNavigate }) => {
 // Trigger soccer del Kanban: badge sin pill que abre con hover el popover
 // "Línea de pases".
 const SoccerBloqueoTrigger = ({ op, navigate }) => {
-  const isBloqueado = op.bloqueoActor === 'bloqueado';
-  const visual = ESTADO_STAGE_VISUAL[op.estado] || ESTADO_STAGE_VISUAL.apertura;
+  const actor = op.bloqueoActor;
+  const isBloqueado = actor === 'bloqueado';
+  const isEscribania = actor === 'escribania';
+  // Tratamiento NEUTRAL: el color no comunica actor ni etapa (ver UI_SEMANTIC_SYSTEM §2/§3).
+  // El rol se lee por el copy. Excepción leve para Escribanía (acción propia): borde/fondo
+  // algo más marcado, sin color fuerte. "Bloqueado" mantiene rojo = severidad, no color de actor.
+  const tone = isBloqueado
+    ? 'bg-red-50 text-red-700 border border-red-100'
+    : isEscribania
+    ? 'bg-slate-100 text-slate-700 border border-slate-300'
+    : 'bg-slate-50 text-slate-600 border border-slate-200';
   return (
     <HoverCard openDelay={120} closeDelay={80}>
       <HoverCardTrigger asChild>
@@ -258,10 +267,7 @@ const SoccerBloqueoTrigger = ({ op, navigate }) => {
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          style={isBloqueado ? undefined : { background: visual.bg, color: visual.text }}
-          className={`inline-flex items-center gap-1.5 cursor-pointer rounded-full px-2.5 py-1 transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-1 ${
-            isBloqueado ? 'bg-red-50' : ''
-          }`}
+          className={`inline-flex items-center gap-1.5 cursor-pointer rounded-full px-2.5 py-1 transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-1 ${tone}`}
         >
           <BloqueoNameOnly actor={op.bloqueoActor} opId={op.id} tone textClassName="text-[11px]" iconClassName="w-3 h-3" />
         </button>
