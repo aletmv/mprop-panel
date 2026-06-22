@@ -220,11 +220,11 @@ En orden sugerido — todas derivadas de la auditoría:
 
 1. ✅ **Renombrar "Resolver"** (alerta) → "Crear tarea" (QW1, hecho).
 2. ✅ **Renombrar "Timeline de la operación"** → "Avance del proceso" (QW2, hecho).
-3. **Neutralizar el pill de responsable/pelota** (QW4): que **no** use color de etapa **ni** color de rol — tono
+3. ✅ **Neutralizar el pill de responsable/pelota** (QW4, hecho): no usa color de etapa **ni** color de rol — tono
    neutral; el actor lo comunica el copy. Excepción leve para "Escribanía"/acción propia (borde/fondo neutral algo
-   destacado, sin color fuerte). *Visual acotado.*
+   destacado, sin color fuerte).
 4. **Despromover stubs** (Programar firma, etc.) a secundario hasta que funcionen. *Visual.*
-5. **Quitar "Manual" como Pill** en Operativa → metadata secundaria. *Visual menor.*
+5. ✅ **Quitar "Manual" como Pill** en Operativa → metadata secundaria (QW5, hecho).
 6. **Unificar el rendering de `OperationalTask`** en un primitive compartido (TasksBoard + Operativa) y un helper
    único de "tono por severidad". *Refactor — mayor scope, hacer con cuidado.*
 
