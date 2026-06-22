@@ -7,7 +7,7 @@ import {
   ChevronLeft, CheckCircle2, AlertTriangle, FileSignature, Download,
   MessageSquarePlus, ChevronRight, Sparkles, ExternalLink, Phone, Mail,
   FileText, DollarSign, Building2, CircleDot, Circle, Clock, Copy, Wallet,
-  CalendarClock, ShieldCheck,
+  CalendarClock, ShieldCheck, Plus,
 } from 'lucide-react';
 import {
   operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, estadoLabel, riesgoLabel, bloqueoLabel,
@@ -478,7 +478,7 @@ const OperacionDetail = () => {
                               className="bg-slate-900 text-white hover:bg-slate-800 font-medium px-3 h-8 shadow-sm transition-colors"
                               data-testid={`btn-resolver-${a.id}`}
                             >
-                              Resolver <ChevronRight className="w-3.5 h-3.5 ml-0.5" strokeWidth={1.5} />
+                              <Plus className="w-3.5 h-3.5 mr-0.5" strokeWidth={2} /> Crear tarea
                             </Button>
                           )}
                         </div>
