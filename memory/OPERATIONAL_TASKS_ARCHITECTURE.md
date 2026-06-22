@@ -26,9 +26,11 @@ en vez de ir parchando.
 │   Futuro: ChecklistItem.                                          │
 └─────────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────────┐
-│ Línea de pases                                                    │
-│   Responsabilidad formal: quién tiene la pelota y cómo llegó ahí. │
-│   Hoy: op.bloqueoActor + op.lineaDePases (SoccerBloqueoTrigger).   │
+│ Responsabilidad operativa (ex "Línea de pases")                   │
+│   Quién debe actuar ahora para destrabar/avanzar un requisito y   │
+│   cómo llegó esa responsabilidad ahí. Capa de RUTEO, no el centro │
+│   del workflow. Legacy en código: op.bloqueoActor +              │
+│   op.lineaDePases / SoccerBloqueoTrigger.                         │
 │   No cambia con tareas operativas custom.                         │
 └─────────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────────┐
@@ -157,14 +159,15 @@ OperationalTask ──(subset filtrado por el usuario)──→  "Tareas del dí
 OperationalTask / Communication ──(evento)──────────→  Timeline (registro, no flow duro)
 ```
 
-`Línea de pases` y `op.estado` **no aparecen como destino de ninguna flecha** — ninguna entidad de este modelo
-escribe sobre ellos. Esa es la regla no-negociable de la sección 5.
+La `Responsabilidad operativa` (ex "línea de pases"; legacy `op.lineaDePases`/`op.bloqueoActor`) y `op.estado`
+**no aparecen como destino de ninguna flecha** — ninguna entidad de este modelo escribe sobre ellos. Esa es la
+regla no-negociable de la sección 5.
 
 ## 5. Reglas no negociables
 
 1. Crear una `OperationalTask` **no** cambia `op.estado`.
-2. Completar una `OperationalTask` **no** mueve la pelota (`op.bloqueoActor`) automáticamente.
-3. Crear una `OperationalTask` **no** modifica `op.lineaDePases`.
+2. Completar una `OperationalTask` **no** cambia el responsable actual (`op.bloqueoActor`) automáticamente.
+3. Crear una `OperationalTask` **no** modifica la responsabilidad operativa (`op.lineaDePases`).
 4. Una `AutomationSuggestion` puede sugerir una acción, pero **nunca equivale** a completar la tarea — completar
    sigue siendo una acción explícita del usuario sobre la `OperationalTask`.
 5. En contexto notarial/legal, **los envíos sensibles (WhatsApp/email) inician como `draft` o requieren aprobación
@@ -179,7 +182,7 @@ escribe sobre ellos. Esa es la regla no-negociable de la sección 5.
 | Concepto del modelo | Implementación actual | Notas |
 |---|---|---|
 | Checklist / flow duro | `op.estado`, `HITOS` (`Kanban.jsx`), `timelineChecklist.js` | Sin cambios propuestos en este documento |
-| Línea de pases | `op.bloqueoActor`, `op.lineaDePases`, `SoccerBloqueoTrigger` | Sin cambios; ninguna `OperationalTask` debe escribir acá |
+| Responsabilidad operativa (ex "línea de pases") | `op.bloqueoActor`, `op.lineaDePases`, `SoccerBloqueoTrigger` (legacy naming) | Capa de ruteo; ninguna `OperationalTask` debe escribir acá |
 | Tareas del día (vista) | `dayTasksStore.js` (`pending`/`done` = `string[]` de `op.id`) | Hoy **es** el dato, no una vista — ver sección 7 |
 | Tarea operativa | No existe como entidad | A crear (`OperationalTask`), separado de `dayTasksStore` |
 | Automatización / IA | No existe | A crear, fuera de alcance inmediato |
@@ -209,6 +212,11 @@ Cuando se implemente, la migración recomendada (no ejecutar todavía) es:
   producto, no en este documento de arquitectura de datos.
 - No toca automatizaciones reales de WhatsApp/email (`MessageDraft`/`Communication`) más allá del modelo de datos —
   no hay integración real de envío en este prototipo.
+- No define la **presentación** de las tareas (cómo se ven las Task Cards). Eso vive en
+  [`UI_SEMANTIC_SYSTEM.md`](UI_SEMANTIC_SYSTEM.md): §4A (gramática compacta + view-model, dirección para implementar)
+  y §4B·WIP (Task Card expandida como lente sobre `ChecklistItem`/`DocumentRequirement`, con referencias futuras
+  como `relatedChecklistItemId`/`relatedDocumentRequirementId`/`parentTaskId` y estado `needs_review` — hipótesis,
+  no modelo decidido acá).
 
 ## 9. Framing de producto: `OperationalTask` no es una feature de tareas custom
 
@@ -234,7 +242,7 @@ la generó. Es la unidad mínima sobre la que el sistema (humano, regla de negoc
 - dejarla como memoria operativa visible en el legajo aunque no esté en la bandeja de hoy,
 - registrar su ciclo de vida en el `Timeline`.
 
-Sigue sin modificar por sí misma el flow duro, la línea de pases ni `op.estado` — esa regla (sección 5) no cambia.
+Sigue sin modificar por sí misma el flow duro, la responsabilidad operativa ni `op.estado` — esa regla (sección 5) no cambia.
 
 ### 9.3 Posibles orígenes (`origin`)
 

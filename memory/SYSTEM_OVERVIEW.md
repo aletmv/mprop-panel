@@ -27,7 +27,7 @@ graph TD
     L["📁 LEGAJO<br/>la operación inmobiliaria"]
 
     L --> FD["Flow duro / Checklist<br/><i>¿en qué paso formal está?</i>"]
-    L --> LP["Línea de pases<br/><i>¿quién tiene la pelota?</i>"]
+    L --> LP["Responsabilidad operativa<br/><i>¿quién tiene la responsabilidad actual?</i>"]
     L --> OP["Operativa<br/><i>¿qué acciones hay/hubo para destrabarlo?</i>"]
     L --> AC["Actividad / Timeline<br/><i>¿qué pasó? bitácora</i>"]
     L --> BV["Bóveda<br/><i>¿estado económico y pagos?</i>"]
@@ -39,8 +39,8 @@ graph TD
     style TD stroke-dasharray: 5 5
 ```
 
-**Regla de oro:** crear/completar algo en una capa **no** muta otra. Una tarea operativa completada no mueve la
-pelota ni cambia el estado del flow. (Ver reglas no negociables en
+**Regla de oro:** crear/completar algo en una capa **no** muta otra. Una tarea operativa completada no cambia el
+responsable actual ni el estado del flow. (Ver reglas no negociables en
 [`OPERATIONAL_TASKS_ARCHITECTURE.md` §5](OPERATIONAL_TASKS_ARCHITECTURE.md).)
 
 ---
@@ -51,7 +51,7 @@ pelota ni cambia el estado del flow. (Ver reglas no negociables en
 |---|---|---|---|---|
 | **Legajo / Operación** | La operación inmobiliaria completa | — | Toda la app | PRD |
 | **Flow duro / Checklist** | Pasos formales estructurados del proceso | Tareas custom | `op.estado`, HITOS, tab Actividad | — |
-| **Línea de pases** | Responsabilidad formal: quién debe accionar y cómo se llegó ahí | Una tarea | Pill responsable + popover | — |
+| **Responsabilidad operativa** (antes "línea de pases" / "pelota"; legacy en código) | Quién debe actuar ahora, cómo llegó esa responsabilidad ahí y por qué actor estamos esperando | Fuente de verdad del checklist, documento, OperationalTask ni timeline | Pill responsable + popover (`SoccerBloqueoTrigger`, legacy) | UI_SEMANTIC §1 |
 | **OperationalEvent** | Hecho/detección/registro inmutable | Algo con estado que evoluciona | *No implementado* | OP_TASKS §10 |
 | **OperationalTask / WorkItem** | Unidad **accionable con estado** (pending/done/cancelled) | Un seguimiento manual a secas | Tab Operativa, Tareas del día | OP_TASKS §3.2 |
 | **`follow_up`** | Un **subtype** de OperationalTask | El modelo base | Badge "Seguimiento" | OP_TASKS §5.7 |

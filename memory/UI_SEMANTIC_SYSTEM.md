@@ -21,7 +21,7 @@ mapear a **una** capa de [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md) y no contrad
 | Capa | Pregunta que responde | Nunca debe confundirse con |
 |---|---|---|
 | Flow duro / Checklist | ¿en qué paso formal está? | bitácora, tareas operativas |
-| Línea de pases | ¿quién tiene la pelota? | etapa |
+| Responsabilidad operativa | ¿quién debe actuar ahora? ¿cómo llegó esa responsabilidad ahí? | etapa |
 | Actividad / Bitácora | ¿qué pasó? (registro) | flow duro, tareas accionables |
 | Bóveda / Economía | ¿estado de pagos? | tareas operativas |
 | Operativa | ¿qué acciones hay/hubo para destrabar? | checklist formal |
@@ -29,6 +29,16 @@ mapear a **una** capa de [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md) y no contrad
 | Alertas | ¿qué problema se detectó? | estado resuelto |
 
 **Regla raíz:** si el usuario no puede inferir a qué capa pertenece algo por su señal visual, la señal está mal.
+
+> **Responsabilidad operativa** (antes "Línea de pases" / "la pelota"; legacy en código: `op.bloqueoActor`,
+> `op.lineaDePases`, `SoccerBloqueoTrigger`). Indica **quién tiene la responsabilidad actual** de destrabar/avanzar
+> un requisito y **cómo llegó** esa responsabilidad ahí (responsable actual · historial de responsabilidad · motivo
+> de asignación · actor responsable). Es una **capa de ruteo/responsabilidad** dentro del sistema operativo del
+> legajo, **ya no el centro del workflow**.
+> **No es fuente de verdad de:** estado del checklist · existencia/validez del documento · estado de una
+> `OperationalTask` · timeline/bitácora. **Orienta** (a quién contactar/esperar/escalar, cuándo crear una subtarea
+> de seguimiento, qué actor mostrar como responsable), pero **no determina** por sí sola que una tarea esté resuelta
+> ni que un requisito esté satisfecho. La metáfora futbolera ("pelota") queda como naming legacy, no conceptual.
 
 ---
 
@@ -57,7 +67,7 @@ primaria?" — nunca "¿quién es el actor?".** Los roles se identifican por **l
    (pill/dot = estado; botón con ✓ = acción).
 4. Sky pertenece a Bóveda + primary. Las tareas operativas toman color de su **severidad/origen**, no sky por defecto.
 5. **Los roles no se codifican por color.** Ningún actor tiene color semántico propio (Comprador ≠ azul,
-   Vendedor ≠ naranja, Gestoría ≠ violeta, etc.). El responsable/pelota usa tratamiento **neutral**; se distingue
+   Vendedor ≠ naranja, Gestoría ≠ violeta, etc.). El responsable / responsabilidad actual usa tratamiento **neutral**; se distingue
    por el copy ("Responsable: Vendedor", "Acción: Comprador"). **Excepción controlada:** "Escribanía" / acción
    propia puede llevar un **énfasis leve** (borde más marcado, fondo neutral algo destacado, ícono sutil) porque
    comunica accionabilidad propia — nunca un color fuerte que compita con alerta/riesgo/etapa.
@@ -76,7 +86,7 @@ primaria?" — nunca "¿quién es el actor?".** Los roles se identifican por **l
    con la severidad. ⚠️ Hoy "Manual" se muestra como Pill en Operativa.
 4. **subtype / severity / origin / scheduling no compiten:** jerarquía fija → severidad/subtype (principal) >
    scheduling ("En tu día") > origin (metadata, tenue).
-5. **Roles se identifican por label, no por color** (ver §2 regla 5). El pill de responsable/pelota es **neutral**;
+5. **Roles se identifican por label, no por color** (ver §2 regla 5). El pill de responsable / responsabilidad actual es **neutral**;
    el dato lo da el copy ("Responsable: Gestoría", "Acción: Comprador"). Excepción: "Escribanía"/acción propia con
    énfasis leve (borde/fondo neutral algo destacado), nunca color fuerte.
 
@@ -108,54 +118,141 @@ detalle vs bespoke de TasksBoard — ver §8). Especificación objetivo:
 La **severidad es la señal principal** de la tarjeta cuando la task nació de una alerta; el azul genérico de tarea
 operativa no debe dominar en ese caso.
 
-> ⚠️ **El enfoque de "badge compuesto" (`Revisión · Alerta crítica`) de esta sección está en revisión.** Ver
-> **§4·WIP**, que propone separar tipo (badge) de severidad (tratamiento) y de origen (detalle). Hasta validar §4·WIP
-> con implementación real, esta §4 queda como referencia previa, no como regla cerrada.
+> ⚠️ **El enfoque de "badge compuesto" (`Revisión · Alerta crítica`) de esta sección quedó superado.** La gramática
+> vigente para implementar está en **§4A** (separa tipo / severidad / origen). Esta §4 queda como referencia previa.
 
 ---
 
-## 4·WIP — Task Card Grammar (pendiente de validación)
+## 4A. Task Card Grammar — gramática compacta (dirección PARA IMPLEMENTAR · F1)
 
-> 🚧 **WIP / dirección provisional — NO es diseño final.** Reemplazaría el enfoque de badge compuesto de §4.
-> No está implementada ni vista en UI real. Debe validarse implementando un renderer/primitive único de Task
-> Card / `TaskRow` y puede cambiar (o descartarse) si en la UI real no funciona. **No representa una regla cerrada.**
+> **Estado: decisión para implementar (F1).** La **gramática compacta** y el **contrato de view-model** de esta
+> sección son la dirección acordada para el refactor `TaskCard`. (El **expand** y el puente con Avance del proceso /
+> Documentos siguen WIP — ver §4B.) Aun así, validar en UI real antes de cerrarla como definitiva.
 
-**Decisión provisional:** `badge = tipo` · `severidad = tratamiento visual` · `origen = detalle`.
+**Decisión:** `badge = tipo` · `severidad = tratamiento visual` · `origen = detalle`.
 
-Tres dimensiones, tres canales separados (hoy el badge compuesto las mezcla):
+Tres dimensiones, tres canales separados (el badge compuesto de §4 las mezclaba):
 
 | Dimensión | Canal |
 |---|---|
 | **Tipo** de tarea | **Badge** (única función del badge) |
 | **Severidad** (crítica/media/none) | **Tratamiento de tarjeta**: acento lateral + ícono + borde/fondo suave + tono |
-| **Origen/procedencia** | **Solo vista expandida/detalle** |
+| **Origen/procedencia** | **Solo vista expandida/detalle** (no compacta) |
 
-**Reglas propuestas (todavía no finales):**
-- El badge principal identifica **solo el tipo**: `Proceso` · `Seguimiento` · `Revisión` · `Tarea` (fallback).
-- El badge **no** mezcla tipo + origen + severidad. Evitar como formato base: `[Revisión · Alerta crítica]`.
-- Para una `review` creada desde alerta crítica/media:
-  - badge: `Revisión`
-  - severidad: acento lateral / ícono / borde-fondo suave (rojo crítica, ámbar media)
-  - origen: detalle/expand, **no** en la tarjeta compacta.
+**Reglas (F1):**
+- Badge = **solo tipo**: `Proceso` · `Seguimiento` · `Revisión` · `Tarea` (fallback). Subtype desconocido → `Tarea`,
+  **nunca** el string técnico.
+- El badge **no** mezcla tipo + origen + severidad. **No** usar `[Revisión · Alerta crítica]` como badge base.
+- Para una `review` desde alerta crítica/media: badge `Revisión` + severidad por **acento lateral / ícono /
+  borde-fondo suave** (rojo crítica, ámbar media); el origen va al **detalle/expand**.
+- **Responsable**: en detalle/expand, **no** en el título ni como pill principal.
 - **Tarjeta compacta** centrada en la acción:
   ```
   [BADGE]  Acción concreta
            Dirección simplificada
            MP-ID
   ```
-- La tarjeta compacta **no** debería mostrar: Responsable como pill · origin/manual como pill · sourceLabel como
-  pill · metadata secundaria de más.
-- **pending / done / cancelled** mantienen la **misma estructura**; difieren solo por atenuación/tachado y la acción
-  primaria (completar vs reabrir). La severidad **persiste** (atenuada) en done/cancelled, no se pierde.
-- Una tarea **formal** (`Proceso`) y una **operativa** deberían compartir **gramática mínima** si conviven en la
-  misma sección (ej. "Completadas hoy").
-- **Operativa** puede ser la vista más **expandida/contextual**: muestra origen, responsable, fechas,
-  `sourceType`/`sourceId`, historial, subtareas — lo que la tarjeta compacta omite.
+- La compacta **no** muestra: Responsable como pill · origin/manual como pill · sourceLabel como pill · metadata de más.
+- **pending / done / cancelled** mantienen la **misma estructura**; difieren solo por **atenuación/tachado** y la
+  acción primaria (completar vs reabrir). **No reordenar.** La severidad **persiste atenuada** en done/cancelled
+  (una `review` crítica completada se sigue leyendo crítica, no revierte a neutro).
+- Formal (`Proceso`) y operativa comparten **gramática visual mínima** si conviven en una sección (ej. "Completadas hoy").
 
-**Implementación:** esto **no** debe hacerse como parche dentro del PR actual de cleanup semántico. Queda para una
-**fase futura de refactor**, probablemente creando un **renderer/primitive único de Task Card / `TaskRow`** que
-aplique esta gramática a formal + operativa y a pending/done/cancelled. Recién ahí, validado en UI real, esta
-sección podría promoverse de WIP a regla y absorber/reemplazar §4.
+**Contrato de arquitectura de render (F1):** un **view-model normalizado** + **un** renderer. Dos modelos de datos
+distintos (formal = `dayTasks`/checklist; operativa = `OperationalTask`) producen el **mismo** view-model vía
+adapters puros; el renderer no sabe de cuál proviene. Comparten *presentación*, no *store* (no se fusionan modelos).
+
+```
+TaskFormal (dayTasks + op)  ─┐
+OperationalTask (store)      ─┼─► taskCardPresentation(x) ─► ViewModel ─► <TaskCard/>
+                             ─┘   (fromFormalTask / fromOperationalTask)
+
+ViewModel ≈ { id, kind:'formal'|'operational',
+              type:'proceso'|'seguimiento'|'revision'|'tarea', typeLabel,
+              title, addressLine, legajoId,
+              severity:'critica'|'media'|null, status:'pending'|'done'|'cancelled',
+              detail:{ origen, responsable, origin, sourceType, sourceId, createdAt, completedAt } }
+```
+
+**Fases del refactor:**
+- **F1 — gramática compacta + view-model + `TaskCard` base** (esta sección). Primero wired solo a OperationalTasks.
+- **F2 — adapter de tarea formal** → misma `TaskCard` (unifica "Completadas hoy").
+- **F3 — expand** como lente de Avance del proceso / DocumentRequirement (§4B, WIP).
+- **F4 — subtareas asociadas** (`parentTaskId`, §4B, WIP).
+- **F5 — eventos/documentos/panel de partes/resolución automática** (§4B, WIP · backend).
+
+**No** implementar como parche en el PR de cleanup semántico actual; F1 va en una rama/fase de refactor propia.
+
+---
+
+## 4B·WIP — Task Card expandida como superficie contextual de resolución
+
+> 🚧 **WIP / hipótesis futura — NO es diseño final, NO es modelo actual.** Cubre F3–F5. El expand no está
+> implementado; los campos de referencia (`relatedChecklistItemId`, `relatedDocumentRequirementId`, `parentTaskId`,
+> `resolutionCondition`, estado `needs_review`, eventos `document_*`) son **hipótesis** a validar antes de backend.
+
+**Regla arquitectónica:** la Task Card expandida **no** es un mini-repositorio ni una fuente de verdad paralela.
+Es una **lente accionable** sobre tres capas, cada una dueña de su dato:
+
+```
+Avance del proceso (checklist formal)   ← fuente de verdad del PASO y su estado
+  └─ ChecklistItem / nodo
+       └─ DocumentRequirement / Documentos   ← fuente de verdad del DOCUMENTO
+            ▲ referencia (no copia)
+       OperationalTask                        ← superficie ACCIONABLE (resolver/empujar/monitorear)
+            └─ Task Card expandida            ← LENTE enfocada del nodo (proyección, no repo)
+```
+
+- **Avance del proceso** = checklist formal completo del legajo.
+- **Task expandida** = vista **enfocada** de un requisito accionable dentro de ese checklist.
+- **DocumentRequirement / Documentos** = fuente de verdad documental.
+- **OperationalTask** = superficie accionable para resolver/empujar/monitorear ese requisito.
+
+**Qué dato viene de dónde (en el expand):**
+
+| Dato | Fuente |
+|---|---|
+| Label del requisito, estado del nodo, "¿bloquea firma?", evidencia, próximo responsable | **ChecklistItem** (Avance del proceso, hoy `buildTimelineChecklist`) — read-only |
+| Documento requerido, estado documental, vencimiento | **DocumentRequirement / Documentos** — fuente de verdad |
+| Tipo, severidad, origen, `sourceType/Id`, referencias, estado de la task | **OperationalTask** |
+
+**Ejemplo:**
+```
+Avance del proceso:  Due diligence › Certificado de dominio
+                     Estado: observado · Bloquea firma · Próximo responsable: Gestoría
+
+Task (compacta):     [Revisión] Solicitar nuevo certificado de dominio
+                     Av. Santa Fe 1234, 4° B · MP-673033   (acento rojo)
+
+Task (expandida):
+  Requisito del proceso asociado: Certificado de dominio
+  Estado actual del requisito: observado
+  Evidencia disponible · Próximo responsable: Gestoría · Bloquea firma
+  Acciones:  Subir documento · Solicitar a Gestoría · Crear seguimiento asociado
+```
+
+**Reglas del expand (WIP):**
+- **No duplicar repos/formularios:** el upload reusa **el mismo componente/lógica** que el tab Documentos; el bloque
+  de nodo reusa componentes de Avance del proceso (extraer un sub-componente de `TimelineProceso`). El expand
+  **orquesta** piezas existentes, no las reimplementa.
+- La task **referencia** (`relatedChecklistItemId`, `relatedDocumentRequirementId`); no almacena el documento ni el nodo.
+
+**Resolución por acción externa (WIP):** una task puede resolverse por una acción del actor correcto. Si el comprador
+carga el documento desde un futuro **panel de partes**, la transición del `DocumentRequirement` actualiza la task de
+la escribanía:
+- → **done**, si el requisito no exige validación notarial;
+- → **`needs_review`** ("Lista para revisión"), si la escribanía debe validar.
+
+La task **reacciona** vía eventos (`document_requested · document_uploaded · document_validated · document_rejected`);
+**nunca** es la fuente de verdad del documento. Una sola `DocumentRequirement` se **proyecta** a dos vistas
+(acción de escribanía / pedido a la parte) — **no** se crean tasks gemelas.
+
+**Subtareas (WIP):** una subtask = otra `OperationalTask` con `parentTaskId` + `relationType`. Completar la subtask
+**no** auto-completa la madre; completar la madre **no** cascada. Se crean solo desde el expand de la madre y se
+muestran anidadas en expand/Operativa — **nunca** en la lista plana de "Tareas del día" (evita Trello).
+
+**No implementar todavía:** nada de §4B (expand, referencias, resolución, eventos, `needs_review`, partes, subtasks).
+Sigue WIP hasta validarse con UI real y, para la resolución/eventos, con backend.
 
 ---
 
@@ -167,7 +264,7 @@ Una alerta es un **problema detectado** (un *finding*), no un estado mutable del
 1. El botón de una alerta **no debe prometer resolución** si solo crea una tarea. **"Resolver" es anti-pattern**
    cuando la alerta no se marca resuelta ni se oculta. ⚠️ Hoy el botón dice "Resolver".
 2. Verbo literal: **"Crear tarea"** / **"Generar acción"** / **"Atender"** — lo que realmente hace.
-3. La alerta **permanece visible** tras crear la tarea (no se oculta, no cambia estado/pelota/línea de pases).
+3. La alerta **permanece visible** tras crear la tarea (no se oculta, no cambia estado / responsable actual / responsabilidad operativa).
 4. Tras crear, el control refleja el estado real ("Tarea creada", dedup) — eso ya es correcto.
 
 ---
@@ -240,8 +337,8 @@ y en Operativa, debe verse igual (ver refactor §11 / quick wins).
 2. **Actividad/bitácora ≠ task accionable.** Un evento es registro; una tarea tiene estado y acciones. No se
    muestran como lo mismo. ⚠️ Hoy el tab "Actividad" mezcla bitácora (Línea de tiempo) + checklist (Timeline de la operación).
 3. **Bóveda ≠ tarea operativa.** La economía es su propio dominio (sky); no se cruza con Operativa.
-4. **Responsable/pelota ≠ etapa.** Distintos ejes. El responsable es **neutral** (no toma color de etapa ni color
-   de rol); la etapa tiene su propio color en columnas/barras/labels.
+4. **Responsabilidad operativa (responsable actual) ≠ etapa.** Distintos ejes. El responsable es **neutral** (no
+   toma color de etapa ni color de rol); la etapa tiene su propio color en columnas/barras/labels.
 5. **Alerta ≠ estado resuelto.** Crear una tarea desde una alerta no la resuelve.
 
 ---
@@ -269,7 +366,7 @@ En orden sugerido — todas derivadas de la auditoría:
 
 1. ✅ **Renombrar "Resolver"** (alerta) → "Crear tarea" (QW1, hecho).
 2. ✅ **Renombrar "Timeline de la operación"** → "Avance del proceso" (QW2, hecho).
-3. ✅ **Neutralizar el pill de responsable/pelota** (QW4, hecho): no usa color de etapa **ni** color de rol — tono
+3. ✅ **Neutralizar el pill de responsable / responsabilidad actual** (QW4, hecho): no usa color de etapa **ni** color de rol — tono
    neutral; el actor lo comunica el copy. Excepción leve para "Escribanía"/acción propia (borde/fondo neutral algo
    destacado, sin color fuerte).
 4. **Despromover stubs** (Programar firma, etc.) a secundario hasta que funcionen. *Visual.*
