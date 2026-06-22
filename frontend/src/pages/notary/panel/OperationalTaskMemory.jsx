@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronDown, MessageCircle, RotateCcw, X, Inbox, Check } from 'lucide-react';
+import { ChevronDown, MessageCircle, RotateCcw, X, Inbox, Check, AlertTriangle } from 'lucide-react';
 import { Card, Pill, SectionLabel, StatusDot } from './OperacionDetailPrimitives';
-import { operationalTasks, useOperationalTasks, todayDateString } from './operationalTasksStore';
+import { operationalTasks, useOperationalTasks, todayDateString, operationalTaskBadge } from './operationalTasksStore';
 
 // Memoria operativa del legajo — ver memory/OPERATIONAL_TASKS_ARCHITECTURE.md
 // sección 9/10. Esto NO es "mostrar follow-ups": es la capa accionable del
@@ -14,8 +14,12 @@ import { operationalTasks, useOperationalTasks, todayDateString } from './operat
 // (op.bloqueoActor/lineaDePases) y no es el Timeline (eventos narrativos) —
 // esta vista no lee ni escribe ninguno de esos tres.
 
-const SUBTYPE_LABEL = { follow_up: 'Seguimiento' };
 const ORIGIN_LABEL = { manual: 'Manual', system: 'Sistema', ai: 'IA' };
+// Tono del badge compuesto (Pill) según severidad — sobrio, concentra la señal.
+const BADGE_VARIANT = { critica: 'destructive', media: 'warning', null: 'muted' };
+// Tono del icon-chip según severidad: la severidad de la alerta es la señal
+// principal de la tarjeta, no el azul genérico de tarea operativa.
+const ICON_CHIP_TONE = { critica: 'bg-red-50 text-red-600', media: 'bg-amber-50 text-amber-600', null: 'bg-sky-50 text-sky-600' };
 
 const formatDateTime = (iso) => {
   if (!iso) return null;
@@ -32,17 +36,18 @@ const STATUS_META = {
 const TaskMemoryItem = ({ task, onComplete, onCancel, onReopen }) => {
   const today = todayDateString();
   const statusMeta = STATUS_META[task.status] || STATUS_META.pending;
+  const badge = operationalTaskBadge(task);
   return (
     <div
       data-testid={`op-task-memory-item-${task.id}`}
       className="px-4 py-3.5 flex items-start gap-3.5 hover:bg-slate-50/60 transition-colors"
     >
-      <span className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 grid place-items-center shrink-0 mt-0.5">
-        <MessageCircle className="w-4 h-4" strokeWidth={1.8} />
+      <span className={`w-8 h-8 rounded-lg grid place-items-center shrink-0 mt-0.5 ${ICON_CHIP_TONE[badge.severity]}`}>
+        {badge.severity ? <AlertTriangle className="w-4 h-4" strokeWidth={1.8} /> : <MessageCircle className="w-4 h-4" strokeWidth={1.8} />}
       </span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap mb-1">
-          <Pill variant="muted">{SUBTYPE_LABEL[task.subtype] || task.subtype}</Pill>
+          <Pill variant={BADGE_VARIANT[badge.severity]}>{badge.label}</Pill>
           <Pill variant="muted">{ORIGIN_LABEL[task.origin] || task.origin}</Pill>
           {task.scheduledForDate === today && <Pill variant="info">En tu día</Pill>}
         </div>
@@ -50,7 +55,7 @@ const TaskMemoryItem = ({ task, onComplete, onCancel, onReopen }) => {
           {task.title}
         </div>
         <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
-          {task.relatedActorLabel && <span>relacionado: {task.relatedActorLabel}</span>}
+          {task.relatedActorLabel && <span>Responsable: {task.relatedActorLabel}</span>}
           {task.relatedActorLabel && <span className="text-slate-300">·</span>}
           <span>creada {formatDateTime(task.createdAt)}</span>
           {task.completedAt && (

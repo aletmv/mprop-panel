@@ -15,6 +15,7 @@ import {
 import { getDocumentosByOp, getEventosByOp } from './legajoDocsEventos';
 import { buildNotaryOperaciones } from './operacionesAdapter';
 import { BloqueoBadge } from './Kanban';
+import { operationalTasks, useOperationalTasks } from './operationalTasksStore';
 import TimelineProceso from './TimelineProceso';
 import { buyerCosts, sellerCosts } from '@/lib/costs';
 import {
@@ -328,6 +329,29 @@ const OperacionDetail = () => {
     : op.riesgo === 'medio'
     ? { text: 'Riesgo medio · monitorear', cls: 'text-amber-600' }
     : { text: 'Sin observaciones', cls: 'text-slate-600' };
+
+  // "Resolver" una alerta = crear una OperationalTask subtype 'review' para
+  // atenderla (event-informed, task-driven). NO oculta la alerta, NO la marca
+  // resuelta, NO cambia op.estado/bloqueoActor/línea de pases.
+  const allOpTasks = useOperationalTasks();
+  const taskFromAlert = (alertId) =>
+    allOpTasks.find(
+      (t) => t.opId === op.id && t.sourceType === 'alert' && t.sourceId === alertId && t.status !== 'cancelled'
+    );
+  const resolverAlerta = (a, sourceLabel) => {
+    if (taskFromAlert(a.id)) return; // dedup: ya existe una task para esta alerta
+    operationalTasks.create({
+      opId: op.id,
+      title: a.accion,
+      subtype: 'review',
+      origin: 'manual',
+      relatedActorRole: null,
+      relatedActorLabel: a.responsable || null,
+      sourceType: 'alert',
+      sourceId: a.id,
+      sourceLabel,
+    });
+  };
   const pasoIdx = pasos.findIndex((p) => p === op.pasoActual);
   const fase = pasoIdx >= 0 ? pasoIdx + 1 : 1;
   const [searchParams] = useSearchParams();
@@ -440,13 +464,23 @@ const OperacionDetail = () => {
                             <Sparkles className={`w-4 h-4 ${cfg.icon} shrink-0 mt-0.5`} strokeWidth={1.5} />
                             <span><span className="text-slate-500">Acción sugerida ·</span> {a.accion}</span>
                           </div>
-                          <Button
-                            size="sm"
-                            className="bg-slate-900 text-white hover:bg-slate-800 font-medium px-3 h-8 shadow-sm transition-colors"
-                            data-testid={`btn-resolver-${a.id}`}
-                          >
-                            Resolver <ChevronRight className="w-3.5 h-3.5 ml-0.5" strokeWidth={1.5} />
-                          </Button>
+                          {taskFromAlert(a.id) ? (
+                            <span
+                              className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 px-3 h-8"
+                              data-testid={`alert-task-created-${a.id}`}
+                            >
+                              <CheckCircle2 className="w-4 h-4" strokeWidth={2} /> Tarea creada
+                            </span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => resolverAlerta(a, `Alerta ${cfg.label.toLowerCase()}`)}
+                              className="bg-slate-900 text-white hover:bg-slate-800 font-medium px-3 h-8 shadow-sm transition-colors"
+                              data-testid={`btn-resolver-${a.id}`}
+                            >
+                              Resolver <ChevronRight className="w-3.5 h-3.5 ml-0.5" strokeWidth={1.5} />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

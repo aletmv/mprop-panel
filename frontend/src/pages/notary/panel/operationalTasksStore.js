@@ -84,6 +84,12 @@ export const operationalTasks = {
     relatedDocumentId = null,
     relatedPaymentId = null,
     scheduledForDate = todayDateString(),
+    // Procedencia (finding que informó la tarea). Aditivo y opcional: las tareas
+    // viejas en localStorage quedan con estos campos undefined sin romperse.
+    // Ej: una tarea creada desde "Resolver" de una alerta lleva sourceType:'alert'.
+    sourceType = null,
+    sourceId = null,
+    sourceLabel = null,
   }) {
     if (!opId || !title) return null;
     const now = new Date().toISOString();
@@ -103,6 +109,9 @@ export const operationalTasks = {
       relatedPaymentId,
       scheduledForDate,
       addedToTodayAt: scheduledForDate === todayDateString() ? now : null,
+      sourceType,
+      sourceId,
+      sourceLabel,
       createdAt: now,
       completedAt: null,
     };
@@ -149,3 +158,19 @@ export const operationalTasks = {
 
 export const useOperationalTasks = () =>
   useSyncExternalStore(operationalTasks.subscribe, operationalTasks.getSnapshot, operationalTasks.getSnapshot);
+
+// Helper de presentación (puro, no toca estado): badge compuesto para una task.
+// Los datos siguen separados en el modelo (subtype / sourceType / sourceLabel);
+// esto solo decide qué etiqueta única mostrar para no apilar pills.
+// - review + alert → "Revisión · Alerta crítica/media" (con severidad para el tono)
+// - review        → "Revisión"
+// - follow_up     → "Seguimiento"
+export const operationalTaskBadge = (task) => {
+  if (task.subtype === 'review' && task.sourceType === 'alert') {
+    const severity = /crít/i.test(task.sourceLabel || '') ? 'critica' : 'media';
+    return { label: `Revisión · ${task.sourceLabel || 'Alerta'}`, severity };
+  }
+  if (task.subtype === 'review') return { label: 'Revisión', severity: null };
+  if (task.subtype === 'follow_up') return { label: 'Seguimiento', severity: null };
+  return { label: task.subtype, severity: null };
+};

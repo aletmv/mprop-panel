@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks, Trash2, MessageCircle,
+  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks, Trash2, MessageCircle, AlertTriangle,
 } from 'lucide-react';
 import { dayTasks, useDayTasks } from './dayTasksStore';
-import { operationalTasks, useOperationalTasks, todayDateString, dateStringFromISO } from './operationalTasksStore';
+import { operationalTasks, useOperationalTasks, todayDateString, dateStringFromISO, operationalTaskBadge } from './operationalTasksStore';
 import { DND_TYPE } from './dndTypes';
 import { AlertChip } from './Kanban';
 
@@ -123,25 +123,38 @@ const DoneItem = ({ op }) => {
   );
 };
 
-// OperationalTask subtype: 'follow_up', pendiente. Sección propia, separada
-// de las tareas formales — no comparte drag/reorder ni el store de
-// dayTasksStore. Completar/eliminar acá nunca toca op.estado/bloqueoActor.
-const FollowUpItem = ({ task, op }) => (
+// Tono sobrio por severidad (solo review-de-alerta toma rojo/ámbar; el resto sky).
+// La severidad es la señal principal de la tarjeta: badge + acento lateral + ícono.
+const BADGE_TONE = {
+  critica: 'text-red-700 bg-red-50',
+  media: 'text-amber-700 bg-amber-50',
+  null: 'text-sky-600 bg-sky-50',
+};
+const ACCENT_TONE = { critica: 'bg-red-400', media: 'bg-amber-400', null: 'bg-sky-300' };
+const ICON_TONE = { critica: 'text-red-500', media: 'text-amber-500', null: 'text-sky-400' };
+
+// Item de OperationalTask agendada para hoy (cualquier subtype). Sección propia,
+// separada de las tareas formales — no comparte drag/reorder ni dayTasksStore.
+// Completar/eliminar acá nunca toca op.estado/bloqueoActor/línea de pases.
+const FollowUpItem = ({ task, op }) => {
+  const badge = operationalTaskBadge(task);
+  const Icon = badge.severity ? AlertTriangle : MessageCircle;
+  return (
   <li
     data-testid={`followup-item-${task.id}`}
     className="relative shrink-0 overflow-hidden flex items-center gap-3.5 bg-white border border-[#EEEFF2] rounded-2xl pl-5 pr-4 py-3.5 hover:border-[#DDE6F5] hover:shadow-sm transition-all snap-start"
   >
-    <span className="absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full bg-sky-300" aria-hidden />
-    <span className="flex items-center justify-center w-5 text-sky-400 shrink-0 self-center">
-      <MessageCircle className="w-4 h-4" />
+    <span className={`absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full ${ACCENT_TONE[badge.severity]}`} aria-hidden />
+    <span className={`flex items-center justify-center w-5 shrink-0 self-center ${ICON_TONE[badge.severity]}`}>
+      <Icon className="w-4 h-4" />
     </span>
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[9.5px] font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded">
-          Seguimiento
+        <span className={`text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${BADGE_TONE[badge.severity]}`}>
+          {badge.label}
         </span>
         {task.relatedActorLabel && (
-          <span className="text-[11px] text-slate-400">relacionado: {task.relatedActorLabel}</span>
+          <span className="text-[11px] text-slate-400">Responsable: {task.relatedActorLabel}</span>
         )}
       </div>
       <div className="text-[14.5px] font-semibold text-slate-900 leading-snug mt-1">{task.title}</div>
@@ -172,7 +185,8 @@ const FollowUpItem = ({ task, op }) => (
       </button>
     </div>
   </li>
-);
+  );
+};
 
 // OperationalTask subtype: 'follow_up', completado hoy — no desaparece sin
 // rastro, queda visible (liviano) dentro de "Completadas hoy" con badge
@@ -186,7 +200,9 @@ const FollowUpDoneItem = ({ task, op }) => (
       <MessageCircle className="w-4 h-4" strokeWidth={2.2} />
     </span>
     <div className="flex-1 min-w-0">
-      <span className="text-[9.5px] font-bold uppercase tracking-wider text-sky-500">Seguimiento</span>
+      <span className="text-[9.5px] font-bold uppercase tracking-wider text-sky-500">
+        {operationalTaskBadge(task).label}
+      </span>
       <div className="text-[14px] font-medium text-slate-400 line-through leading-snug">{task.title}</div>
       {op && (
         <div className="text-[12px] text-slate-400 mt-0.5 truncate">
@@ -241,11 +257,13 @@ export const TasksBoard = ({ operaciones }) => {
   // por scheduledForDate — una tarea agendada para hoy pero completada ayer
   // (o agendada para otro día y completada hoy) debe filtrarse por el
   // momento real de completado, no por la agenda original.
+  // Tareas operativas de HOY — cualquier subtype (follow_up, review, …), no solo
+  // follow_up. Una task 'review' creada al "Resolver" una alerta debe aparecer
+  // acá igual que un seguimiento.
   const allOperationalTasks = useOperationalTasks();
   const today = todayDateString();
-  const followUps = allOperationalTasks.filter((t) => t.subtype === 'follow_up');
-  const pendingFollowUps = followUps.filter((t) => t.status === 'pending' && t.scheduledForDate === today);
-  const doneFollowUpsToday = followUps.filter(
+  const pendingFollowUps = allOperationalTasks.filter((t) => t.status === 'pending' && t.scheduledForDate === today);
+  const doneFollowUpsToday = allOperationalTasks.filter(
     (t) => t.status === 'done' && t.completedAt && dateStringFromISO(t.completedAt) === today
   );
 
@@ -362,7 +380,7 @@ export const TasksBoard = ({ operaciones }) => {
       {pendingFollowUps.length > 0 && (
         <div className="mt-3 pt-1" data-testid="followups-section">
           <div className="flex items-baseline gap-2 mb-2.5 pr-1">
-            <span className="text-[13px] font-semibold leading-tight text-[#7A818B]">Seguimientos</span>
+            <span className="text-[13px] font-semibold leading-tight text-[#7A818B]">Tareas operativas</span>
             <span
               className="text-[13px] font-bold leading-tight text-[#C5C9CF] num-tabular"
               data-testid="followups-pending-count"
