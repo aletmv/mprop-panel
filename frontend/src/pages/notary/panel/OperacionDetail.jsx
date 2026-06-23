@@ -15,6 +15,8 @@ import {
 import { getDocumentosByOp, getEventosByOp } from './legajoDocsEventos';
 import { buildNotaryOperaciones } from './operacionesAdapter';
 import { BloqueoBadge } from './Kanban';
+import { useSignatures, signatures } from './signaturesStore';
+import { ProgramarFirmaDialog } from './ProgramarFirmaDialog';
 import { operationalTasks, useOperationalTasks } from './operationalTasksStore';
 import TimelineProceso from './TimelineProceso';
 import { buyerCosts, sellerCosts } from '@/lib/costs';
@@ -310,7 +312,29 @@ const OperacionDetail = () => {
   // Documentos y eventos scoped por legajo (P0 demo integrity). Conteos y lista
   // visible salen SIEMPRE del mismo array scoped.
   const docs = getDocumentosByOp(op);
-  const evs = getEventosByOp(op);
+  // Firma programada (demo Fase D) — store local aditivo; NO muta op.firma.
+  useSignatures();
+  const firmaProgramada = signatures.getByOp(op.id);
+  const fmtFechaCorta = (yyyymmdd) => {
+    if (!yyyymmdd) return '';
+    const [y, m, d] = yyyymmdd.split('-');
+    return d && m ? `${d}/${m}` : yyyymmdd;
+  };
+  // Evento mock signature_scheduled inyectado SOLO en el punto de consumo
+  // (no se toca el generador legajoDocsEventos). Se antepone a la bitácora.
+  const evs = firmaProgramada
+    ? [
+        {
+          fecha: fmtFechaCorta(firmaProgramada.fecha),
+          hora: firmaProgramada.hora,
+          tipo: 'signature_scheduled',
+          evento: `Firma programada para ${fmtFechaCorta(firmaProgramada.fecha)} ${firmaProgramada.hora} · ${firmaProgramada.modalidad}`,
+          responsable: 'Esc. Lagos',
+          evidencia: 'programación',
+        },
+        ...getEventosByOp(op),
+      ]
+    : getEventosByOp(op);
   const docCounts = {
     revisado: docs.filter((d) => d.estado === 'revisado').length,
     alerta: docs.filter((d) => d.estado === 'alerta').length,
@@ -358,6 +382,7 @@ const OperacionDetail = () => {
   const location = useLocation();
   const initialTab = searchParams.get('tab') || 'resumen';
   const [tab, setTab] = useState(initialTab);
+  const [firmaDialogOpen, setFirmaDialogOpen] = useState(false);
 
   // Scroll suave al rol pedido (ej. #vendedor / #comprador) si el tab es "partes".
   useEffect(() => {
@@ -430,10 +455,11 @@ const OperacionDetail = () => {
                 <Download className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> Exportar
               </Button>
               <Button
+                onClick={() => setFirmaDialogOpen(true)}
                 className="bg-primary text-primary-foreground hover:opacity-90 font-medium px-4 h-9 shadow-sm transition-colors"
                 data-testid="btn-programar-firma"
               >
-                <FileSignature className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> Programar firma
+                <FileSignature className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> {firmaProgramada ? 'Editar firma' : 'Programar firma'}
               </Button>
             </div>
           </div>
@@ -522,15 +548,35 @@ const OperacionDetail = () => {
               </div>
             </Card>
 
-            <Card className="p-5">
-              <SectionLabel>Firma tentativa</SectionLabel>
-              <div className="text-lg font-semibold tracking-tight text-slate-900 mt-2 tabular-nums">{op.firma}</div>
-              <div className="mt-1 inline-flex items-center gap-1.5 text-sm">
-                <Clock className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.5} />
-                <span className={op.diasFirma <= 5 ? 'text-red-600 font-semibold' : 'text-slate-600'}>
-                  {op.diasFirma > 0 ? `en ${op.diasFirma} días` : op.diasFirma === 0 ? 'hoy' : `hace ${Math.abs(op.diasFirma)} días`}
-                </span>
-              </div>
+            <Card className="p-5" data-testid="firma-card">
+              {firmaProgramada ? (
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <SectionLabel>Firma programada</SectionLabel>
+                    <Pill variant="success">Programada</Pill>
+                  </div>
+                  <div className="text-lg font-semibold tracking-tight text-slate-900 mt-2 tabular-nums">
+                    {fmtFechaCorta(firmaProgramada.fecha)} · {firmaProgramada.hora}
+                  </div>
+                  <div className="mt-1 text-sm text-slate-600">
+                    {firmaProgramada.modalidad}{firmaProgramada.lugar ? ` · ${firmaProgramada.lugar}` : ''}
+                  </div>
+                  {firmaProgramada.nota && (
+                    <div className="mt-1 text-[12.5px] text-slate-500 leading-snug">{firmaProgramada.nota}</div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <SectionLabel>Firma tentativa</SectionLabel>
+                  <div className="text-lg font-semibold tracking-tight text-slate-900 mt-2 tabular-nums">{op.firma}</div>
+                  <div className="mt-1 inline-flex items-center gap-1.5 text-sm">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" strokeWidth={1.5} />
+                    <span className={op.diasFirma <= 5 ? 'text-red-600 font-semibold' : 'text-slate-600'}>
+                      {op.diasFirma > 0 ? `en ${op.diasFirma} días` : op.diasFirma === 0 ? 'hoy' : `hace ${Math.abs(op.diasFirma)} días`}
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <Link
                   to="/escribanos/agenda"
@@ -835,6 +881,7 @@ const OperacionDetail = () => {
                       documento: FileText,
                       alerta: AlertTriangle,
                       decision: FileSignature,
+                      signature_scheduled: FileSignature,
                       pago: DollarSign,
                       boveda: Wallet,
                       gestion: Building2,
@@ -878,6 +925,8 @@ const OperacionDetail = () => {
           </Tabs>
         </div>
       </div>
+
+      <ProgramarFirmaDialog op={op} open={firmaDialogOpen} onOpenChange={setFirmaDialogOpen} />
     </PanelShell>
   );
 };
