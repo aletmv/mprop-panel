@@ -424,8 +424,10 @@ const OperacionDetail = () => {
                 {op.id}
               </span>
               <button
-                className="text-slate-400 hover:text-slate-700 transition-colors"
+                className="text-slate-300 cursor-not-allowed transition-colors"
                 aria-label="Copiar ID"
+                title="Próximamente"
+                disabled
                 data-testid="copy-legajo-id"
               >
                 <Copy className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -442,6 +444,8 @@ const OperacionDetail = () => {
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
+                disabled
+                title="Próximamente"
                 className="text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium px-3 h-9 hidden lg:inline-flex"
                 data-testid="btn-nota-interna"
               >
@@ -449,6 +453,8 @@ const OperacionDetail = () => {
               </Button>
               <Button
                 variant="ghost"
+                disabled
+                title="Próximamente"
                 className="text-slate-700 hover:bg-slate-100 hover:text-slate-900 font-medium px-3 h-9 hidden lg:inline-flex"
                 data-testid="btn-exportar"
               >
@@ -788,6 +794,8 @@ const OperacionDetail = () => {
                   </div>
                   <Button
                     variant="ghost"
+                    disabled
+                    title="Próximamente"
                     className="text-primary hover:bg-sky-50 font-medium px-3 h-9"
                     data-testid="btn-subir-documento"
                   >
@@ -839,6 +847,8 @@ const OperacionDetail = () => {
                   </div>
                   <Button
                     variant="ghost"
+                    disabled
+                    title="Próximamente"
                     className="text-primary hover:bg-sky-50 font-medium px-3 h-9"
                     data-testid="btn-exportar-log"
                   >

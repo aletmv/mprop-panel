@@ -260,12 +260,13 @@ export const Topbar = ({ title, subtitle, actions, greeting = false }) => {
         <Button
           variant="ghost"
           size="icon"
+          disabled
+          title="Próximamente"
           className="relative z-10 w-[42px] h-[42px] rounded-[13px] bg-card border border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:bg-muted"
           aria-label="Notificaciones"
           data-testid="topbar-notif-btn"
         >
           <Bell className="w-[18px] h-[18px]" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive border-2 border-card" />
         </Button>
 
         <Button
