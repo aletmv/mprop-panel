@@ -108,14 +108,14 @@ const OperacionesList = () => {
               data-testid="legajos-search-input"
             />
           </div>
-          <Button variant="outline" className="gap-2 h-10">
+          <Button variant="outline" className="gap-2 h-10" disabled title="Próximamente">
             <SlidersHorizontal className="w-4 h-4" /> Filtros
           </Button>
-          <Button variant="outline" className="gap-2 h-10">
+          <Button variant="outline" className="gap-2 h-10" disabled title="Próximamente">
             <Download className="w-4 h-4" /> Exportar
           </Button>
           <div className="flex-1" />
-          <Button className="gap-2 h-10 bg-primary hover:bg-primary-glow text-primary-foreground">
+          <Button variant="outline" className="gap-2 h-10" disabled title="Próximamente">
             <Plus className="w-4 h-4" /> Nuevo legajo
           </Button>
         </div>
