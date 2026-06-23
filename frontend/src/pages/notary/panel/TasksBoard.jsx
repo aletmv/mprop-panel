@@ -1,10 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks, Trash2, MessageCircle, AlertTriangle,
+  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks, Trash2,
 } from 'lucide-react';
 import { dayTasks, useDayTasks } from './dayTasksStore';
-import { operationalTasks, useOperationalTasks, todayDateString, dateStringFromISO, operationalTaskBadge } from './operationalTasksStore';
+import { operationalTasks, useOperationalTasks, todayDateString, dateStringFromISO } from './operationalTasksStore';
+import { taskCardPresentation } from './taskCardPresentation';
+import { TaskCard } from './TaskCard';
 import { DND_TYPE } from './dndTypes';
 import { AlertChip } from './Kanban';
 
@@ -94,7 +96,10 @@ const DoneItem = ({ op }) => {
         <Check className="w-4 h-4" strokeWidth={2.4} />
       </span>
       <div className="flex-1 min-w-0">
-        <div className="text-[14px] font-medium text-slate-400 line-through leading-snug">{titulo}</div>
+        <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-slate-500 bg-slate-100">
+          Proceso
+        </span>
+        <div className="text-[14px] font-medium text-slate-400 line-through leading-snug mt-1">{titulo}</div>
         <div className="text-[12px] text-slate-400 mt-0.5 truncate">
           <span className="font-mono">{op.id}</span> · {op.direccion}
         </div>
@@ -109,129 +114,10 @@ const DoneItem = ({ op }) => {
         >
           <RotateCcw className="w-[15px] h-[15px]" />
         </button>
-        <button
-          onClick={() => dayTasks.removeDone(op.id)}
-          data-testid={`done-remove-${op.id}`}
-          title="Eliminar"
-          aria-label="Eliminar"
-          className="w-8 h-8 grid place-items-center rounded-[10px] bg-white border border-[#ECEDF0] text-slate-400 hover:text-destructive transition-colors"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
       </div>
     </li>
   );
 };
-
-// Tono sobrio por severidad (solo review-de-alerta toma rojo/ámbar; el resto sky).
-// La severidad es la señal principal de la tarjeta: badge + acento lateral + ícono.
-const BADGE_TONE = {
-  critica: 'text-red-700 bg-red-50',
-  media: 'text-amber-700 bg-amber-50',
-  null: 'text-sky-600 bg-sky-50',
-};
-const ACCENT_TONE = { critica: 'bg-red-400', media: 'bg-amber-400', null: 'bg-sky-300' };
-const ICON_TONE = { critica: 'text-red-500', media: 'text-amber-500', null: 'text-sky-400' };
-
-// Item de OperationalTask agendada para hoy (cualquier subtype). Sección propia,
-// separada de las tareas formales — no comparte drag/reorder ni dayTasksStore.
-// Completar/eliminar acá nunca toca op.estado/bloqueoActor/línea de pases.
-const FollowUpItem = ({ task, op }) => {
-  const badge = operationalTaskBadge(task);
-  const Icon = badge.severity ? AlertTriangle : MessageCircle;
-  return (
-  <li
-    data-testid={`followup-item-${task.id}`}
-    className="relative shrink-0 overflow-hidden flex items-center gap-3.5 bg-white border border-[#EEEFF2] rounded-2xl pl-5 pr-4 py-3.5 hover:border-[#DDE6F5] hover:shadow-sm transition-all snap-start"
-  >
-    <span className={`absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full ${ACCENT_TONE[badge.severity]}`} aria-hidden />
-    <span className={`flex items-center justify-center w-5 shrink-0 self-center ${ICON_TONE[badge.severity]}`}>
-      <Icon className="w-4 h-4" />
-    </span>
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className={`text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${BADGE_TONE[badge.severity]}`}>
-          {badge.label}
-        </span>
-        {task.relatedActorLabel && (
-          <span className="text-[11px] text-slate-400">Responsable: {task.relatedActorLabel}</span>
-        )}
-      </div>
-      <div className="text-[14.5px] font-semibold text-slate-900 leading-snug mt-1">{task.title}</div>
-      {op && (
-        <div className="text-[12.5px] text-slate-400 mt-1 truncate">
-          <span className="font-mono">{op.id}</span> · {op.direccion}
-        </div>
-      )}
-    </div>
-    <div className="flex items-center gap-1.5 shrink-0">
-      <button
-        onClick={() => operationalTasks.complete(task.id)}
-        data-testid={`followup-complete-${task.id}`}
-        title="Marcar como completado"
-        aria-label="Marcar como completado"
-        className="w-9 h-9 grid place-items-center rounded-[11px] bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
-      >
-        <Check className="w-[18px] h-[18px]" strokeWidth={2.4} />
-      </button>
-      <button
-        onClick={() => operationalTasks.remove(task.id)}
-        data-testid={`followup-remove-${task.id}`}
-        title="Eliminar seguimiento"
-        aria-label="Eliminar seguimiento"
-        className="w-9 h-9 grid place-items-center rounded-[11px] bg-slate-100 text-slate-400 hover:bg-destructive-soft hover:text-destructive transition-colors"
-      >
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  </li>
-  );
-};
-
-// OperationalTask subtype: 'follow_up', completado hoy — no desaparece sin
-// rastro, queda visible (liviano) dentro de "Completadas hoy" con badge
-// propio para no confundirse con una tarea formal completada.
-const FollowUpDoneItem = ({ task, op }) => (
-  <li
-    data-testid={`followup-done-${task.id}`}
-    className="flex items-center gap-3.5 bg-[#F7F8FA] rounded-2xl px-4 py-3.5"
-  >
-    <span className="w-[30px] h-[30px] rounded-[9px] bg-sky-50 text-sky-400 grid place-items-center shrink-0">
-      <MessageCircle className="w-4 h-4" strokeWidth={2.2} />
-    </span>
-    <div className="flex-1 min-w-0">
-      <span className="text-[9.5px] font-bold uppercase tracking-wider text-sky-500">
-        {operationalTaskBadge(task).label}
-      </span>
-      <div className="text-[14px] font-medium text-slate-400 line-through leading-snug">{task.title}</div>
-      {op && (
-        <div className="text-[12px] text-slate-400 mt-0.5 truncate">
-          <span className="font-mono">{op.id}</span> · {op.direccion}
-        </div>
-      )}
-    </div>
-    <div className="flex items-center gap-1.5 shrink-0">
-      <button
-        onClick={() => operationalTasks.reopen(task.id)}
-        data-testid={`followup-restore-${task.id}`}
-        title="Restaurar"
-        aria-label="Restaurar"
-        className="w-8 h-8 grid place-items-center rounded-[10px] bg-white border border-[#ECEDF0] text-slate-400 hover:text-primary transition-colors"
-      >
-        <RotateCcw className="w-[15px] h-[15px]" />
-      </button>
-      <button
-        onClick={() => operationalTasks.remove(task.id)}
-        data-testid={`followup-done-remove-${task.id}`}
-        title="Eliminar"
-        aria-label="Eliminar"
-        className="w-8 h-8 grid place-items-center rounded-[10px] bg-white border border-[#ECEDF0] text-slate-400 hover:text-destructive transition-colors"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
-    </div>
-  </li>
-);
 
 export const TasksBoard = ({ operaciones }) => {
   const navigate = useNavigate();
@@ -390,7 +276,12 @@ export const TasksBoard = ({ operaciones }) => {
           </div>
           <ul className="flex flex-col gap-2.5 max-h-[280px] overflow-y-auto pr-1" data-testid="followups-list">
             {pendingFollowUps.map((task) => (
-              <FollowUpItem key={task.id} task={task} op={opMap[task.opId]} />
+              <TaskCard
+                key={task.id}
+                view={taskCardPresentation(task, opMap[task.opId])}
+                onComplete={operationalTasks.complete}
+                onCancel={operationalTasks.cancel}
+              />
             ))}
           </ul>
         </div>
@@ -435,7 +326,11 @@ export const TasksBoard = ({ operaciones }) => {
                 <DoneItem key={opId} op={opMap[opId]} />
               ))}
               {doneFollowUpsToday.map((task) => (
-                <FollowUpDoneItem key={task.id} task={task} op={opMap[task.opId]} />
+                <TaskCard
+                  key={task.id}
+                  view={taskCardPresentation(task, opMap[task.opId])}
+                  onReopen={operationalTasks.reopen}
+                />
               ))}
             </ul>
           )}

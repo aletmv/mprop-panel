@@ -289,6 +289,20 @@ code {
     animation: pase-current-blink 1.1s ease-in-out infinite;
 }
 
+/* TaskCard F1 — pulso sutil de opacidad del rol "Escribanía" en tareas pending.
+   Señala foco operativo propio de la escribanía. Solo se aplica desde TaskCard
+   (clase .task-role-pulse) cuando roleLabel === "Escribanía" && status pending. */
+@keyframes task-role-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.72; }
+}
+.task-role-pulse {
+    animation: task-role-pulse 3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .task-role-pulse { animation: none; }
+}
+
 /* Anillo que pulsa alrededor del punto "estado actual" del popover Línea de
    pases — distingue ese punto del punto verde fijo de "tarea en curso", que
    reutiliza el mismo .pase-current-dot pero sin este anillo. */
