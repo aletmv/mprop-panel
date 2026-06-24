@@ -44,7 +44,11 @@ export const signatures = {
   getSnapshot: () => state,
 
   // Programa (o reprograma) la firma de un legajo.
-  set(opId, { fecha, hora, modalidad, lugar = '', nota = '' }) {
+  // `notificar` es opcional y aditivo: { email, whatsapp } booleanos — representa
+  // la CONFIGURACIÓN/intención de aviso (demo, no ejecuta envíos). Si no se pasa
+  // (ej. ProgramarFirmaDialog desde el legajo), el campo NO se agrega a la entrada,
+  // así las firmas existentes y el flujo canónico quedan idénticos.
+  set(opId, { fecha, hora, modalidad, lugar = '', nota = '', notificar = null }) {
     if (!opId || !fecha || !hora) return null;
     const entry = {
       fecha,
@@ -52,6 +56,7 @@ export const signatures = {
       modalidad: modalidad || 'Presencial',
       lugar,
       nota,
+      ...(notificar ? { notificar } : {}),
       status: 'programada',
       scheduledAt: new Date().toISOString(),
     };
