@@ -36,11 +36,12 @@ conteos · no cambiar stores.
   kind: 'operational',                  // F1: solo operacional (formal = micro-ajuste §7)
   type: 'seguimiento'|'revision'|'tarea',       // tipo (NO compuesto con severidad)
   typeLabel: 'Seguimiento'|'Revisión'|'Tarea',  // texto base de tipo — usado SOLO en title/aria-label del ícono (§3), no visible
-  title,                                // task.title (texto crudo, sin prefijos)
+  title,                                // task.title normalizado (sin punto final), SIN rol integrado
+  displayTitle,                         // título a renderizar — title + rol integrado (ver §2), lo único que pinta TaskCard
   addressLine,                          // op.direccion
   legajoId,                             // op.id
   severity: 'critica'|'media'|null,     // deriva de sourceLabel (review+alert); si no, null
-  roleLabel: string|null,               // rol corto del responsable (ver §2) — ej. "Gestoría"
+  roleLabel: string|null,               // rol corto del responsable (ver §2) — insumo de displayTitle, no se pinta directo
   status: 'pending'|'done'|'cancelled', // task.status
   detail: {                             // NO se renderiza en F1 (reservado a expand C5)
     origin, sourceLabel, createdAt, completedAt
@@ -51,33 +52,36 @@ conteos · no cambiar stores.
 - 🟢 **(Revisión F2) Tipo = forma del ícono, sin badge textual visible.** `typeLabel` ya no se pinta como
   badge; viaja en el view-model y se usa únicamente para componer el `title`/`aria-label` accesible del ícono
   (ver §3). **Prohibido** `"Revisión · Alerta crítica"` como texto visible.
+- 🟢 **(Revisión F3) `displayTitle` es lo único que `TaskCard` pinta como título.** `title` sigue viajando en el
+  view-model (texto base sin rol), pero la card renderiza `displayTitle` (título con rol integrado, ver §2).
 - Subtype desconocido → `type:'tarea'`, `typeLabel:'Tarea'` (nunca string técnico).
-- `roleLabel` = rol corto derivado de `relatedActorLabel`/`bloqueoActor` (ver §2); puede ser `null`.
+- `roleLabel` = rol corto derivado de `relatedActorLabel`/`bloqueoActor` (ver §2); puede ser `null`. Ya no se
+  pinta como pill — solo es insumo de `displayTitle`.
 - `detail.*` viaja en el view-model pero **no se pinta** en F1.
 
 ---
 
-## 2. Rol / responsable en la compacta (`roleLabel`)
+## 2. Rol / responsable en la compacta (`roleLabel` → `displayTitle`)
 
-🟢 El responsable **sí se muestra** en la compacta, pero como **rol corto**, no texto largo.
+🟢 **(Revisión F3)** El responsable **ya no se muestra como pill separado**. Se integra al **título visible**
+(`view.displayTitle`), generado por `buildDisplayTitle(title, roleLabel)` en `taskCardPresentation.js`.
 
-- Valores: `Gestoría` · `Escribanía` · `Comprador` · `Vendedor` · `Banco` · `Tercero` (rol corto, 1 palabra).
-- **Rendering:** texto simple, **semibold**, neutral (slate). **Sin pill, sin badge, sin color semántico fuerte.**
-- **Sin prefijo "Resp."** salvo ambigüedad real.
-- **Ubicación:** zona estable de metadata, **arriba a la derecha** (misma fila que el badge de tipo).
-- No debe competir con el badge de tipo ni reemplazar la severidad.
-- Si no hay rol → no se muestra nada (sin placeholder).
-
-### 2.1 Animación del rol (solo Escribanía)
-🟢 La animación sutil de opacidad **solo** aplica cuando `roleLabel === 'Escribanía'` y la task está
-**pending/active**:
-- opacidad oscilante ~**72%–100%**, duración **2.8s–3.2s**, **ease-in-out**.
-- **Respetar `prefers-reduced-motion`** (si está activo, texto estable).
-- Cualquier otro rol (Gestoría/Comprador/Vendedor/Banco/…) → **texto estable, sin animar**.
-- **Done y cancelled → nunca animan**, aunque el rol sea Escribanía.
-
-Motivo: la animación señala **acción interna de escribanía / foco operativo propio** — no responsabilidad externa,
-no severidad, no loading.
+- **Sin role pill, sin "Resp.", sin metadata de responsable separada.** El único lugar donde el rol aparece es
+  dentro del texto del título.
+- `buildDisplayTitle`:
+  - No muta `task.title` (dato fuente intacto); genera un string nuevo solo de presentación.
+  - Patrón: `[título base] + [conector] + [roleLabel]`.
+  - Conectores: `Gestoría → "a Gestoría"` · `Escribanía → "a Escribanía"` · `Comprador → "al Comprador"` ·
+    `Vendedor → "al Vendedor"` · `Banco → "al Banco"` · `Tercero → "al Tercero"`.
+  - Si el título base **ya menciona** el `roleLabel` (ej. el dato fuente ya viene como "Enviar WhatsApp a
+    Gestoría"), **no duplica** el conector — lo deja igual.
+  - Si no hay `roleLabel` (o no tiene conector mapeado) → `displayTitle` es solo el título base.
+  - Quita el punto final del resultado (`stripTrailingDot`), igual que el título base.
+- `roleLabel` **se mantiene en el view-model** (no se elimina del shape) porque es el insumo de
+  `buildDisplayTitle` — pero `TaskCard.jsx` ya no lo lee directamente para pintar nada.
+- 🟢 **Animación de rol eliminada por ahora.** No hay tratamiento animado de "Escribanía" en F1 (no hay pill que
+  animar). Si a futuro se quisiera señalar foco operativo de escribanía, se diseña de nuevo — no asumir que la
+  animación previa sigue vigente en otra forma.
 
 ---
 
@@ -100,9 +104,28 @@ alerta — se reutiliza **solo el ícono** que esa misma severidad usa en la car
   "Revisión crítica" · "Revisión media" · "Revisión" · "Seguimiento" · "Tarea". Sin texto visible, pero sin
   pérdida semántica para lector de pantalla / tooltip.
 - La severidad se expresa con: **forma del ícono (revisión) + color del ícono** (rojo crítica / ámbar media / sky
-  neutro). Sin acento lateral (eso es identidad de tarea formal, §0).
+  neutro). **Sin acento lateral** (eso es identidad de tarea formal, §0) — ver §3.1 para el border de perímetro
+  (que no es acento lateral).
 - **Persistencia:** mismos tokens de severidad en pending/done/cancelled. En **done/cancelled** el ícono
   **persiste atenuado** (por `opacity` del contenedor), sin badge sombreado ni fondo fuerte.
+
+### 3.1 Border de perímetro — solo `severity === 'critica'`
+
+🟢 **(Revisión F4)** Para que una task crítica se identifique de inmediato sin recurrir a badge/texto, las
+`OperationalTask` con `severity === 'critica'` llevan **border de perímetro rojo** (no lateral — distinto del
+acento de tarea formal, §0):
+
+- **Aplica solo a:** `OperationalTask` con `severity === 'critica'`. **No** aplica a `media` ni a `null`
+  (seguimiento/tarea sin severidad), **no** aplica a tareas formales/proceso.
+- **Pending:** `border-red-300` (perímetro completo) + `ring-1 ring-red-100` + `bg-red-50/30`. Si en pantalla se
+  ve débil, escalar a `border-red-400` (decisión visual, no de contrato).
+- **Done/cancelled:** se mantiene `border-red-300` (mismo tono); la atenuación la da la `opacity-80` ya existente
+  del contenedor — **no** se usa un tono de borde distinto para "atenuar", la opacidad general alcanza.
+- **`media`:** sin border por decisión de diseño (evita ruido visual) — la severidad media se expresa solo con el
+  ícono `AlertTriangle` ámbar. Si a futuro se necesitara reforzar, usar un tratamiento **más leve** que crítica
+  (ej. `border-amber-200`/`ring-amber-100`), nunca igual o más fuerte que el de crítica.
+- **No** es badge textual, no es badge sombreado completo de alerta, no escribe "Alerta crítica", no es acento
+  lateral (`absolute left-0 ...`, eso sigue reservado a `FormalTaskRow`, §0).
 - 🔴 Regla dura (fix B1): una `review` de Alerta crítica **completada** sigue leyéndose crítica (`ShieldAlert`
   rojo atenuado), nunca vuelve a `AlertTriangle`/sky.
 - 🟢 **Regla de diseño (no acoplar tipo a un único portador de severidad):**
@@ -141,19 +164,19 @@ alerta — se reutiliza **solo el ícono** que esa misma severidad usa en la car
 
 ## 5. Qué renderiza cada estado (misma estructura, no reordenar)
 
-Estructura única para los tres:
+🟢 **(Revisión F3)** Estructura única para los tres — sin badge de tipo visible (§3) y sin role pill (§2); el rol
+vive integrado en `displayTitle`:
 ```
-[acento sev.] [ícono sev. si aplica] [BADGE-tipo]            [rol corto]
-Título de acción
+[ícono tipo/severidad] Título visible (con rol integrado si corresponde)
 Dirección · MP-ID
 [acciones icon-only según estado]
 ```
 
-| Estado | Diferencia visual | Acciones | Rol animado |
-|---|---|---|---|
-| **pending** | tono pleno | completar · cancelar | sí, solo si rol = Escribanía |
-| **done** | `opacity` reducida + **título tachado** | reabrir | **no** |
-| **cancelled** | (oculto por defecto, §6) | reabrir (futuro) | **no** |
+| Estado | Diferencia visual | Acciones |
+|---|---|---|
+| **pending** | tono pleno | completar · cancelar |
+| **done** | `opacity` reducida + **título tachado** | reabrir |
+| **cancelled** | (oculto por defecto, §6) | reabrir (futuro) |
 
 - Done/cancelled **no** reordenan ni cambian tamaños; solo atenúan/tachan + cambian acción.
 
@@ -189,19 +212,18 @@ Dirección · MP-ID
 ## 8. Jerarquía visual (ejemplos cerrados)
 
 🟢 **(Revisión F2)** Ya no hay badge de tipo visible — el tipo+severidad viven en el ícono (forma+color), con
-texto accesible solo en `title`/`aria-label` (entre corchetes abajo, no se pinta).
+texto accesible solo en `title`/`aria-label` (entre corchetes abajo, no se pinta). **(Revisión F3)** Tampoco hay
+role pill: el rol va integrado en el título visible (`displayTitle`, §2).
 
-**pending crítica (rol Escribanía → rol animado):**
+**pending crítica (rol Gestoría → integrado al título):**
 ```
-[ícono ShieldAlert rojo, title="Revisión crítica"]                Escribanía
-Solicitar nuevo certificado de dominio
+[ícono ShieldAlert rojo, title="Revisión crítica"] Solicitar nuevo certificado de dominio a Gestoría
 Av. Libertador 123 · MP-328552
 [✓] [✕]
 ```
-**done crítica (rol Gestoría → estable, ícono crítico atenuado):**
+**done crítica (mismo rol, título tachado, ícono crítico atenuado):**
 ```
-[ícono ShieldAlert rojo atenuado, title="Revisión crítica"]       Gestoría
-Solicitar nuevo certificado de dominio
+[ícono ShieldAlert rojo atenuado, title="Revisión crítica"] Solicitar nuevo certificado de dominio a Gestoría
 Av. Libertador 123 · MP-328552
 [↺]
 ```
@@ -216,11 +238,11 @@ Done = misma estructura, atenuada, sin "Eliminar". Cancelled no se muestra por d
 
 ## 9. Qué NO incluir en la compacta (⛔)
 
-**badge textual de tipo** ("Revisión"/"Seguimiento"/"Tarea" visibles) · origen como pill · `sourceLabel` como pill ·
-"Manual" como badge protagonista · "Alerta crítica" como texto en el badge · badge compuesto "Revisión · Alerta
-crítica" · responsable como pill · historial · eventos relacionados · documentos · evidencia · expand · acciones
-contextuales múltiples · `needs_review` · `DocumentRequirement` · **subtasks · mini-checklist interno · grouping
-por legajo**.
+**badge textual de tipo** ("Revisión"/"Seguimiento"/"Tarea" visibles) · **role pill / "Resp." / responsable como
+metadata separada** (el rol va integrado al título, §2) · origen como pill · `sourceLabel` como pill · "Manual"
+como badge protagonista · "Alerta crítica" como texto en el badge · badge compuesto "Revisión · Alerta crítica" ·
+historial · eventos relacionados · documentos · evidencia · expand · acciones contextuales múltiples ·
+`needs_review` · `DocumentRequirement` · **subtasks · mini-checklist interno · grouping por legajo**.
 
 ---
 
@@ -239,22 +261,28 @@ convertir Avance en TaskBoard**.
 - **Nuevos:** `taskCardPresentation.js` (adapter puro) · `TaskCard.jsx` (renderer compacto).
 - **Modificado:** `TasksBoard.jsx` — reemplazar `FollowUpItem` + `FollowUpDoneItem` por **un** `TaskCard`
   (pending/done/cancelled); X → `cancel`; badge muted "Proceso" en `DoneItem` formal (§7).
-- (Posible) CSS/keyframe para la animación de opacidad del rol Escribanía (si no hay uno reutilizable).
+- 🟢 **(Revisión F3)** Animación de rol eliminada de F1: el keyframe CSS (`task-role-pulse` en `index.css`) puede
+  quedar sin uso en el código — no se elimina el CSS por este cambio (fuera del alcance de archivos de F3), solo
+  se deja de aplicar la clase desde `TaskCard.jsx`.
 - Nada más.
 
 ---
 
 ## 12. Criterios de aceptación
 
-- [ ] `review·crítica` se ve igual (`ShieldAlert` rojo) en pending **y** done (atenuada). Nunca sky/`AlertTriangle`.
+- [ ] `review·crítica` se ve igual (`ShieldAlert` rojo + border de perímetro rojo, §3.1) en pending **y** done
+      (atenuada). Nunca sky/`AlertTriangle`, nunca sin border.
+- [ ] Border rojo de crítica es de **perímetro**, no lateral; no aplica a `media`/`null` ni a tareas formales.
 - [ ] `review·media` mantiene `AlertTriangle` ámbar en ambos estados.
 - [ ] `follow_up` (`MessageCircle`) y `tarea` fallback (`ClipboardList`) neutro/sky en ambos estados.
 - [ ] Sin badge textual de tipo visible (ni "Revisión", ni "Seguimiento", ni "Tarea"); nunca "· Alerta crítica" ni
       strings técnicos. Tipo desconocido → ícono `ClipboardList` (mismo que fallback "Tarea").
 - [ ] Ícono de tipo/severidad tiene `title`+`aria-label` con el texto equivalente ("Revisión crítica" / "Revisión
       media" / "Revisión" / "Seguimiento" / "Tarea").
-- [ ] **Rol corto** visible (semibold, neutral, sin pill), arriba a la derecha; sin "Resp." salvo ambigüedad.
-- [ ] Animación de opacidad **solo** en rol Escribanía + pending; respeta `prefers-reduced-motion`; nunca en done/cancelled.
+- [ ] Sin role pill / "Resp." / metadata de responsable separada. El rol (si existe) aparece integrado en
+      `displayTitle` con el conector correcto (a/al + rol), sin duplicar si el título fuente ya lo incluye.
+- [ ] `TaskCard` renderiza `view.displayTitle` (no `view.title`) como título visible.
+- [ ] Sin animación de rol en F1 (eliminada junto con el pill).
 - [ ] Acciones **icon-only** con `aria-label`+`title`; sin texto visible.
 - [ ] "✕" cancela (no borra): la task sigue en el store (visible como cancelada en Operativa).
 - [ ] Done sin "Eliminar"; cancelled fuera del flujo principal; cancelled conserva ícono de tipo/severidad.

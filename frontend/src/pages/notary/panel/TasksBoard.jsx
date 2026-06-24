@@ -115,6 +115,11 @@ export const TasksBoard = ({ operaciones }) => {
   // store (no remove/cancel). Estado local de UI; la memoria queda en Operativa.
   const [hiddenOpDoneIds, setHiddenOpDoneIds] = useState(() => new Set());
   const overIdxRef = useRef(null);
+  // Drag/reorder de "Tareas operativas" pending — estado independiente del de
+  // tareas formales (dragIdx/overIdxRef arriba), para que un drag iniciado en
+  // una sección nunca reordene la otra.
+  const [opDragIdx, setOpDragIdx] = useState(null);
+  const opOverIdxRef = useRef(null);
 
   const opMap = operaciones.reduce((acc, o) => {
     acc[o.id] = o;
@@ -187,6 +192,30 @@ export const TasksBoard = ({ operaciones }) => {
     }
     setDragIdx(null);
     overIdxRef.current = null;
+  };
+
+  // Reorder vertical de "Tareas operativas" pending. Mismo patrón que arriba,
+  // pero opera sobre ids (operationalTasksStore es un array plano de tasks, no
+  // un array de ids como dayTasks.pending) y persiste vía reorderPending(orderedIds).
+  const onOpItemDragStart = (e, idx) => {
+    setOpDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/x-mp-optask-idx', String(idx));
+  };
+  const onOpItemDragOver = (e, idx) => {
+    if (opDragIdx == null) return;
+    e.preventDefault();
+    opOverIdxRef.current = idx;
+  };
+  const onOpItemDragEnd = () => {
+    if (opDragIdx != null && opOverIdxRef.current != null && opDragIdx !== opOverIdxRef.current) {
+      const reordered = [...pendingFollowUps];
+      const [moved] = reordered.splice(opDragIdx, 1);
+      reordered.splice(opOverIdxRef.current, 0, moved);
+      operationalTasks.reorderPending(reordered.map((t) => t.id));
+    }
+    setOpDragIdx(null);
+    opOverIdxRef.current = null;
   };
 
   return (
@@ -277,12 +306,17 @@ export const TasksBoard = ({ operaciones }) => {
             </span>
           </div>
           <ul className="flex flex-col gap-2.5 max-h-[280px] overflow-y-auto pr-1" data-testid="followups-list">
-            {pendingFollowUps.map((task) => (
+            {pendingFollowUps.map((task, idx) => (
               <TaskCard
                 key={task.id}
                 view={taskCardPresentation(task, opMap[task.opId])}
                 onComplete={operationalTasks.complete}
                 onCancel={operationalTasks.cancel}
+                draggable
+                isDragging={opDragIdx === idx}
+                onDragStart={(e) => onOpItemDragStart(e, idx)}
+                onDragOver={(e) => onOpItemDragOver(e, idx)}
+                onDragEnd={onOpItemDragEnd}
               />
             ))}
           </ul>

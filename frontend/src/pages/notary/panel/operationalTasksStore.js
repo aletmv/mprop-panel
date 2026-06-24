@@ -145,6 +145,29 @@ export const operationalTasks = {
     setState(state.map((t) => (t.id === id ? { ...t, status: 'cancelled' } : t)));
   },
 
+  // Reordena solo las tasks listadas en `orderedIds` (los pending visibles tras
+  // un drag), preservando exactamente la posición de todas las demás. No es un
+  // splice/insert que las agrupe en un punto: cada slot original ocupado por una
+  // task incluida en orderedIds se reasigna in-place según el nuevo orden — el
+  // resto del array (otras tasks, otros días, done/cancelled) no se mueve.
+  // No toca status/origin/sourceType/severity/scheduledForDate de ninguna task.
+  reorderPending(orderedIds) {
+    const idsSet = new Set(orderedIds);
+    const orderedTasks = orderedIds
+      .map((id) => state.find((task) => task.id === id))
+      .filter(Boolean);
+
+    if (orderedTasks.length !== orderedIds.length) return;
+
+    let cursor = 0;
+    const nextState = state.map((task) => {
+      if (!idsSet.has(task.id)) return task;
+      return orderedTasks[cursor++];
+    });
+
+    setState(nextState);
+  },
+
   remove(id) {
     setState(state.filter((t) => t.id !== id));
   },
