@@ -11,12 +11,65 @@ import {
 import { buildNotaryOperaciones } from './operacionesAdapter';
 import { LegajosKanban } from './Kanban';
 import { TasksBoard } from './TasksBoard';
+import { useSignatures } from './signaturesStore';
 import { useApp } from '@/context/AppContext';
+
+// ── Próximas firmas: merge de firmas mock + firmas programadas (signaturesStore) ──
+// Helpers presentacionales puros: NO mutan el mock ni el store, solo arman la
+// vista. La firma programada tiene prioridad sobre la mock/tentativa del mismo
+// legajo (dedup por opId).
+const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+// 'YYYY-MM-DD' (formato del store) → 'DD/MM' (formato que consume el render).
+const isoToDDMM = (iso) => {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return d && m ? `${d}/${m}` : iso;
+};
+
+// Fecha de HOY en 'DD/MM' — para la tab "Hoy" (no depende de la primera firma).
+const todayDDMM = () => {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}`;
+};
+
+// Clave de orden ascendente por fecha+hora. El mock no trae año, así que se
+// ordena por mes/día/hora dentro del mismo ciclo anual (suficiente para la demo).
+const firmaSortKey = (f) => {
+  const [d, m] = (f.fecha || '').split('/');
+  const [hh, mm] = (f.hora || '').split(':');
+  return (Number(m) || 0) * 1e6 + (Number(d) || 0) * 1e4 + (Number(hh) || 0) * 1e2 + (Number(mm) || 0);
+};
+
+// Combina mock + programadas. Dedup por opId con la programada pisando a la mock.
+const buildProximasFirmas = (mock, programmed, operaciones) => {
+  const byOp = new Map();
+  mock.forEach((f) => byOp.set(f.operacion, f));
+  Object.entries(programmed || {}).forEach(([opId, entry]) => {
+    const op = operaciones.find((o) => o.id === opId);
+    const mockEntry = mock.find((f) => f.operacion === opId);
+    byOp.set(opId, {
+      fecha: isoToDDMM(entry.fecha),
+      hora: entry.hora,
+      operacion: opId,
+      direccion: op?.direccion || mockEntry?.direccion || '',
+      escribano: op?.escribano || mockEntry?.escribano || 'Escribanía',
+      estado: 'programada',
+      modalidad: entry.modalidad || '',
+    });
+  });
+  return [...byOp.values()].sort((a, b) => firmaSortKey(a) - firmaSortKey(b));
+};
 
 const Dashboard = () => {
   const ctx = useApp();
   const { notarySession } = ctx;
   const [agendaTab, setAgendaTab] = useState('proximas');
+  // Hook antes de cualquier early return (rules-of-hooks). Lectura reactiva de
+  // las firmas programadas; se combina con el mock más abajo.
+  const programmed = useSignatures();
   if (!notarySession) return <Navigate to="/escribanos" replace />;
   const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
   const distribucion = [
@@ -28,8 +81,8 @@ const Dashboard = () => {
   ];
   const totalDist = distribucion.reduce((s, x) => s + x.n, 0) || 1;
 
-  const firmasOrdenadas = proximasFirmas;
-  const fechaHoy = firmasOrdenadas[0]?.fecha;
+  const firmasOrdenadas = buildProximasFirmas(proximasFirmas, programmed, operaciones);
+  const fechaHoy = todayDDMM();
   const firmasHoy = firmasOrdenadas.filter((f) => f.fecha === fechaHoy);
   const firmasAMostrar = agendaTab === 'hoy' ? firmasHoy : firmasOrdenadas.slice(0, 5);
 
@@ -181,13 +234,13 @@ const Dashboard = () => {
                   <div className="w-10 h-10 rounded-full bg-muted grid place-items-center mb-3">
                     <CalendarDays className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  No hay firmas programadas para hoy.
+                  {agendaTab === 'hoy' ? 'No hay firmas programadas para hoy.' : 'No hay próximas firmas programadas.'}
                 </div>
               ) : (
                 <div className="divide-y divide-border">
                   {firmasAMostrar.map((f) => {
-                    const colorByState = { confirmada: 'success', observada: 'destructive', tentativa: 'warning' }[f.estado];
-                    const labelByState = { confirmada: 'Confirmada', observada: 'Observada', tentativa: 'Tentativa' }[f.estado];
+                    const colorByState = { confirmada: 'success', observada: 'destructive', tentativa: 'warning', programada: 'primary' }[f.estado];
+                    const labelByState = { confirmada: 'Confirmada', observada: 'Observada', tentativa: 'Tentativa', programada: 'Programada' }[f.estado];
                     return (
                       <Link
                         to={`/escribanos/operaciones/${f.operacion}`}
@@ -197,7 +250,7 @@ const Dashboard = () => {
                       >
                         <div className="w-14 text-center shrink-0">
                           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                            {f.fecha.split('/')[1] === '06' ? 'Jun' : 'Jul'}
+                            {MESES[Number(f.fecha.split('/')[1]) - 1] || ''}
                           </div>
                           <div className="font-display font-bold text-[20px] text-foreground leading-none num-tabular">
                             {f.fecha.split('/')[0]}
@@ -210,7 +263,7 @@ const Dashboard = () => {
                         <div className="flex-1 min-w-0">
                           <div className="text-[14px] font-semibold text-foreground truncate">{f.direccion}</div>
                           <div className="text-[11px] text-muted-foreground mt-0.5">
-                            <span className="font-mono">{f.operacion}</span> · {f.escribano}
+                            <span className="font-mono">{f.operacion}</span> · {f.escribano}{f.modalidad ? ` · ${f.modalidad}` : ''}
                           </div>
                         </div>
                         <span
@@ -228,6 +281,9 @@ const Dashboard = () => {
 
               <div className="mt-4 flex items-end justify-between gap-3 flex-wrap">
                 <div className="flex flex-col gap-1" data-testid="agenda-status-legend">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-primary">
+                    <span className="w-2 h-2 rounded-full bg-primary" aria-hidden="true" /> Programada
+                  </span>
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-success">
                     <span className="w-2 h-2 rounded-full bg-success" aria-hidden="true" /> Confirmada
                   </span>
