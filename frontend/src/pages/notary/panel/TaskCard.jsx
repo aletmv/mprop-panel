@@ -6,9 +6,12 @@ import { ShieldAlert, AlertTriangle, MessageCircle, ClipboardList, Check, X, Rot
 // - tipo = forma del ícono (sin badge textual visible) · severidad = color/tono del ícono
 // - íconos de revisión reutilizados de la card de Alertas (Dashboard.jsx): ShieldAlert
 //   (crítica) / AlertTriangle (media o sin severidad) — no se inventa ícono nuevo
-// - rol corto visible (semibold, neutral, sin pill); animación solo si rol = Escribanía && pending
+// - sin role pill: el rol se integra al título visible (`view.displayTitle`, ver
+//   taskCardPresentation.buildDisplayTitle); sin animación de rol por ahora
 // - acciones icon-only con aria-label/title · cancel != remove · done sin eliminar
 // - pending/done/cancelled comparten estructura; done/cancelled atenúan (no reordenan)
+// - drag opcional (draggable/onDragStart/onDragOver/onDragEnd/isDragging): solo wiring,
+//   la lógica de reorder vive en TasksBoard (igual que onComplete/onCancel)
 // - portable: no contiene lógica de agrupación ni de subtasks (solo dibuja una card del view-model)
 
 // Severidad → tono del ícono. Las tareas operativas NO usan acento lateral: el
@@ -37,7 +40,12 @@ const IconBtn = ({ onClick, title, children, className }) => (
   </button>
 );
 
-export const TaskCard = ({ view, onComplete, onReopen, onCancel }) => {
+export const TaskCard = ({
+  view, onComplete, onReopen, onCancel,
+  // Drag opcional (reorder de pending) — la lógica vive en TasksBoard; TaskCard
+  // solo aplica los handlers/estilos que recibe, igual que onComplete/onCancel.
+  draggable, onDragStart, onDragOver, onDragEnd, isDragging,
+}) => {
   const sev = view.severity; // 'critica' | 'media' | null
   const Icon = iconForType(view.type, sev);
   // Texto del tipo+severidad, solo accesible (title/aria-label) — no se pinta visible.
@@ -47,15 +55,25 @@ export const TaskCard = ({ view, onComplete, onReopen, onCancel }) => {
   const done = view.status === 'done';
   const cancelled = view.status === 'cancelled';
   const atenuado = done || cancelled;
-  // Animación SOLO para rol Escribanía y task pending/active (ver contrato §2.1).
-  const rolePulse = view.roleLabel === 'Escribanía' && view.status === 'pending';
+  // Borde de perímetro (NO lateral) solo para crítica — distinto de §0/identidad de
+  // tarea formal. Atenuado/cancelled mantiene el mismo border-red; la opacidad del
+  // contenedor ya lo atenúa, sin necesidad de un tono de borde distinto.
+  const critica = sev === 'critica';
 
   return (
     <li
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
       data-testid={`taskcard-${view.id}`}
       className={`relative shrink-0 overflow-hidden flex items-center gap-3.5 rounded-2xl pl-5 pr-4 py-3.5 snap-start transition-all ${
-        atenuado ? 'bg-[#F7F8FA] border border-transparent opacity-80' : 'bg-white border border-[#EEEFF2] hover:border-[#DDE6F5] hover:shadow-sm'
-      }`}
+        atenuado
+          ? `bg-[#F7F8FA] border opacity-80 ${critica ? 'border-red-300' : 'border-transparent'}`
+          : critica
+            ? 'bg-red-50/30 border border-red-300 ring-1 ring-red-100 hover:border-red-400'
+            : 'bg-white border border-[#EEEFF2] hover:border-[#DDE6F5] hover:shadow-sm'
+      } ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${isDragging ? 'opacity-50' : ''}`}
     >
       {/* ícono = tipo + severidad (sin texto visible); accesible vía title/aria-label.
           Sin badge/sombreado, sin acento lateral (eso es identidad de tarea formal). */}
@@ -69,15 +87,8 @@ export const TaskCard = ({ view, onComplete, onReopen, onCancel }) => {
       </span>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          {view.roleLabel && (
-            <span className={`text-[10.5px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-2 py-0.5 ${rolePulse ? 'task-role-pulse' : ''}`}>
-              {view.roleLabel}
-            </span>
-          )}
-        </div>
-        <div className={`text-[14.5px] font-semibold leading-snug mt-1 ${atenuado ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-          {view.title}
+        <div className={`text-[14.5px] font-semibold leading-snug ${atenuado ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+          {view.displayTitle}
         </div>
         {(view.legajoId || view.addressLine) && (
           <div className="text-[12.5px] text-slate-400 mt-1 truncate">
