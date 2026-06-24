@@ -3,22 +3,71 @@ import { Link, Navigate } from 'react-router-dom';
 import { PanelShell, Topbar } from './PanelShell';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalIcon, Clock, MapPin } from 'lucide-react';
-import { proximasFirmas } from './mockData';
+import { proximasFirmas, operaciones as MOCK_OPERACIONES } from './mockData';
+import { buildNotaryOperaciones } from './operacionesAdapter';
+import { useSignatures } from './signaturesStore';
+import { NuevaFirmaDialog } from './NuevaFirmaDialog';
 import { useApp } from '@/context/AppContext';
 
 const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const MESES_FULL = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
 
-const buildMonth = () => {
+// Índice de día de semana con Lunes = 0 … Domingo = 6 (getDay() es Dom=0..Sáb=6).
+const mondayIndex = (jsDay) => (jsDay + 6) % 7;
+
+// Grilla real de 42 celdas para el mes de `viewDate` (Date en día 1). Calcula
+// relleno del mes anterior/siguiente según el día de semana real del 1°.
+const buildMonth = (viewDate) => {
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDow = mondayIndex(new Date(year, month, 1).getDay());
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysPrev = new Date(year, month, 0).getDate();
   const cells = [];
-  for (let d = 26; d <= 31; d++) cells.push({ day: d, prev: true });
-  for (let d = 1; d <= 30; d++) cells.push({ day: d });
-  let i = cells.length;
-  while (cells.length < 42) {
-    cells.push({ day: cells.length - i + 1, next: true });
-  }
+  for (let i = firstDow - 1; i >= 0; i--) cells.push({ day: daysPrev - i, prev: true });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d });
+  let nd = 1;
+  while (cells.length < 42) cells.push({ day: nd++, next: true });
   return cells.slice(0, 42);
 };
 
+// 'YYYY-MM-DD' (store) → 'DD/MM' (formato del sidebar).
+const isoToDDMM = (iso) => {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return d && m ? `${d}/${m}` : iso;
+};
+
+// Orden ascendente por fecha+hora ('DD/MM' + 'HH:MM'); el mock no trae año.
+const firmaSortKey = (f) => {
+  const [d, m] = (f.fecha || '').split('/');
+  const [hh, mm] = (f.hora || '').split(':');
+  return (Number(m) || 0) * 1e6 + (Number(d) || 0) * 1e4 + (Number(hh) || 0) * 1e2 + (Number(mm) || 0);
+};
+
+// Sidebar "Próximas firmas": merge mock + programadas. Dedup por opId con la
+// firma programada pisando a la mock del mismo legajo.
+const buildSidebarFirmas = (mock, programmed, opMap) => {
+  const byOp = new Map();
+  mock.forEach((f) => byOp.set(f.operacion, f));
+  Object.entries(programmed || {}).forEach(([opId, entry]) => {
+    const mockEntry = mock.find((f) => f.operacion === opId);
+    byOp.set(opId, {
+      operacion: opId,
+      fecha: isoToDDMM(entry.fecha),
+      hora: entry.hora,
+      direccion: opMap[opId]?.direccion || mockEntry?.direccion || '',
+      estado: 'programada',
+    });
+  });
+  return [...byOp.values()].sort((a, b) => firmaSortKey(a) - firmaSortKey(b));
+};
+
+// Eventos demo del calendario (mock por día, sin mes). Se anclan al mes real
+// actual: solo se muestran cuando se está viendo el mes de hoy.
 const eventosMes = {
   3: [{ id: 'MP-662480', label: 'MP-662480', estado: 'success', hora: '10:00' }],
   10: [{ id: 'MP-834068', label: 'MP-834068', estado: 'success', hora: '11:30' }],
@@ -31,11 +80,53 @@ const eventosMes = {
 };
 
 const Agenda = () => {
-  const { notarySession } = useApp();
-  const [mes] = useState('Junio 2025');
-  const cells = buildMonth();
+  const ctx = useApp();
+  const { notarySession } = ctx;
+  // Hooks antes de cualquier early return (rules-of-hooks).
+  const programmed = useSignatures();
+  const [viewDate, setViewDate] = useState(() => {
+    const t = new Date();
+    return new Date(t.getFullYear(), t.getMonth(), 1);
+  });
+  const [nuevaFirmaOpen, setNuevaFirmaOpen] = useState(false);
 
   if (!notarySession) return <Navigate to="/escribanos" replace />;
+
+  const operaciones = buildNotaryOperaciones(ctx, MOCK_OPERACIONES);
+  const opMap = operaciones.reduce((acc, o) => { acc[o.id] = o; return acc; }, {});
+
+  const today = new Date();
+  const isCurrentMonth =
+    viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() === today.getMonth();
+  const cells = buildMonth(viewDate);
+  const mesLabel = `${MESES_FULL[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
+
+  const goPrev = () => setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const goNext = () => setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+  const goToday = () => {
+    const t = new Date();
+    setViewDate(new Date(t.getFullYear(), t.getMonth(), 1));
+  };
+
+  // Firmas programadas que caen en el mes/año visible → evento por día.
+  const programmedByDay = {};
+  Object.entries(programmed || {}).forEach(([opId, entry]) => {
+    if (!entry || !entry.fecha) return;
+    const [y, m, d] = entry.fecha.split('-').map(Number);
+    if (y === viewDate.getFullYear() && m - 1 === viewDate.getMonth()) {
+      if (!programmedByDay[d]) programmedByDay[d] = [];
+      programmedByDay[d].push({ id: opId, label: opId, estado: 'programada', hora: entry.hora });
+    }
+  });
+  // Eventos de una celda: programadas (prioridad) + demo del mes actual, dedup por opId.
+  const eventsForDay = (day) => {
+    const prog = programmedByDay[day] || [];
+    const base = isCurrentMonth ? (eventosMes[day] || []) : [];
+    const progIds = new Set(prog.map((e) => e.id));
+    return [...prog, ...base.filter((e) => !progIds.has(e.id))];
+  };
+
+  const sidebarFirmas = buildSidebarFirmas(proximasFirmas, programmed, opMap);
 
   return (
     <PanelShell>
@@ -44,24 +135,61 @@ const Agenda = () => {
       <div className="px-9 py-6 lg:py-8 space-y-5" data-testid="agenda-page">
         <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex items-center bg-card border border-border rounded-lg h-10">
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-r-none">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goPrev}
+              title="Mes anterior"
+              aria-label="Mes anterior"
+              data-testid="agenda-mes-prev"
+              className="h-10 w-10 rounded-r-none"
+            >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <div className="px-4 text-[14px] font-semibold text-foreground border-x border-border h-10 leading-10">
-              {mes}
+            <div
+              className="px-4 text-[14px] font-semibold text-foreground border-x border-border h-10 leading-10"
+              data-testid="agenda-mes-label"
+            >
+              {mesLabel}
             </div>
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-l-none">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goNext}
+              title="Mes siguiente"
+              aria-label="Mes siguiente"
+              data-testid="agenda-mes-next"
+              className="h-10 w-10 rounded-l-none"
+            >
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
-          <Button variant="outline" className="h-10">Hoy</Button>
+          <Button variant="outline" onClick={goToday} data-testid="agenda-hoy" className="h-10">Hoy</Button>
 
           <div className="inline-flex bg-card border border-border rounded-lg p-1 ml-auto">
             <button className="px-3 py-1.5 text-[12px] font-semibold text-foreground bg-muted rounded-md">Mes</button>
-            <button className="px-3 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground">Semana</button>
-            <button className="px-3 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground">Día</button>
+            <button
+              disabled
+              title="Próximamente"
+              className="px-3 py-1.5 text-[12px] font-medium text-muted-foreground/50 cursor-not-allowed"
+            >
+              Semana
+            </button>
+            <button
+              disabled
+              title="Próximamente"
+              className="px-3 py-1.5 text-[12px] font-medium text-muted-foreground/50 cursor-not-allowed"
+            >
+              Día
+            </button>
           </div>
-          <Button className="gap-2 h-10 bg-primary hover:bg-primary-glow text-primary-foreground">
+          {/* Nueva firma: abre el modal con selector de legajo. La firma se
+              persiste con signatures.set (mismo flujo canónico). */}
+          <Button
+            onClick={() => setNuevaFirmaOpen(true)}
+            data-testid="agenda-nueva-firma"
+            className="gap-2 h-10 bg-primary hover:bg-primary-glow text-primary-foreground"
+          >
             <Plus className="w-4 h-4" /> Nueva firma
           </Button>
         </div>
@@ -80,8 +208,8 @@ const Agenda = () => {
             </div>
             <div className="grid grid-cols-7">
               {cells.map((c, i) => {
-                const e = eventosMes[c.day];
-                const isToday = c.day === 23 && !c.prev && !c.next;
+                const dayEvents = !c.prev && !c.next ? eventsForDay(c.day) : [];
+                const isToday = isCurrentMonth && !c.prev && !c.next && c.day === today.getDate();
                 return (
                   <div
                     key={i}
@@ -96,18 +224,19 @@ const Agenda = () => {
                     >
                       {c.day}
                     </div>
-                    {e && !c.prev && !c.next && (
+                    {dayEvents.length > 0 && (
                       <div className="mt-1 space-y-1">
-                        {e.map((ev) => {
+                        {dayEvents.map((ev) => {
                           const cls = {
                             success: 'bg-success-soft text-success border-success/20',
                             destructive: 'bg-destructive-soft text-destructive border-destructive/20',
                             warning: 'bg-warning-soft text-warning-foreground border-warning/30',
+                            programada: 'bg-primary/10 text-primary border-primary/20',
                           }[ev.estado];
                           return (
                             <Link
                               to={`/escribanos/operaciones/${ev.id}`}
-                              key={ev.id}
+                              key={`${ev.id}-${ev.hora}`}
                               className={`block px-1.5 py-1 rounded-md border ${cls} text-[10px] font-mono truncate hover:shadow-sm transition-shadow`}
                             >
                               <span className="font-semibold">{ev.hora}</span> · {ev.label}
@@ -129,16 +258,18 @@ const Agenda = () => {
                 <h3 className="font-display font-bold text-[15px] text-foreground">Próximas firmas</h3>
               </div>
               <div className="space-y-3 flex-1">
-                {proximasFirmas.map((f) => {
+                {sidebarFirmas.map((f) => {
                   const dotCls = {
                     confirmada: 'bg-success',
-                    observada:  'bg-destructive',
-                    tentativa:  'bg-warning',
+                    observada: 'bg-destructive',
+                    tentativa: 'bg-warning',
+                    programada: 'bg-primary',
                   }[f.estado];
                   const stateLabel = {
                     confirmada: 'Confirmada',
-                    observada:  'Observada',
-                    tentativa:  'Tentativa',
+                    observada: 'Observada',
+                    tentativa: 'Tentativa',
+                    programada: 'Programada',
                   }[f.estado];
                   return (
                     <Link
@@ -167,9 +298,12 @@ const Agenda = () => {
                 })}
               </div>
 
-              {/* Referencia de estado · alineada a la margen inferior izquierda,
-                  sólo punto de color + texto correspondiente en color. */}
+              {/* Referencia de estado · punto de color + texto en color. */}
               <div className="mt-4 pt-3 border-t border-border flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-primary" />
+                  <span className="font-medium text-primary">Programada</span>
+                </span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="inline-block w-2 h-2 rounded-full bg-success" />
                   <span className="font-medium text-success">Confirmada</span>
@@ -195,13 +329,25 @@ const Agenda = () => {
                   <p className="text-[12px] text-muted-foreground mt-1">
                     Conectá tu calendario para sincronizar firmas y recibir recordatorios automáticos.
                   </p>
-                  <button className="text-[12px] font-semibold text-accent hover:underline mt-2">Conectar →</button>
+                  <button
+                    disabled
+                    title="Próximamente"
+                    className="text-[12px] font-semibold text-accent/50 cursor-not-allowed mt-2"
+                  >
+                    Conectar →
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <NuevaFirmaDialog
+        open={nuevaFirmaOpen}
+        onOpenChange={setNuevaFirmaOpen}
+        operaciones={operaciones}
+      />
     </PanelShell>
   );
 };
