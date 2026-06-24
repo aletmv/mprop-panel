@@ -255,20 +255,6 @@ const OperacionesList = () => {
               Mostrando <span className="font-semibold text-foreground">{lista.length}</span> de{' '}
               <span className="font-semibold text-foreground">{operaciones.length}</span> legajos
             </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" disabled>
-                Anterior
-              </Button>
-              <Button variant="outline" size="sm" className="w-8 h-8 p-0">
-                1
-              </Button>
-              <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
-                2
-              </Button>
-              <Button variant="ghost" size="sm">
-                Siguiente
-              </Button>
-            </div>
           </div>
         </div>
       </div>

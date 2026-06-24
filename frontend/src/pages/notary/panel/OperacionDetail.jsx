@@ -559,7 +559,7 @@ const OperacionDetail = () => {
                 <>
                   <div className="flex items-center justify-between gap-2">
                     <SectionLabel>Firma programada</SectionLabel>
-                    <Pill variant="success">Programada</Pill>
+                    <Pill variant="primary">Programada</Pill>
                   </div>
                   <div className="text-lg font-semibold tracking-tight text-slate-900 mt-2 tabular-nums">
                     {fmtFechaCorta(firmaProgramada.fecha)} · {firmaProgramada.hora}
@@ -826,7 +826,9 @@ const OperacionDetail = () => {
                         </div>
                         <Pill variant={cfg.dot}>{cfg.label}</Pill>
                         <button
-                          className="text-slate-400 hover:text-slate-700 transition-colors shrink-0"
+                          disabled
+                          title="Próximamente"
+                          className="text-slate-300 cursor-not-allowed shrink-0"
                           aria-label="Descargar"
                         >
                           <Download className="w-4 h-4" strokeWidth={1.5} />

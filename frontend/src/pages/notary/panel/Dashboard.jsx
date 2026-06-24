@@ -319,7 +319,11 @@ const Dashboard = () => {
                 <div className="text-[12px] opacity-80 mt-2 leading-snug">
                   Documentación completa. Te sugerimos programar firma tentativa entre el 26 y 28 de junio.
                 </div>
-                <button className="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-card/15 hover:bg-card/25 text-[12px] font-semibold backdrop-blur-sm transition-colors">
+                <button
+                  disabled
+                  title="Próximamente"
+                  className="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-card/15 text-[12px] font-semibold backdrop-blur-sm opacity-60 cursor-not-allowed"
+                >
                   Ver sugerencias <ChevronRight className="w-4 h-4" />
                 </button>
               </div>

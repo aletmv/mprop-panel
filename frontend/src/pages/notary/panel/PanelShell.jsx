@@ -60,7 +60,30 @@ const BrandLogo = ({ collapsed }) => (
 );
 
 const NavItem = ({ item, collapsed }) => {
-  const link = (
+  // Ítems "Próximamente" (soon): NO son NavLink — su ruta no existe y navegarían
+  // a pantalla en blanco. Se renderizan como elemento inerte (disabled), con
+  // title="Próximamente" y, si hay espacio, un badge "Pronto".
+  if (item.soon) {
+    return (
+      <div
+        aria-disabled="true"
+        title="Próximamente"
+        data-testid={`sidebar-link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+        className={`relative flex items-center rounded-lg text-[13.5px] font-medium text-foreground/40 cursor-not-allowed select-none ${
+          collapsed ? 'justify-center w-10 h-10 mx-auto' : 'gap-3 px-3 py-2'
+        }`}
+      >
+        <item.icon className="w-[18px] h-[18px] shrink-0" />
+        {!collapsed && <span className="flex-1">{item.label}</span>}
+        {!collapsed && (
+          <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground border border-border font-semibold">
+            Pronto
+          </span>
+        )}
+      </div>
+    );
+  }
+  return (
     <NavLink
       to={item.to}
       end={item.end}
@@ -90,7 +113,6 @@ const NavItem = ({ item, collapsed }) => {
       )}
     </NavLink>
   );
-  return link;
 };
 
 const Sidebar = ({ collapsed, setCollapsed }) => {
@@ -110,8 +132,10 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
 
       {!collapsed && (
         <button
+          disabled
+          title="Próximamente"
           data-testid="sidebar-escribania-switcher"
-          className="mx-3 mt-4 mb-2 flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-muted transition-colors"
+          className="mx-3 mt-4 mb-2 flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-background cursor-not-allowed transition-colors"
         >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-glow text-primary-foreground grid place-items-center text-xs font-bold">
             {escribania.iniciales}
