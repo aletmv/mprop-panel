@@ -1,5 +1,5 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AppProvider } from "@/context/AppContext";
 import { Layout } from "@/components/Layout";
@@ -43,6 +43,10 @@ function App() {
             <Route path="/escribanos/partes" element={<NotaryPartesList />} />
             <Route path="/escribanos/partes/:id" element={<NotaryPartesDetail />} />
             <Route path="/escribanos/carpeta/:resId" element={<NotaryDashboard />} />
+            {/* Contención: cualquier /escribanos/* no matcheado vuelve al panel
+                (evita pantalla en blanco). Scoped al área de escribanos para no
+                afectar el resto de la app. No es una ruta de feature. */}
+            <Route path="/escribanos/*" element={<Navigate to="/escribanos/panel" replace />} />
           </Routes>
         </Layout>
       </BrowserRouter>
