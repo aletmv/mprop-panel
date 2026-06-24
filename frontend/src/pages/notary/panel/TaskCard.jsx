@@ -1,23 +1,28 @@
 import React from 'react';
-import { ShieldAlert, MessageCircle, Check, X, RotateCcw } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, MessageCircle, ClipboardList, Check, X, RotateCcw } from 'lucide-react';
 
 // TaskCard F1 — renderer compacto unificado de OperationalTask.
 // Contrato: memory/TASKCARD_F1_CONTRACT.md.
-// - badge = TIPO solo · severidad = ícono(ShieldAlert)+acento+tono (NO badge de alerta completo)
+// - tipo = forma del ícono (sin badge textual visible) · severidad = color/tono del ícono
+// - íconos de revisión reutilizados de la card de Alertas (Dashboard.jsx): ShieldAlert
+//   (crítica) / AlertTriangle (media o sin severidad) — no se inventa ícono nuevo
 // - rol corto visible (semibold, neutral, sin pill); animación solo si rol = Escribanía && pending
 // - acciones icon-only con aria-label/title · cancel != remove · done sin eliminar
 // - pending/done/cancelled comparten estructura; done/cancelled atenúan (no reordenan)
 // - portable: no contiene lógica de agrupación ni de subtasks (solo dibuja una card del view-model)
 
-// Severidad → tratamiento visual (ícono + tono del badge). Las tareas operativas
-// NO usan acento lateral: el border/acento lateral es identidad de tarea formal/
-// proceso, no de severidad. La severidad persiste vía ícono/tono; done/cancelled
-// la atenúan por opacidad del contenedor.
+// Severidad → tono del ícono. Las tareas operativas NO usan acento lateral: el
+// border/acento lateral es identidad de tarea formal/proceso, no de severidad.
+// La severidad persiste vía tono; done/cancelled la atenúan por opacidad del contenedor.
 const ICON_TONE = { critica: 'text-red-500', media: 'text-amber-500', null: 'text-sky-400' };
-const BADGE_TONE = {
-  critica: 'text-red-700 bg-red-50',
-  media: 'text-amber-700 bg-amber-50',
-  null: 'text-sky-600 bg-sky-50',
+
+// Tipo → forma del ícono. Revisión varía de ícono según severidad (mismos íconos
+// que usa la card de Alertas); seguimiento/tarea no tienen severidad en el modelo
+// (ver taskCardPresentation), así que su ícono es fijo.
+const iconForType = (type, sev) => {
+  if (type === 'revision') return sev === 'critica' ? ShieldAlert : AlertTriangle;
+  if (type === 'seguimiento') return MessageCircle;
+  return ClipboardList;
 };
 
 const IconBtn = ({ onClick, title, children, className }) => (
@@ -34,7 +39,11 @@ const IconBtn = ({ onClick, title, children, className }) => (
 
 export const TaskCard = ({ view, onComplete, onReopen, onCancel }) => {
   const sev = view.severity; // 'critica' | 'media' | null
-  const Icon = sev ? ShieldAlert : MessageCircle;
+  const Icon = iconForType(view.type, sev);
+  // Texto del tipo+severidad, solo accesible (title/aria-label) — no se pinta visible.
+  const iconTitle = sev === 'critica' ? `${view.typeLabel} crítica`
+    : sev === 'media' ? `${view.typeLabel} media`
+    : view.typeLabel;
   const done = view.status === 'done';
   const cancelled = view.status === 'cancelled';
   const atenuado = done || cancelled;
@@ -48,17 +57,19 @@ export const TaskCard = ({ view, onComplete, onReopen, onCancel }) => {
         atenuado ? 'bg-[#F7F8FA] border border-transparent opacity-80' : 'bg-white border border-[#EEEFF2] hover:border-[#DDE6F5] hover:shadow-sm'
       }`}
     >
-      {/* ícono de criticidad: solo el ícono (ShieldAlert), sin badge/sombreado.
-          Sin acento lateral (eso es identidad de tarea formal). */}
-      <span className={`flex items-center justify-center w-5 shrink-0 self-center ${ICON_TONE[sev]}`}>
+      {/* ícono = tipo + severidad (sin texto visible); accesible vía title/aria-label.
+          Sin badge/sombreado, sin acento lateral (eso es identidad de tarea formal). */}
+      <span
+        className={`flex items-center justify-center w-5 shrink-0 self-center ${ICON_TONE[sev]}`}
+        title={iconTitle}
+        aria-label={iconTitle}
+        role="img"
+      >
         <Icon className="w-4 h-4" />
       </span>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${BADGE_TONE[sev]}`}>
-            {view.typeLabel}
-          </span>
           {view.roleLabel && (
             <span className={`text-[10.5px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-2 py-0.5 ${rolePulse ? 'task-role-pulse' : ''}`}>
               {view.roleLabel}
