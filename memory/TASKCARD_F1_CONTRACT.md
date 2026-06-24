@@ -35,7 +35,7 @@ conteos · no cambiar stores.
   id,                                   // task.id
   kind: 'operational',                  // F1: solo operacional (formal = micro-ajuste §7)
   type: 'seguimiento'|'revision'|'tarea',       // tipo (NO compuesto con severidad)
-  typeLabel: 'Seguimiento'|'Revisión'|'Tarea',  // label del badge (TIPO solo)
+  typeLabel: 'Seguimiento'|'Revisión'|'Tarea',  // texto base de tipo — usado SOLO en title/aria-label del ícono (§3), no visible
   title,                                // task.title (texto crudo, sin prefijos)
   addressLine,                          // op.direccion
   legajoId,                             // op.id
@@ -48,7 +48,9 @@ conteos · no cambiar stores.
 }
 ```
 
-- **Badge = tipo.** `typeLabel` nunca incluye severidad/origen. **Prohibido** `"Revisión · Alerta crítica"`.
+- 🟢 **(Revisión F2) Tipo = forma del ícono, sin badge textual visible.** `typeLabel` ya no se pinta como
+  badge; viaja en el view-model y se usa únicamente para componer el `title`/`aria-label` accesible del ícono
+  (ver §3). **Prohibido** `"Revisión · Alerta crítica"` como texto visible.
 - Subtype desconocido → `type:'tarea'`, `typeLabel:'Tarea'` (nunca string técnico).
 - `roleLabel` = rol corto derivado de `relatedActorLabel`/`bloqueoActor` (ver §2); puede ser `null`.
 - `detail.*` viaja en el view-model pero **no se pinta** en F1.
@@ -79,19 +81,40 @@ no severidad, no loading.
 
 ---
 
-## 3. Severidad: ícono de criticidad, NO el badge de alerta
+## 3. Tipo + severidad: un solo ícono, sin badge textual ni badge de alerta
 
-🟢 Cuando la task nació de una **alerta crítica/media**, **no** se reutiliza el badge completo de alerta. Se
-reutiliza **solo el ícono de criticidad** que vive dentro de ese badge.
+🟢 **(Revisión F2)** No hay badge visible de tipo ni de severidad. **Tipo = forma del ícono · severidad = color/
+tono del ícono.** Cuando la task nació de una **alerta crítica/media**, **no** se reutiliza el badge completo de
+alerta — se reutiliza **solo el ícono** que esa misma severidad usa en la card de Alertas (`Dashboard.jsx`).
 
+- **Mapa de ícono por tipo** (`iconForType(type, severity)` en `TaskCard.jsx`):
+  - `revision` + `severity:'critica'` → `ShieldAlert` (mismo ícono que Alertas crítica).
+  - `revision` + `severity:'media'` o `null` → `AlertTriangle` (mismo ícono que Alertas no-crítica/media).
+  - `seguimiento` → `MessageCircle` (hoy fijo, porque hoy `seguimiento` siempre llega con `severity:null`).
+  - `tarea` (fallback) → `ClipboardList` (hoy fijo, porque hoy `tarea` siempre llega con `severity:null`).
+  - **No inventar íconos nuevos** para revisión — siempre reusar los de Alertas.
 - Usar **solo el ícono** (no el contenedor/pill, no el sombreado, no el fondo coloreado fuerte).
-- **No** escribir "Alerta crítica" en la compacta. **No** badge compuesto "Revisión · Alerta crítica".
-- La severidad se expresa con: **ícono de criticidad + acento lateral + tratamiento visual sutil** (rojo crítica /
-  ámbar media). El **badge sigue siendo solo el tipo** (Revisión / Seguimiento / Proceso / Tarea).
-- **Persistencia:** mismos tokens de severidad en pending/done/cancelled. En **done/cancelled** el ícono de
-  criticidad **persiste atenuado** (por `opacity`), sin badge sombreado ni fondo fuerte.
-- 🔴 Regla dura (fix B1): una `review` de Alerta crítica **completada** sigue leyéndose crítica (rojo atenuado),
-  nunca vuelve a sky/neutro.
+- **No** escribir "Alerta crítica" como texto visible. **No** badge compuesto "Revisión · Alerta crítica". **No**
+  badge textual de tipo (ni "Revisión", ni "Seguimiento", ni "Tarea" visibles en la card).
+- **Accesibilidad obligatoria:** el ícono lleva `title`+`aria-label` con el texto que antes era el badge:
+  "Revisión crítica" · "Revisión media" · "Revisión" · "Seguimiento" · "Tarea". Sin texto visible, pero sin
+  pérdida semántica para lector de pantalla / tooltip.
+- La severidad se expresa con: **forma del ícono (revisión) + color del ícono** (rojo crítica / ámbar media / sky
+  neutro). Sin acento lateral (eso es identidad de tarea formal, §0).
+- **Persistencia:** mismos tokens de severidad en pending/done/cancelled. En **done/cancelled** el ícono
+  **persiste atenuado** (por `opacity` del contenedor), sin badge sombreado ni fondo fuerte.
+- 🔴 Regla dura (fix B1): una `review` de Alerta crítica **completada** sigue leyéndose crítica (`ShieldAlert`
+  rojo atenuado), nunca vuelve a `AlertTriangle`/sky.
+- 🟢 **Regla de diseño (no acoplar tipo a un único portador de severidad):**
+  - Tipo = forma del ícono. Severidad = color/tratamiento visual del ícono. Son dos ejes independientes.
+  - Hoy la severidad aparece principalmente en `revision` porque es el único tipo que hoy la produce
+    (`taskCardPresentation.js` deriva `severity` de `sourceLabel`/alerta, y eso hoy solo ocurre en revisiones).
+  - El renderer **no debe impedir** que otros tipos tengan severidad a futuro: `iconForType` resuelve forma por
+    `type` y `ICON_TONE` resuelve color por `severity` como pasos separados, no como una tabla cerrada
+    `revision-only`.
+  - Si mañana `seguimiento` o `tarea` reciben `severity:'critica'|'media'`, el modelo visual debe poder expresarlo
+    (forma del tipo + color de severidad) **sin rediseñar la card** — a lo sumo, sumar un caso en `iconForType`
+    para esa combinación puntual, no repensar el contrato.
 
 ---
 
@@ -165,16 +188,19 @@ Dirección · MP-ID
 
 ## 8. Jerarquía visual (ejemplos cerrados)
 
+🟢 **(Revisión F2)** Ya no hay badge de tipo visible — el tipo+severidad viven en el ícono (forma+color), con
+texto accesible solo en `title`/`aria-label` (entre corchetes abajo, no se pinta).
+
 **pending crítica (rol Escribanía → rol animado):**
 ```
-[ícono crítico] [Revisión]                         Escribanía
+[ícono ShieldAlert rojo, title="Revisión crítica"]                Escribanía
 Solicitar nuevo certificado de dominio
 Av. Libertador 123 · MP-328552
 [✓] [✕]
 ```
 **done crítica (rol Gestoría → estable, ícono crítico atenuado):**
 ```
-[ícono crítico atenuado] [Revisión]                Gestoría
+[ícono ShieldAlert rojo atenuado, title="Revisión crítica"]       Gestoría
 Solicitar nuevo certificado de dominio
 Av. Libertador 123 · MP-328552
 [↺]
@@ -182,16 +208,19 @@ Av. Libertador 123 · MP-328552
 Done = misma estructura, atenuada, sin "Eliminar". Cancelled no se muestra por defecto.
 
 > Las acciones son **icon-only**: en la card solo se ve el ícono (`[✓]` `[✕]` `[↺]`). Los textos "Completar tarea",
-> "Cancelar tarea" y "Reabrir tarea" existen **solo en `aria-label`/`title`**, nunca visibles en la card.
+> "Cancelar tarea" y "Reabrir tarea" existen **solo en `aria-label`/`title`**, nunca visibles en la card. Lo mismo
+> aplica al ícono de tipo/severidad: el texto ("Revisión crítica", "Seguimiento", "Tarea", …) vive solo en
+> `title`/`aria-label`.
 
 ---
 
 ## 9. Qué NO incluir en la compacta (⛔)
 
-origen como pill · `sourceLabel` como pill · "Manual" como badge protagonista · "Alerta crítica" como texto en el
-badge · badge compuesto "Revisión · Alerta crítica" · responsable como pill · historial · eventos relacionados ·
-documentos · evidencia · expand · acciones contextuales múltiples · `needs_review` · `DocumentRequirement` ·
-**subtasks · mini-checklist interno · grouping por legajo**.
+**badge textual de tipo** ("Revisión"/"Seguimiento"/"Tarea" visibles) · origen como pill · `sourceLabel` como pill ·
+"Manual" como badge protagonista · "Alerta crítica" como texto en el badge · badge compuesto "Revisión · Alerta
+crítica" · responsable como pill · historial · eventos relacionados · documentos · evidencia · expand · acciones
+contextuales múltiples · `needs_review` · `DocumentRequirement` · **subtasks · mini-checklist interno · grouping
+por legajo**.
 
 ---
 
@@ -217,10 +246,13 @@ convertir Avance en TaskBoard**.
 
 ## 12. Criterios de aceptación
 
-- [ ] `review·crítica` se ve igual (ícono crítico + acento rojo) en pending **y** done (atenuada). Nunca sky.
-- [ ] `review·media` mantiene ámbar en ambos estados.
-- [ ] `follow_up` neutro/sky en ambos estados.
-- [ ] Badge = solo tipo; nunca "· Alerta crítica" ni strings técnicos; desconocido → "Tarea".
+- [ ] `review·crítica` se ve igual (`ShieldAlert` rojo) en pending **y** done (atenuada). Nunca sky/`AlertTriangle`.
+- [ ] `review·media` mantiene `AlertTriangle` ámbar en ambos estados.
+- [ ] `follow_up` (`MessageCircle`) y `tarea` fallback (`ClipboardList`) neutro/sky en ambos estados.
+- [ ] Sin badge textual de tipo visible (ni "Revisión", ni "Seguimiento", ni "Tarea"); nunca "· Alerta crítica" ni
+      strings técnicos. Tipo desconocido → ícono `ClipboardList` (mismo que fallback "Tarea").
+- [ ] Ícono de tipo/severidad tiene `title`+`aria-label` con el texto equivalente ("Revisión crítica" / "Revisión
+      media" / "Revisión" / "Seguimiento" / "Tarea").
 - [ ] **Rol corto** visible (semibold, neutral, sin pill), arriba a la derecha; sin "Resp." salvo ambigüedad.
 - [ ] Animación de opacidad **solo** en rol Escribanía + pending; respeta `prefers-reduced-motion`; nunca en done/cancelled.
 - [ ] Acciones **icon-only** con `aria-label`+`title`; sin texto visible.
