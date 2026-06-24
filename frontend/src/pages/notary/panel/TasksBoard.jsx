@@ -1,17 +1,17 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GripVertical, X, Inbox, Clock, ChevronDown, RotateCcw, Check, ListChecks, Trash2,
+  X, Inbox, ChevronDown, RotateCcw, Check, ListChecks, Trash2, FolderOpen,
 } from 'lucide-react';
 import { dayTasks, useDayTasks } from './dayTasksStore';
 import { operationalTasks, useOperationalTasks, todayDateString, dateStringFromISO } from './operationalTasksStore';
-import { taskCardPresentation } from './taskCardPresentation';
+import { taskCardPresentation, stripTrailingDot, shortAddress } from './taskCardPresentation';
 import { TaskCard } from './TaskCard';
 import { DND_TYPE } from './dndTypes';
-import { AlertChip } from './Kanban';
 
-// Color de acento por etapa (mismo origen que HITOS/estadoLabel) — solo lectura,
-// no agrega datos nuevos, solo decide qué token visual mostrar.
+// Acento lateral de tarea formal = color del hito/etapa (op.estado), reusando
+// los tokens --stage-* del sistema de hitos (mismos que Kanban/estadoLabel).
+// Representa el proceso, no severidad. (Relación existente: op.estado → etapa.)
 const ESTADO_ACCENT = {
   apertura: 'var(--stage-inicio)',
   documentos: 'var(--stage-expediente)',
@@ -21,99 +21,85 @@ const ESTADO_ACCENT = {
   cerrado: 'var(--stage-cierre)',
 };
 
-const TaskItem = ({ op, idx, dragIdx, onDragStart, onDragOver, onDragEnd, onOpen }) => {
-  const urgente = op.diasFirma >= 0 && op.diasFirma <= 5;
-  const titulo = op.tareaEnCursoFull || op.tareaEnCurso || 'Tarea sin descripción';
-  const accent = ESTADO_ACCENT[op.estado] || 'var(--stage-inicio)';
+// Renderer ÚNICO de tarea formal/de proceso — pending y done comparten estructura
+// e identidad visual (ícono carpeta + título + dirección·MP-ID + acciones). El
+// estado solo cambia el TRATAMIENTO (atenuación/tachado) y la acción disponible;
+// no reordena campos ni cambia íconos de identidad. No migra formal a
+// OperationalTask, no usa store nuevo.
+const FormalTaskRow = ({ op, status, onOpen, onComplete, onCancel, onReopen, idx, dragIdx, onDragStart, onDragOver, onDragEnd }) => {
+  const titulo = stripTrailingDot(op.tareaEnCursoFull || op.tareaEnCurso || 'Tarea sin descripción');
+  const done = status === 'done';
+  const dragProps = done
+    ? {}
+    : {
+        draggable: true,
+        onDragStart: (e) => onDragStart(e, idx),
+        onDragOver: (e) => onDragOver(e, idx),
+        onDragEnd,
+      };
   return (
     <li
-      draggable
-      onDragStart={(e) => onDragStart(e, idx)}
-      onDragOver={(e) => onDragOver(e, idx)}
-      onDragEnd={onDragEnd}
-      data-testid={`task-item-${op.id}`}
-      className={`group relative shrink-0 overflow-hidden flex items-center gap-3.5 bg-white border border-[#EEEFF2] rounded-2xl pl-5 pr-4 py-4 hover:border-[#DDE6F5] hover:shadow-sm transition-all cursor-grab active:cursor-grabbing snap-start ${
-        dragIdx === idx ? 'opacity-50' : ''
+      {...dragProps}
+      data-testid={done ? `done-item-${op.id}` : `task-item-${op.id}`}
+      className={`relative shrink-0 overflow-hidden flex items-center gap-3.5 rounded-2xl pl-5 pr-4 py-3.5 snap-start transition-all ${
+        done
+          ? 'bg-[#F7F8FA] border border-transparent opacity-80'
+          : `bg-white border border-[#EEEFF2] hover:border-[#DDE6F5] hover:shadow-sm cursor-grab active:cursor-grabbing ${dragIdx === idx ? 'opacity-50' : ''}`
       }`}
     >
-      <span className="absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full" style={{ background: accent }} />
-      <span className="flex items-center justify-center w-5 text-slate-300 group-hover:text-slate-500 shrink-0 self-center">
-        <GripVertical className="w-4 h-4" />
+      {/* Acento lateral = color del hito/etapa (op.estado) = identidad de proceso,
+          no severidad. Presente en pending y done; done lo atenúa vía opacidad. */}
+      <span
+        className="absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full"
+        style={{ background: ESTADO_ACCENT[op.estado] || 'var(--stage-inicio)' }}
+        aria-hidden
+      />
+      {/* Ícono de identidad: tarea formal/de proceso (carpeta). Atenuado en done.
+          El estado completado se comunica por atenuación/tachado, no por este ícono. */}
+      <span className={`flex items-center justify-center w-5 shrink-0 self-center ${done ? 'text-slate-300' : 'text-slate-400'}`}>
+        <FolderOpen className="w-4 h-4" />
       </span>
-      <button onClick={() => onOpen(op.id)} data-testid={`task-open-${op.id}`} className="flex-1 min-w-0 text-left">
-        <div className="flex items-start justify-between gap-2 flex-wrap">
-          <span className="text-[14.5px] font-semibold text-slate-900 leading-snug">{titulo}</span>
-          <AlertChip op={op} size="md" />
+      <button onClick={() => onOpen?.(op.id)} data-testid={`task-open-${op.id}`} className="flex-1 min-w-0 text-left">
+        <div className={`text-[14.5px] font-semibold leading-snug ${done ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+          {titulo}
         </div>
-        <div className="text-[12.5px] text-slate-500 mt-1 truncate">
-          {op.direccion}, {op.barrio}
-        </div>
-        <div className="text-[12px] text-slate-400 mt-1.5 flex items-center gap-2">
-          <span className="font-semibold text-slate-500">{op.id}</span>
-          <span className="text-slate-300">·</span>
-          <span className={`inline-flex items-center gap-1 ${urgente ? 'text-red-600 font-semibold' : ''}`}>
-            <Clock className="w-3 h-3" />
-            {op.diasFirma > 0
-              ? `${op.diasFirma}d a firma`
-              : op.diasFirma === 0
-              ? 'firma hoy'
-              : `firmado hace ${Math.abs(op.diasFirma)}d`}
-          </span>
+        <div className="text-[12.5px] text-slate-400 mt-1 truncate">
+          {shortAddress(op.direccion)} · <span className="font-mono font-semibold">{op.id}</span>
         </div>
       </button>
       <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          onClick={() => dayTasks.complete(op.id)}
-          data-testid={`task-complete-${op.id}`}
-          title="Marcar como completada"
-          aria-label="Marcar como completada"
-          className="w-9 h-9 grid place-items-center rounded-[11px] bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
-        >
-          <Check className="w-[18px] h-[18px]" strokeWidth={2.4} />
-        </button>
-        <button
-          onClick={() => dayTasks.removePending(op.id)}
-          data-testid={`task-remove-${op.id}`}
-          title="Quitar de mi día"
-          aria-label="Quitar de mi día"
-          className="w-9 h-9 grid place-items-center rounded-[11px] bg-slate-100 text-slate-400 hover:bg-destructive-soft hover:text-destructive transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-    </li>
-  );
-};
-
-const DoneItem = ({ op }) => {
-  const titulo = op.tareaEnCursoFull || op.tareaEnCurso || 'Tarea sin descripción';
-  return (
-    <li
-      data-testid={`done-item-${op.id}`}
-      className="flex items-center gap-3.5 bg-[#F7F8FA] rounded-2xl px-4 py-3.5"
-    >
-      <span className="w-[30px] h-[30px] rounded-[9px] bg-slate-100 text-slate-400 grid place-items-center shrink-0">
-        <Check className="w-4 h-4" strokeWidth={2.4} />
-      </span>
-      <div className="flex-1 min-w-0">
-        <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-slate-500 bg-slate-100">
-          Proceso
-        </span>
-        <div className="text-[14px] font-medium text-slate-400 line-through leading-snug mt-1">{titulo}</div>
-        <div className="text-[12px] text-slate-400 mt-0.5 truncate">
-          <span className="font-mono">{op.id}</span> · {op.direccion}
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          onClick={() => dayTasks.uncomplete(op.id)}
-          data-testid={`task-restore-${op.id}`}
-          title="Restaurar"
-          aria-label="Restaurar"
-          className="w-8 h-8 grid place-items-center rounded-[10px] bg-white border border-[#ECEDF0] text-slate-400 hover:text-primary transition-colors"
-        >
-          <RotateCcw className="w-[15px] h-[15px]" />
-        </button>
+        {done ? (
+          <button
+            onClick={() => onReopen(op.id)}
+            data-testid={`task-restore-${op.id}`}
+            title="Reabrir tarea"
+            aria-label="Reabrir tarea"
+            className="w-9 h-9 grid place-items-center rounded-[11px] bg-white border border-[#ECEDF0] text-slate-400 hover:text-primary transition-colors"
+          >
+            <RotateCcw className="w-[18px] h-[18px]" />
+          </button>
+        ) : (
+          <>
+            <button
+              onClick={() => onComplete(op.id)}
+              data-testid={`task-complete-${op.id}`}
+              title="Marcar como completada"
+              aria-label="Marcar como completada"
+              className="w-9 h-9 grid place-items-center rounded-[11px] bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
+            >
+              <Check className="w-[18px] h-[18px]" strokeWidth={2.4} />
+            </button>
+            <button
+              onClick={() => onCancel(op.id)}
+              data-testid={`task-remove-${op.id}`}
+              title="Quitar de mi día"
+              aria-label="Quitar de mi día"
+              className="w-9 h-9 grid place-items-center rounded-[11px] bg-slate-100 text-slate-400 hover:bg-destructive-soft hover:text-destructive transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
     </li>
   );
@@ -125,6 +111,9 @@ export const TasksBoard = ({ operaciones }) => {
   const [isOver, setIsOver] = useState(false);
   const [dragIdx, setDragIdx] = useState(null);
   const [showDone, setShowDone] = useState(true);
+  // "Limpiar" oculta las operativas completadas de ESTA vista sin borrarlas del
+  // store (no remove/cancel). Estado local de UI; la memoria queda en Operativa.
+  const [hiddenOpDoneIds, setHiddenOpDoneIds] = useState(() => new Set());
   const overIdxRef = useRef(null);
 
   const opMap = operaciones.reduce((acc, o) => {
@@ -152,6 +141,16 @@ export const TasksBoard = ({ operaciones }) => {
   const doneFollowUpsToday = allOperationalTasks.filter(
     (t) => t.status === 'done' && t.completedAt && dateStringFromISO(t.completedAt) === today
   );
+  // Operativas completadas hoy aún visibles (las ocultadas por "Limpiar" siguen
+  // en el store, solo se filtran de la vista).
+  const visibleDoneFollowUps = doneFollowUpsToday.filter((t) => !hiddenOpDoneIds.has(t.id));
+
+  // "Limpiar" completadas de hoy: formales por su mecanismo existente
+  // (dayTasks.clearDone); operativas se ocultan localmente (sin borrar memoria).
+  const handleClearDone = () => {
+    dayTasks.clearDone();
+    setHiddenOpDoneIds(new Set(visibleDoneFollowUps.map((t) => t.id)));
+  };
 
   const handleDragOverBoard = (e) => {
     if (![...e.dataTransfer.types].includes(DND_TYPE)) return;
@@ -249,14 +248,17 @@ export const TasksBoard = ({ operaciones }) => {
           data-testid="tasks-list"
         >
           {pendingTasks.map((opId, idx) => (
-            <TaskItem
+            <FormalTaskRow
               key={opId}
               op={opMap[opId]}
+              status="pending"
               idx={idx}
               dragIdx={dragIdx}
               onDragStart={onItemDragStart}
               onDragOver={onItemDragOver}
               onDragEnd={onItemDragEnd}
+              onComplete={dayTasks.complete}
+              onCancel={dayTasks.removePending}
               onOpen={(id) => navigate(`/escribanos/operaciones/${id}`)}
             />
           ))}
@@ -287,7 +289,7 @@ export const TasksBoard = ({ operaciones }) => {
         </div>
       )}
 
-      {(doneTasks.length > 0 || doneFollowUpsToday.length > 0) && (
+      {(doneTasks.length > 0 || visibleDoneFollowUps.length > 0) && (
         <div className="mt-3 pt-1" data-testid="done-section">
           <button
             onClick={() => setShowDone((v) => !v)}
@@ -302,13 +304,13 @@ export const TasksBoard = ({ operaciones }) => {
                 className="text-[13px] font-bold leading-tight text-[#C5C9CF] num-tabular"
                 data-testid="tasks-done-count"
               >
-                {doneTasks.length + doneFollowUpsToday.length}
+                {doneTasks.length + visibleDoneFollowUps.length}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {showDone && doneTasks.length > 0 && (
+              {showDone && (doneTasks.length > 0 || visibleDoneFollowUps.length > 0) && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); dayTasks.clearDone(); }}
+                  onClick={(e) => { e.stopPropagation(); handleClearDone(); }}
                   data-testid="done-clear-all"
                   className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#A6ABB3] hover:text-[#7A818B] transition-colors"
                 >
@@ -323,9 +325,15 @@ export const TasksBoard = ({ operaciones }) => {
           {showDone && (
             <ul className="space-y-2 max-h-[260px] overflow-y-auto pr-1" data-testid="done-list">
               {doneTasks.map((opId) => (
-                <DoneItem key={opId} op={opMap[opId]} />
+                <FormalTaskRow
+                  key={opId}
+                  op={opMap[opId]}
+                  status="done"
+                  onReopen={dayTasks.uncomplete}
+                  onOpen={(id) => navigate(`/escribanos/operaciones/${id}`)}
+                />
               ))}
-              {doneFollowUpsToday.map((task) => (
+              {visibleDoneFollowUps.map((task) => (
                 <TaskCard
                   key={task.id}
                   view={taskCardPresentation(task, opMap[task.opId])}

@@ -9,9 +9,10 @@ import { ShieldAlert, MessageCircle, Check, X, RotateCcw } from 'lucide-react';
 // - pending/done/cancelled comparten estructura; done/cancelled atenúan (no reordenan)
 // - portable: no contiene lógica de agrupación ni de subtasks (solo dibuja una card del view-model)
 
-// Severidad → tratamiento visual. La severidad persiste en todos los estados;
-// done/cancelled solo la atenúan por opacidad del contenedor.
-const ACCENT = { critica: 'bg-red-400', media: 'bg-amber-400', null: 'bg-sky-300' };
+// Severidad → tratamiento visual (ícono + tono del badge). Las tareas operativas
+// NO usan acento lateral: el border/acento lateral es identidad de tarea formal/
+// proceso, no de severidad. La severidad persiste vía ícono/tono; done/cancelled
+// la atenúan por opacidad del contenedor.
 const ICON_TONE = { critica: 'text-red-500', media: 'text-amber-500', null: 'text-sky-400' };
 const BADGE_TONE = {
   critica: 'text-red-700 bg-red-50',
@@ -47,21 +48,19 @@ export const TaskCard = ({ view, onComplete, onReopen, onCancel }) => {
         atenuado ? 'bg-[#F7F8FA] border border-transparent opacity-80' : 'bg-white border border-[#EEEFF2] hover:border-[#DDE6F5] hover:shadow-sm'
       }`}
     >
-      {/* acento lateral por severidad (persiste en todos los estados) */}
-      <span className={`absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full ${ACCENT[sev]}`} aria-hidden />
-
-      {/* ícono de criticidad: solo el ícono (ShieldAlert), sin badge/sombreado */}
+      {/* ícono de criticidad: solo el ícono (ShieldAlert), sin badge/sombreado.
+          Sin acento lateral (eso es identidad de tarea formal). */}
       <span className={`flex items-center justify-center w-5 shrink-0 self-center ${ICON_TONE[sev]}`}>
         <Icon className="w-4 h-4" />
       </span>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${BADGE_TONE[sev]}`}>
             {view.typeLabel}
           </span>
           {view.roleLabel && (
-            <span className={`text-[11px] font-semibold text-slate-500 shrink-0 ${rolePulse ? 'task-role-pulse' : ''}`}>
+            <span className={`text-[10.5px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-2 py-0.5 ${rolePulse ? 'task-role-pulse' : ''}`}>
               {view.roleLabel}
             </span>
           )}
@@ -71,7 +70,7 @@ export const TaskCard = ({ view, onComplete, onReopen, onCancel }) => {
         </div>
         {(view.legajoId || view.addressLine) && (
           <div className="text-[12.5px] text-slate-400 mt-1 truncate">
-            <span className="font-mono">{view.legajoId}</span>{view.addressLine ? ` · ${view.addressLine}` : ''}
+            {view.addressLine ? `${view.addressLine} · ` : ''}<span className="font-mono font-semibold">{view.legajoId}</span>
           </div>
         )}
       </div>
