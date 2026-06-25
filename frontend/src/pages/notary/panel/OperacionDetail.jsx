@@ -4,10 +4,13 @@ import { PanelShell } from './PanelShell';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
+import {
   ChevronLeft, CheckCircle2, AlertTriangle, FileSignature, Download,
   MessageSquarePlus, ChevronRight, ChevronDown, Sparkles, ExternalLink, Phone, Mail,
   FileText, DollarSign, Building2, CircleDot, Circle, Clock, Copy, Wallet,
-  CalendarClock, ShieldCheck, Plus, Paperclip, XCircle, Trash2,
+  CalendarClock, ShieldCheck, Plus, Paperclip, XCircle, Trash2, MessageSquareWarning, RefreshCw, Landmark,
 } from 'lucide-react';
 import {
   operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, estadoLabel, riesgoLabel, bloqueoLabel,
@@ -18,8 +21,10 @@ import { BloqueoBadge } from './Kanban';
 import { useSignatures, signatures } from './signaturesStore';
 import { ProgramarFirmaDialog } from './ProgramarFirmaDialog';
 import { documentUploads, useDocumentUploads, aportadoPorDisplay } from './documentUploadsStore';
+import { useDocumentCorrections } from './documentCorrectionsStore';
 import { DEMO_REQUIREMENTS_VISIBLES, DOC_CATEGORIES } from './documentRequirements';
 import { SubirDocumentoDialog } from './SubirDocumentoDialog';
+import { SolicitarCorreccionDialog } from './SolicitarCorreccionDialog';
 import { operationalTasks, useOperationalTasks } from './operationalTasksStore';
 import TimelineProceso from './TimelineProceso';
 import { buyerCosts, sellerCosts } from '@/lib/costs';
@@ -321,6 +326,15 @@ const DOC_STATE_CFG = {
 const docStateCfg = (estado) =>
   DOC_STATE_CFG[estado] || { icon: Circle, dot: 'muted', label: estado, tint: 'text-slate-500' };
 
+// Ícono de "acciones documentales": cuatro puntos en grid 2x2 (no tres puntos
+// verticales). Comunica "centro de comando" del requisito.
+const FourDots = ({ className }) => (
+  <svg viewBox="0 0 16 16" className={className} fill="currentColor" aria-hidden="true">
+    <circle cx="5" cy="5" r="1.6" /><circle cx="11" cy="5" r="1.6" />
+    <circle cx="5" cy="11" r="1.6" /><circle cx="11" cy="11" r="1.6" />
+  </svg>
+);
+
 // Resumen compacto de una categoría: "N requisitos · X en revisión · …" (oculta ceros).
 const catResumen = (items) => {
   const c = (st) => items.filter((r) => r.estado === st).length;
@@ -420,13 +434,31 @@ const buildOutcome = (u) => {
   return null;
 };
 
+// Branch de solicitud de corrección (si existe una para la carga). Se cuelga del
+// evento documental como subevento, nunca como evento top-level.
+const buildCorrectionBranch = (correction) => {
+  if (!correction) return null;
+  const canales = [
+    correction.canalSugerido && correction.canalSugerido.email && 'Email',
+    correction.canalSugerido && correction.canalSugerido.whatsapp && 'WhatsApp',
+  ].filter(Boolean).join(' / ');
+  return {
+    text: `Corrección solicitada a ${correction.aportadoPor}${canales ? ` · ${canales}` : ''}`,
+    fecha: correction.fecha,
+    hora: correction.hora,
+    responsable: correction.responsable,
+  };
+};
+
 // Eventos de bitácora derivados de los uploads (inyectados en el punto de
 // consumo, igual que signature_scheduled — no se toca el generador base).
 // Cada carga es UN evento padre (document_uploaded) con hijos: los archivos
-// aportados + un branch de resultado (validado/observado/rechazado). NUNCA
-// eventos hermanos al mismo nivel.
-const buildUploadEventos = (uploads) =>
-  uploads.map((u) => {
+// aportados + un branch de resultado (validado/observado/rechazado) + un branch
+// de corrección solicitada si existe. NUNCA eventos hermanos al mismo nivel.
+const buildUploadEventos = (uploads, corrections = []) => {
+  const corrByUpload = {};
+  corrections.forEach((c) => { if (!corrByUpload[c.uploadId]) corrByUpload[c.uploadId] = c; });
+  return uploads.map((u) => {
     const enRevision = u.estado === 'en_revision';
     return {
       fecha: u.fecha,
@@ -439,8 +471,10 @@ const buildUploadEventos = (uploads) =>
       enRevision,
       files: u.archivos.map((a) => `${a.nombre} · Aportado por ${aportadoPorDisplay(u)}`),
       outcome: buildOutcome(u),
+      correction: buildCorrectionBranch(corrByUpload[u.id]),
     };
   });
+};
 
 // Clave de orden por fecha+hora ('DD/MM' + 'HH:MM') para los eventos inyectados.
 const evSortKey = (ev) => {
@@ -465,6 +499,8 @@ const OperacionDetail = () => {
   // sembrado con los derivados (legajoDocsEventos) y con las cargas del store.
   const derivedDocs = getDocumentosByOp(op);
   const uploads = useDocumentUploads().filter((u) => u.opId === op.id);
+  const corrections = useDocumentCorrections().filter((c) => c.opId === op.id);
+  const correctionByUpload = (uploadId) => corrections.find((c) => c.uploadId === uploadId) || null;
   const docMatrix = buildDocMatrix(DEMO_REQUIREMENTS_VISIBLES, derivedDocs, uploads);
   // Firma programada (demo Fase D) — store local aditivo; NO muta op.firma.
   useSignatures();
@@ -487,7 +523,7 @@ const OperacionDetail = () => {
         evidencia: 'programación',
       }]
     : [];
-  const eventosInyectados = [...firmaEvento, ...buildUploadEventos(uploads)].sort(
+  const eventosInyectados = [...firmaEvento, ...buildUploadEventos(uploads, corrections)].sort(
     (a, b) => evSortKey(b) - evSortKey(a)
   );
   const evs = [...eventosInyectados, ...getEventosByOp(op)];
@@ -546,6 +582,8 @@ const OperacionDetail = () => {
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+  // Carga seleccionada para "Solicitar corrección" (abre dialog); null = cerrado.
+  const [correccionUpload, setCorreccionUpload] = useState(null);
   // Panel inline de acción sobre una carga: { uploadId, type: 'observe'|'reject'|'delete' }.
   const [docAction, setDocAction] = useState(null);
   const [docActionNote, setDocActionNote] = useState('');
@@ -558,6 +596,95 @@ const OperacionDetail = () => {
     else if (type === 'reject') documentUploads.reject(uploadId, docActionNote.trim());
     else if (type === 'delete') documentUploads.remove(uploadId);
     closeDocAction();
+  };
+
+  // Menú "centro de comando documental" a nivel requisito. Opera sobre la carga
+  // objetivo (`target`, la más relevante/activa del requisito). Las acciones de
+  // estado abren los flujos existentes (panel inline / dialog / drawer). Las
+  // opciones de IA quedan disabled "Próximamente" (no dejar items muertos).
+  const renderDocMenu = (item, target, targetCorreccion) => {
+    const reqKey = item.key;
+    const hasUpload = Boolean(target);
+    const estado = target ? target.estado : 'pendiente';
+    const canValidar = estado === 'en_revision' || estado === 'observado';
+    const canObservar = estado === 'en_revision';
+    const canRechazar = estado === 'en_revision' || estado === 'observado';
+    const canSolicitar = (estado === 'observado' || estado === 'rechazado') && !targetCorreccion;
+    const hasRevision = canValidar || canObservar || canRechazar || canSolicitar;
+    const cargaItem = estado === 'rechazado'
+      ? { label: 'Cargar nuevo documento', icon: Plus }
+      : !hasUpload
+        ? { label: 'Cargar documento', icon: Plus }
+        : { label: 'Agregar nueva versión', icon: Plus };
+    const CargaIcon = cargaItem.icon;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            title="Acciones del documento"
+            aria-label={`Acciones del documento ${item.nombre}`}
+            className="w-6 h-6 grid place-items-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            data-testid={`req-acciones-${reqKey}`}
+          >
+            <FourDots className="w-4 h-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-60">
+          {/* Acciones neutras (slate); solo "Borrar documento" usa rojo/destructive. */}
+          <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold">Carga documental</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => openSubirDoc(reqKey)} data-testid={`menu-cargar-${reqKey}`}>
+            <CargaIcon className="w-4 h-4 mr-2 text-slate-500" /> {cargaItem.label}
+          </DropdownMenuItem>
+          {hasUpload && (
+            <DropdownMenuItem onClick={() => openDocAction(target.id, 'delete')} className="text-red-600 focus:text-red-700" data-testid={`menu-borrar-${reqKey}`}>
+              <Trash2 className="w-4 h-4 mr-2" /> Borrar documento
+            </DropdownMenuItem>
+          )}
+
+          {hasRevision && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold">Revisión documental</DropdownMenuLabel>
+              {canValidar && (
+                <DropdownMenuItem onClick={() => documentUploads.approve(target.id)} data-testid={`menu-validar-${reqKey}`}>
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-slate-500" /> Validar
+                </DropdownMenuItem>
+              )}
+              {canObservar && (
+                <DropdownMenuItem onClick={() => openDocAction(target.id, 'observe')} data-testid={`menu-observar-${reqKey}`}>
+                  <AlertTriangle className="w-4 h-4 mr-2 text-slate-500" /> Poner en observación
+                </DropdownMenuItem>
+              )}
+              {canRechazar && (
+                <DropdownMenuItem onClick={() => openDocAction(target.id, 'reject')} data-testid={`menu-rechazar-${reqKey}`}>
+                  <XCircle className="w-4 h-4 mr-2 text-slate-500" /> Rechazar
+                </DropdownMenuItem>
+              )}
+              {canSolicitar && (
+                <DropdownMenuItem onClick={() => setCorreccionUpload(target)} data-testid={`menu-solicitar-${reqKey}`}>
+                  <MessageSquareWarning className="w-4 h-4 mr-2 text-slate-500" /> Solicitar corrección
+                </DropdownMenuItem>
+              )}
+            </>
+          )}
+
+          <DropdownMenuSeparator />
+          {hasUpload && (
+            <DropdownMenuItem onClick={() => setTab('timeline')} data-testid={`menu-actividad-${reqKey}`}>
+              <FileText className="w-4 h-4 mr-2 text-slate-500" /> Ver en Actividad
+            </DropdownMenuItem>
+          )}
+
+          <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold">Verificación externa</DropdownMenuLabel>
+          <DropdownMenuItem disabled title="Próximamente"><Landmark className="w-4 h-4 mr-2" /> Consultar en bases oficiales · Próximamente</DropdownMenuItem>
+
+          <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold">Revisión asistida · Próximamente</DropdownMenuLabel>
+          <DropdownMenuItem disabled title="Próximamente"><ShieldCheck className="w-4 h-4 mr-2" /> Marcar para revisión por IA</DropdownMenuItem>
+          <DropdownMenuItem disabled title="Próximamente"><Sparkles className="w-4 h-4 mr-2" /> Ver análisis IA</DropdownMenuItem>
+          <DropdownMenuItem disabled title="Próximamente"><RefreshCw className="w-4 h-4 mr-2" /> Reprocesar análisis IA</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
 
   // Scroll suave al rol pedido (ej. #vendedor / #comprador) si el tab es "partes".
@@ -1022,11 +1149,18 @@ const OperacionDetail = () => {
                           const plusTitle = item.estado === 'rechazado'
                             ? `Cargar nuevo documento para ${item.nombre}`
                             : `Cargar documento para ${item.nombre}`;
+                          // Carga objetivo del menú: la que coincide con el estado
+                          // agregado (la más relevante/activa); si no, la última.
+                          const target = item.uploads.find((u) => u.estado === item.estado)
+                            || item.uploads[item.uploads.length - 1] || null;
+                          const targetCorreccion = target ? correctionByUpload(target.id) : null;
                           return (
                             <div key={item.key} className="py-2.5" data-testid={`requisito-${item.key}`}>
-                              {/* Requisito padre: icono/acción + título + pill de estado
-                                  al extremo derecho. Sin metadata secundaria debajo. */}
-                              <div className="flex items-center gap-3">
+                              {/* Requisito padre: [menú 4 puntos] [+/estado] título + pill.
+                                  El menú concentra las acciones documentales (centro de
+                                  comando); sin metadata secundaria debajo. */}
+                              <div className="flex items-center gap-2.5">
+                                {renderDocMenu(item, target, targetCorreccion)}
                                 {showPlus ? (
                                   <button
                                     onClick={() => openSubirDoc(item.key)}
@@ -1051,6 +1185,7 @@ const OperacionDetail = () => {
                                     // Carga rechazada: todo el contenedor en tono rojo suave
                                     // (intento fallido / historial), sin border fuerte.
                                     const rechazada = u.estado === 'rechazado';
+                                    const correccionActiva = correctionByUpload(u.id);
                                     return (
                                       <div
                                         key={u.id}
@@ -1058,33 +1193,12 @@ const OperacionDetail = () => {
                                         data-testid={`upload-${u.id}`}
                                       >
                                         {/* Carga hija: solo metadata, archivos, observación/
-                                            rechazo y acciones (la pill de estado vive en el
-                                            requisito padre). */}
-                                        <div className="flex items-center gap-2 flex-wrap">
+                                            rechazo y chip. Las acciones se concentran en el
+                                            menú del requisito (centro de comando). */}
+                                        <div className="flex items-center gap-2">
                                           <span className={`text-[12.5px] min-w-0 truncate ${rechazada ? 'text-red-500' : 'text-slate-400'}`}>
                                             Aportado por {aportadoPorDisplay(u)} · {u.fecha} {u.hora} hs
                                           </span>
-                                          <div className="flex-1" />
-                                          <div className="flex items-center gap-1 shrink-0">
-                                            {(u.estado === 'en_revision' || u.estado === 'observado') && (
-                                              <button onClick={() => documentUploads.approve(u.id)} title="Validar" aria-label="Validar"
-                                                className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-                                                data-testid={`doc-validar-${u.id}`}><CheckCircle2 className="w-4 h-4" strokeWidth={1.8} /></button>
-                                            )}
-                                            {u.estado === 'en_revision' && (
-                                              <button onClick={() => openDocAction(u.id, 'observe')} title="Poner en observación" aria-label="Poner en observación"
-                                                className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-orange-600 hover:bg-orange-50 transition-colors"
-                                                data-testid={`doc-observar-${u.id}`}><AlertTriangle className="w-4 h-4" strokeWidth={1.8} /></button>
-                                            )}
-                                            {(u.estado === 'en_revision' || u.estado === 'observado') && (
-                                              <button onClick={() => openDocAction(u.id, 'reject')} title="Rechazar" aria-label="Rechazar"
-                                                className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                                data-testid={`doc-rechazar-${u.id}`}><XCircle className="w-4 h-4" strokeWidth={1.8} /></button>
-                                            )}
-                                            <button onClick={() => openDocAction(u.id, 'delete')} title="Borrar carga" aria-label="Borrar carga"
-                                              className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-destructive hover:bg-destructive-soft transition-colors"
-                                              data-testid={`doc-borrar-${u.id}`}><Trash2 className="w-4 h-4" strokeWidth={1.7} /></button>
-                                          </div>
                                         </div>
                                         <div className="mt-1.5 flex flex-col gap-0.5">
                                           {u.archivos.map((a) => (
@@ -1099,6 +1213,16 @@ const OperacionDetail = () => {
                                         )}
                                         {rechazada && u.rechazoMotivo && (
                                           <div className="mt-1.5 text-[12.5px] text-red-700 font-medium">Rechazado: {u.rechazoMotivo}</div>
+                                        )}
+                                        {correccionActiva && (
+                                          <div
+                                            className="mt-1.5 inline-flex items-center gap-1.5 text-[11.5px] font-medium text-primary bg-primary/5 border border-primary/15 rounded-full px-2.5 py-0.5"
+                                            title={`Solicitada el ${correccionActiva.fecha} ${correccionActiva.hora} hs`}
+                                            data-testid={`correccion-chip-${u.id}`}
+                                          >
+                                            <MessageSquareWarning className="w-3 h-3 shrink-0" strokeWidth={1.8} />
+                                            Corrección solicitada a {correccionActiva.aportadoPor}
+                                          </div>
                                         )}
                                         {panelActivo && (
                                           <div className="mt-2" data-testid={`doc-action-panel-${u.id}`}>
@@ -1250,7 +1374,7 @@ const OperacionDetail = () => {
                         {/* Carga documental: branch hijo "Archivos incorporados" con
                             los archivos, y branch de resultado (validado/observado/
                             rechazado) bajo el evento padre. */}
-                        {(ev.files || ev.outcome) && (
+                        {(ev.files || ev.outcome || ev.correction) && (
                           <div className="mt-2 ml-1 pl-4 border-l border-slate-200 space-y-2" data-testid="timeline-doc-children">
                             {ev.files && ev.files.length > 0 && (
                               <div>
@@ -1282,6 +1406,17 @@ const OperacionDetail = () => {
                                 </div>
                               );
                             })()}
+                            {ev.correction && (
+                              <div className="flex items-start gap-2 text-[12px]" data-testid="timeline-doc-correction">
+                                <MessageSquareWarning className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" strokeWidth={1.8} />
+                                <div className="min-w-0">
+                                  <div className="font-medium text-primary">{ev.correction.text}</div>
+                                  <div className="text-[11px] text-slate-400 mt-0.5">
+                                    {ev.correction.fecha} · {ev.correction.hora} hs · {ev.correction.responsable}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </li>
@@ -1310,6 +1445,12 @@ const OperacionDetail = () => {
         open={subirDocOpen}
         onOpenChange={(v) => { setSubirDocOpen(v); if (!v) setSubirDocReqId(null); }}
         initialRequirementId={subirDocReqId}
+      />
+      <SolicitarCorreccionDialog
+        op={op}
+        upload={correccionUpload}
+        open={Boolean(correccionUpload)}
+        onOpenChange={(v) => { if (!v) setCorreccionUpload(null); }}
       />
     </PanelShell>
   );
