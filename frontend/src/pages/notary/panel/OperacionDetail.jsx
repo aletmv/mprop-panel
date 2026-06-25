@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   ChevronLeft, CheckCircle2, AlertTriangle, FileSignature, Download,
-  MessageSquarePlus, ChevronRight, Sparkles, ExternalLink, Phone, Mail,
+  MessageSquarePlus, ChevronRight, ChevronDown, Sparkles, ExternalLink, Phone, Mail,
   FileText, DollarSign, Building2, CircleDot, Circle, Clock, Copy, Wallet,
-  CalendarClock, ShieldCheck, Plus,
+  CalendarClock, ShieldCheck, Plus, Paperclip, XCircle, Trash2,
 } from 'lucide-react';
 import {
   operaciones as MOCK_OPERACIONES, pasos, alertas as alertasAll, estadoLabel, riesgoLabel, bloqueoLabel,
@@ -17,6 +17,9 @@ import { buildNotaryOperaciones } from './operacionesAdapter';
 import { BloqueoBadge } from './Kanban';
 import { useSignatures, signatures } from './signaturesStore';
 import { ProgramarFirmaDialog } from './ProgramarFirmaDialog';
+import { documentUploads, useDocumentUploads, aportadoPorDisplay } from './documentUploadsStore';
+import { DEMO_REQUIREMENTS_VISIBLES, DOC_CATEGORIES } from './documentRequirements';
+import { SubirDocumentoDialog } from './SubirDocumentoDialog';
 import { operationalTasks, useOperationalTasks } from './operationalTasksStore';
 import TimelineProceso from './TimelineProceso';
 import { buyerCosts, sellerCosts } from '@/lib/costs';
@@ -299,6 +302,153 @@ const BovedaTab = ({ op }) => {
   );
 };
 
+// Mergea documentos derivados (legajoDocsEventos) con los uploads del demo
+// (documentUploadsStore). NO muta los derivados: un upload que matchea un
+// requisito (requisitoId) refleja su estado/archivo en esa fila; un "Otro
+// documento" (requisitoId null) se agrega como fila nueva.
+const uploadLabel = (u) => u.requisito || (u.archivos[0] && u.archivos[0].nombre) || 'Documento';
+
+// Estados documentales → presentación (ícono, Pill, label, tinte). en_revision
+// usa reloj ámbar (pendiente de validación, NO alerta/problema).
+const DOC_STATE_CFG = {
+  revisado:    { icon: CheckCircle2, dot: 'success',     label: 'Revisado',      tint: 'text-emerald-600' },
+  en_revision: { icon: Clock,        dot: 'warning',     label: 'En revisión',   tint: 'text-amber-600' },
+  observado:   { icon: AlertTriangle,dot: 'warning',     label: 'En observación',tint: 'text-orange-600' },
+  rechazado:   { icon: XCircle,      dot: 'destructive', label: 'Rechazado',     tint: 'text-red-600' },
+  alerta:      { icon: AlertTriangle,dot: 'destructive', label: 'Atención',      tint: 'text-red-600' },
+  pendiente:   { icon: Circle,       dot: 'muted',       label: 'Pendiente',     tint: 'text-slate-400' },
+};
+const docStateCfg = (estado) =>
+  DOC_STATE_CFG[estado] || { icon: Circle, dot: 'muted', label: estado, tint: 'text-slate-500' };
+
+// Resumen compacto de una categoría: "N requisitos · X en revisión · …" (oculta ceros).
+const catResumen = (items) => {
+  const c = (st) => items.filter((r) => r.estado === st).length;
+  const plural = (n, s, p) => `${n} ${n === 1 ? s : p}`;
+  return [
+    plural(items.length, 'requisito', 'requisitos'),
+    c('revisado') && plural(c('revisado'), 'revisado', 'revisados'),
+    c('en_revision') && `${c('en_revision')} en revisión`,
+    c('observado') && plural(c('observado'), 'observado', 'observados'),
+    c('rechazado') && plural(c('rechazado'), 'rechazado', 'rechazados'),
+    c('alerta') && `${c('alerta')} con alerta`,
+    c('pendiente') && plural(c('pendiente'), 'pendiente', 'pendientes'),
+  ].filter(Boolean).join(' · ');
+};
+
+// Estado agregado de un requisito con múltiples cargas. `rechazado` NO debe
+// cerrar el requisito: una carga rechazada es un intento fallido y debe poder
+// recargarse. Por eso `rechazado` solo gana cuando TODAS las cargas están
+// rechazadas (no hay ninguna carga activa). Si hay alguna carga activa, manda
+// la activa más relevante (observado > en_revision > revisado > alerta).
+const ESTADO_PRIORITY = { observado: 5, en_revision: 4, revisado: 3, alerta: 2, rechazado: 1, pendiente: 0 };
+const aggregateEstado = (ups) => {
+  const activas = ups.filter((u) => u.estado !== 'rechazado');
+  const pool = activas.length ? activas : ups; // si solo hay rechazadas → 'rechazado'
+  return pool.map((u) => u.estado).reduce((a, b) => ((ESTADO_PRIORITY[b] || 0) > (ESTADO_PRIORITY[a] || 0) ? b : a));
+};
+
+// Matrix de cumplimiento: requisitos del checklist demo agrupados por categoría,
+// con las cargas (uploads) asociadas por requisitoId. Las cargas viejas o "Otro"
+// sin requisito conocido caen en el grupo "Otros". Siembra estado/responsable
+// desde los documentos derivados (mock) cuando el requisito tiene `mock`.
+const buildDocMatrix = (requirements, derivedDocs, uploads) => {
+  const derivedByNombre = {};
+  derivedDocs.forEach((d) => { derivedByNombre[d.nombre] = d; });
+  const knownIds = new Set(requirements.map((r) => r.id));
+  const byReqId = {};
+  const orphans = [];
+  uploads.forEach((u) => {
+    const rid = u.requisitoId;
+    if (rid != null && knownIds.has(String(rid))) {
+      (byReqId[String(rid)] = byReqId[String(rid)] || []).push(u);
+    } else {
+      orphans.push(u);
+    }
+  });
+  const rows = requirements.map((r) => {
+    const ups = byReqId[r.id] || [];
+    const seed = r.mock ? derivedByNombre[r.mock] : null;
+    const estado = ups.length ? aggregateEstado(ups) : (seed ? seed.estado : 'pendiente');
+    return {
+      key: r.id, nombre: r.nombre, categoria: r.categoria, estado, uploads: ups,
+      responsable: seed ? seed.responsable : null,
+      fecha: seed ? seed.fecha : null,
+      esMock: Boolean(seed) && ups.length === 0,
+    };
+  });
+  // Cargas sin requisito conocido (viejas con id numérico) o "Otro": agrupadas por nombre.
+  const orphanGroups = {};
+  orphans.forEach((u) => {
+    const name = uploadLabel(u);
+    (orphanGroups[name] = orphanGroups[name] || []).push(u);
+  });
+  const orphanRows = Object.entries(orphanGroups).map(([name, ups]) => ({
+    key: `otro_${name}`, nombre: name, categoria: 'otros', estado: aggregateEstado(ups),
+    uploads: ups, responsable: null, fecha: null, esMock: false,
+  }));
+  const grupos = DOC_CATEGORIES
+    .map((c) => ({ id: c.id, label: c.label, items: rows.filter((r) => r.categoria === c.id) }))
+    .filter((g) => g.items.length);
+  if (orphanRows.length) grupos.push({ id: 'otros', label: 'Otros documentos', items: orphanRows });
+  const allRows = [...rows, ...orphanRows];
+  const count = (st) => allRows.filter((r) => r.estado === st).length;
+  const counts = {
+    total: allRows.length,
+    revisado: count('revisado'),
+    en_revision: count('en_revision'),
+    observado: count('observado'),
+    rechazado: count('rechazado'),
+    alerta: count('alerta'),
+    pendiente: count('pendiente'),
+  };
+  return { grupos, counts };
+};
+
+// Branch de resultado (validación/observación/rechazo) de una carga. null si
+// sigue en revisión (solo se ven los archivos hijos).
+const buildOutcome = (u) => {
+  if (u.estado === 'revisado' && u.reviewedAt) {
+    return { kind: 'revisado', text: 'Validado por escribanía', fecha: u.reviewedFecha || u.fecha, hora: u.reviewedHora || u.hora, responsable: 'Escribanía' };
+  }
+  if (u.estado === 'observado') {
+    return { kind: 'observado', text: `En observación${u.observacion ? `: ${u.observacion}` : ''}`, fecha: u.observedFecha || u.fecha, hora: u.observedHora || u.hora, responsable: 'Escribanía' };
+  }
+  if (u.estado === 'rechazado') {
+    return { kind: 'rechazado', text: `Rechazado${u.rechazoMotivo ? `: ${u.rechazoMotivo}` : ''}`, fecha: u.rejectedFecha || u.fecha, hora: u.rejectedHora || u.hora, responsable: 'Escribanía' };
+  }
+  return null;
+};
+
+// Eventos de bitácora derivados de los uploads (inyectados en el punto de
+// consumo, igual que signature_scheduled — no se toca el generador base).
+// Cada carga es UN evento padre (document_uploaded) con hijos: los archivos
+// aportados + un branch de resultado (validado/observado/rechazado). NUNCA
+// eventos hermanos al mismo nivel.
+const buildUploadEventos = (uploads) =>
+  uploads.map((u) => {
+    const enRevision = u.estado === 'en_revision';
+    return {
+      fecha: u.fecha,
+      hora: u.hora,
+      tipo: 'document_uploaded',
+      uploadId: u.id,
+      evento: `Carga documental registrada · ${uploadLabel(u)}`,
+      responsable: u.responsable,
+      evidencia: 'documentos',
+      enRevision,
+      files: u.archivos.map((a) => `${a.nombre} · Aportado por ${aportadoPorDisplay(u)}`),
+      outcome: buildOutcome(u),
+    };
+  });
+
+// Clave de orden por fecha+hora ('DD/MM' + 'HH:MM') para los eventos inyectados.
+const evSortKey = (ev) => {
+  const [d, m] = (ev.fecha || '').split('/');
+  const [hh, mi] = (ev.hora || '').split(':');
+  return (Number(m) || 0) * 1e6 + (Number(d) || 0) * 1e4 + (Number(hh) || 0) * 1e2 + (Number(mi) || 0);
+};
+
 const OperacionDetail = () => {
   const { id } = useParams();
   const ctx = useApp();
@@ -311,7 +461,11 @@ const OperacionDetail = () => {
   const opAlertas = alertasAll.filter((a) => a.operacionId === op.id);
   // Documentos y eventos scoped por legajo (P0 demo integrity). Conteos y lista
   // visible salen SIEMPRE del mismo array scoped.
-  const docs = getDocumentosByOp(op);
+  // Documentos = checklist demo (DEMO_DOCUMENT_REQUIREMENTS) agrupado por categoría,
+  // sembrado con los derivados (legajoDocsEventos) y con las cargas del store.
+  const derivedDocs = getDocumentosByOp(op);
+  const uploads = useDocumentUploads().filter((u) => u.opId === op.id);
+  const docMatrix = buildDocMatrix(DEMO_REQUIREMENTS_VISIBLES, derivedDocs, uploads);
   // Firma programada (demo Fase D) — store local aditivo; NO muta op.firma.
   useSignatures();
   const firmaProgramada = signatures.getByOp(op.id);
@@ -320,26 +474,23 @@ const OperacionDetail = () => {
     const [y, m, d] = yyyymmdd.split('-');
     return d && m ? `${d}/${m}` : yyyymmdd;
   };
-  // Evento mock signature_scheduled inyectado SOLO en el punto de consumo
-  // (no se toca el generador legajoDocsEventos). Se antepone a la bitácora.
-  const evs = firmaProgramada
-    ? [
-        {
-          fecha: fmtFechaCorta(firmaProgramada.fecha),
-          hora: firmaProgramada.hora,
-          tipo: 'signature_scheduled',
-          evento: `Firma programada para ${fmtFechaCorta(firmaProgramada.fecha)} ${firmaProgramada.hora} · ${firmaProgramada.modalidad}`,
-          responsable: 'Esc. Lagos',
-          evidencia: 'programación',
-        },
-        ...getEventosByOp(op),
-      ]
-    : getEventosByOp(op);
-  const docCounts = {
-    revisado: docs.filter((d) => d.estado === 'revisado').length,
-    alerta: docs.filter((d) => d.estado === 'alerta').length,
-    pendiente: docs.filter((d) => d.estado === 'pendiente').length,
-  };
+  // Eventos inyectados SOLO en el punto de consumo (no se toca el generador
+  // legajoDocsEventos): firma programada + documentos subidos/revisados. Se
+  // ordenan por fecha+hora desc y se anteponen a la bitácora histórica.
+  const firmaEvento = firmaProgramada
+    ? [{
+        fecha: fmtFechaCorta(firmaProgramada.fecha),
+        hora: firmaProgramada.hora,
+        tipo: 'signature_scheduled',
+        evento: `Firma programada para ${fmtFechaCorta(firmaProgramada.fecha)} ${firmaProgramada.hora} · ${firmaProgramada.modalidad}`,
+        responsable: 'Esc. Lagos',
+        evidencia: 'programación',
+      }]
+    : [];
+  const eventosInyectados = [...firmaEvento, ...buildUploadEventos(uploads)].sort(
+    (a, b) => evSortKey(b) - evSortKey(a)
+  );
+  const evs = [...eventosInyectados, ...getEventosByOp(op)];
   // Resumen derivado del legajo (P0 demo integrity). `proxima` se usa tanto en la
   // card "Condición del legajo" como en el snapshot "Estado actual" → no pueden
   // divergir. No muta estado/pelota/línea de pases: solo lee.
@@ -383,6 +534,31 @@ const OperacionDetail = () => {
   const initialTab = searchParams.get('tab') || 'resumen';
   const [tab, setTab] = useState(initialTab);
   const [firmaDialogOpen, setFirmaDialogOpen] = useState(false);
+  const [subirDocOpen, setSubirDocOpen] = useState(false);
+  // Requisito preseleccionado al abrir el drawer desde el "+" de una fila;
+  // null cuando se abre desde el botón general "Subir documento".
+  const [subirDocReqId, setSubirDocReqId] = useState(null);
+  const openSubirDoc = (reqId = null) => { setSubirDocReqId(reqId); setSubirDocOpen(true); };
+  // Categorías documentales colapsadas (local, no persiste; todas abiertas por defecto).
+  const [collapsedCats, setCollapsedCats] = useState(() => new Set());
+  const toggleCat = (id) => setCollapsedCats((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  // Panel inline de acción sobre una carga: { uploadId, type: 'observe'|'reject'|'delete' }.
+  const [docAction, setDocAction] = useState(null);
+  const [docActionNote, setDocActionNote] = useState('');
+  const openDocAction = (uploadId, type) => { setDocAction({ uploadId, type }); setDocActionNote(''); };
+  const closeDocAction = () => { setDocAction(null); setDocActionNote(''); };
+  const confirmDocAction = () => {
+    if (!docAction) return;
+    const { uploadId, type } = docAction;
+    if (type === 'observe') documentUploads.observe(uploadId, docActionNote.trim());
+    else if (type === 'reject') documentUploads.reject(uploadId, docActionNote.trim());
+    else if (type === 'delete') documentUploads.remove(uploadId);
+    closeDocAction();
+  };
 
   // Scroll suave al rol pedido (ej. #vendedor / #comprador) si el tab es "partes".
   useEffect(() => {
@@ -624,7 +800,7 @@ const OperacionDetail = () => {
               {[
                 { v: 'resumen', label: 'Resumen' },
                 { v: 'partes', label: 'Partes e inmueble' },
-                { v: 'documentos', label: `Documentos · ${docs.length}` },
+                { v: 'documentos', label: 'Documentos' },
                 { v: 'timeline', label: 'Actividad' },
                 { v: 'operativa', label: 'Operativa' },
                 { v: 'boveda', label: 'Bóveda' },
@@ -684,9 +860,9 @@ const OperacionDetail = () => {
                     </div>
                     <div className="p-5 space-y-2.5">
                       {[
-                        { label: 'Revisados', n: docCounts.revisado, v: 'success' },
-                        { label: 'Con alerta', n: docCounts.alerta, v: 'destructive' },
-                        { label: 'Pendientes', n: docCounts.pendiente, v: 'warning' },
+                        { label: 'Revisados', n: docMatrix.counts.revisado, v: 'success' },
+                        { label: 'En revisión', n: docMatrix.counts.en_revision, v: 'warning' },
+                        { label: 'Pendientes', n: docMatrix.counts.pendiente, v: 'warning' },
                       ].map((s) => (
                         <div key={s.label} className="flex items-center justify-between py-1">
                           <StatusDot variant={s.v} label={s.label} />
@@ -787,53 +963,191 @@ const OperacionDetail = () => {
               <Card>
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <div>
-                    <h2 className="text-base font-semibold text-slate-900">Checklist documental</h2>
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      {docs.length} documento{docs.length === 1 ? '' : 's'} · {docCounts.revisado} revisado{docCounts.revisado === 1 ? '' : 's'} · {docCounts.alerta} con alerta · {docCounts.pendiente} pendiente{docCounts.pendiente === 1 ? '' : 's'}
+                    <h2 className="font-display font-semibold text-[19px] text-slate-900 leading-tight tracking-[-0.3px]">Checklist documental</h2>
+                    <div className="text-[12.5px] text-slate-400 mt-1">
+                      {[
+                        docMatrix.counts.revisado > 0 && `${docMatrix.counts.revisado} revisados`,
+                        docMatrix.counts.en_revision > 0 && `${docMatrix.counts.en_revision} en revisión`,
+                        docMatrix.counts.observado > 0 && `${docMatrix.counts.observado} observados`,
+                        docMatrix.counts.rechazado > 0 && `${docMatrix.counts.rechazado} rechazados`,
+                        docMatrix.counts.alerta > 0 && `${docMatrix.counts.alerta} con alerta`,
+                        `${docMatrix.counts.pendiente} pendientes`,
+                      ].filter(Boolean).join(' · ')}
                     </div>
                   </div>
                   <Button
                     variant="ghost"
-                    disabled
-                    title="Próximamente"
+                    onClick={() => openSubirDoc()}
                     className="text-primary hover:bg-sky-50 font-medium px-3 h-9"
                     data-testid="btn-subir-documento"
                   >
                     <FileText className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> Subir documento
                   </Button>
                 </div>
-                <div className="divide-y divide-slate-100">
-                  {docs.map((d) => {
-                    const cfg = {
-                      revisado: { icon: CheckCircle2, dot: 'success', label: 'Revisado', tint: 'text-emerald-600' },
-                      alerta: { icon: AlertTriangle, dot: 'destructive', label: 'Atención', tint: 'text-red-600' },
-                      pendiente: { icon: Circle, dot: 'warning', label: 'Pendiente', tint: 'text-amber-600' },
-                    }[d.estado];
-                    const I = cfg.icon;
+                {/* Matrix de cumplimiento: requisitos agrupados por categoría (sin
+                    border lateral). Cada requisito muestra estado/pill; las cargas
+                    asociadas van como subitems compactos con sus propias acciones. */}
+                <div data-testid="documentos-matrix">
+                  {docMatrix.grupos.map((g) => {
+                    const collapsed = collapsedCats.has(g.id);
+                    const titulo = g.label.replace(/^[A-H]\.\s*/, '');
                     return (
-                      <div
-                        key={d.id}
-                        className="px-5 py-3.5 flex items-center gap-4 hover:bg-slate-50 transition-colors"
-                        data-testid={`documento-${d.id}`}
+                    <div key={g.id} data-testid={`doc-categoria-${g.id}`}>
+                      <button
+                        onClick={() => toggleCat(g.id)}
+                        aria-expanded={!collapsed}
+                        className="w-full px-5 py-3 bg-slate-50/70 border-b border-slate-100 flex items-center gap-3 text-left hover:bg-slate-100/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-inset"
+                        data-testid={`doc-categoria-toggle-${g.id}`}
                       >
-                        <I className={`w-5 h-5 ${cfg.tint} shrink-0`} strokeWidth={1.5} />
+                        <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${collapsed ? '-rotate-90' : ''}`} strokeWidth={2} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-slate-900">{d.nombre}</div>
-                          <div className="text-xs text-slate-500 mt-0.5">
-                            {d.responsable} · {d.fecha}
-                            {d.nota && <span className="ml-1.5 text-red-600 font-medium">· {d.nota}</span>}
-                          </div>
+                          <div className="text-[15px] font-semibold text-slate-900 leading-tight tracking-[-0.2px]">{titulo}</div>
+                          <div className="text-[12.5px] text-slate-400 mt-0.5 truncate">{catResumen(g.items)}</div>
                         </div>
-                        <Pill variant={cfg.dot}>{cfg.label}</Pill>
-                        <button
-                          disabled
-                          title="Próximamente"
-                          className="text-slate-300 cursor-not-allowed shrink-0"
-                          aria-label="Descargar"
-                        >
-                          <Download className="w-4 h-4" strokeWidth={1.5} />
-                        </button>
+                      </button>
+                      {!collapsed && (
+                      <div className="pl-16 pr-4 py-1 divide-y divide-slate-100/80">
+                        {g.items.map((item) => {
+                          const icfg = docStateCfg(item.estado);
+                          const II = icfg.icon;
+                          // Doble función del espacio del ícono: "+" para requisitos
+                          // pendientes/sin carga local Y para requisitos cuyo estado
+                          // agregado es `rechazado` (todas las cargas rechazadas → se
+                          // permite recargar). En el resto, ícono de estado.
+                          const esReq = !String(item.key).startsWith('otro_');
+                          const showPlus = esReq && (
+                            (item.estado === 'pendiente' && item.uploads.length === 0) ||
+                            item.estado === 'rechazado'
+                          );
+                          const plusTitle = item.estado === 'rechazado'
+                            ? `Cargar nuevo documento para ${item.nombre}`
+                            : `Cargar documento para ${item.nombre}`;
+                          return (
+                            <div key={item.key} className="py-2.5" data-testid={`requisito-${item.key}`}>
+                              {/* Requisito padre: icono/acción + título + pill de estado
+                                  al extremo derecho. Sin metadata secundaria debajo. */}
+                              <div className="flex items-center gap-3">
+                                {showPlus ? (
+                                  <button
+                                    onClick={() => openSubirDoc(item.key)}
+                                    title={plusTitle}
+                                    aria-label={plusTitle}
+                                    className="w-5 h-5 grid place-items-center rounded-md text-primary hover:bg-primary/10 transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                                    data-testid={`req-add-${item.key}`}
+                                  >
+                                    <Plus className="w-4 h-4" strokeWidth={2.2} />
+                                  </button>
+                                ) : (
+                                  <II className={`w-4 h-4 ${icfg.tint} shrink-0`} strokeWidth={1.7} />
+                                )}
+                                <span className="flex-1 min-w-0 text-[14.5px] font-semibold leading-snug text-slate-900 truncate">{item.nombre}</span>
+                                <Pill variant={icfg.dot} className="shrink-0">{icfg.label}</Pill>
+                              </div>
+
+                              {item.uploads.length > 0 && (
+                                <div className="mt-2 ml-8 space-y-2">
+                                  {item.uploads.map((u) => {
+                                    const panelActivo = docAction && docAction.uploadId === u.id;
+                                    // Carga rechazada: todo el contenedor en tono rojo suave
+                                    // (intento fallido / historial), sin border fuerte.
+                                    const rechazada = u.estado === 'rechazado';
+                                    return (
+                                      <div
+                                        key={u.id}
+                                        className={`rounded-lg px-3 py-2.5 ${rechazada ? 'bg-red-50/70' : 'bg-slate-50/60'}`}
+                                        data-testid={`upload-${u.id}`}
+                                      >
+                                        {/* Carga hija: solo metadata, archivos, observación/
+                                            rechazo y acciones (la pill de estado vive en el
+                                            requisito padre). */}
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className={`text-[12.5px] min-w-0 truncate ${rechazada ? 'text-red-500' : 'text-slate-400'}`}>
+                                            Aportado por {aportadoPorDisplay(u)} · {u.fecha} {u.hora} hs
+                                          </span>
+                                          <div className="flex-1" />
+                                          <div className="flex items-center gap-1 shrink-0">
+                                            {(u.estado === 'en_revision' || u.estado === 'observado') && (
+                                              <button onClick={() => documentUploads.approve(u.id)} title="Validar" aria-label="Validar"
+                                                className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                                data-testid={`doc-validar-${u.id}`}><CheckCircle2 className="w-4 h-4" strokeWidth={1.8} /></button>
+                                            )}
+                                            {u.estado === 'en_revision' && (
+                                              <button onClick={() => openDocAction(u.id, 'observe')} title="Poner en observación" aria-label="Poner en observación"
+                                                className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+                                                data-testid={`doc-observar-${u.id}`}><AlertTriangle className="w-4 h-4" strokeWidth={1.8} /></button>
+                                            )}
+                                            {(u.estado === 'en_revision' || u.estado === 'observado') && (
+                                              <button onClick={() => openDocAction(u.id, 'reject')} title="Rechazar" aria-label="Rechazar"
+                                                className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                data-testid={`doc-rechazar-${u.id}`}><XCircle className="w-4 h-4" strokeWidth={1.8} /></button>
+                                            )}
+                                            <button onClick={() => openDocAction(u.id, 'delete')} title="Borrar carga" aria-label="Borrar carga"
+                                              className="w-7 h-7 grid place-items-center rounded-md text-slate-400 hover:text-destructive hover:bg-destructive-soft transition-colors"
+                                              data-testid={`doc-borrar-${u.id}`}><Trash2 className="w-4 h-4" strokeWidth={1.7} /></button>
+                                          </div>
+                                        </div>
+                                        <div className="mt-1.5 flex flex-col gap-0.5">
+                                          {u.archivos.map((a) => (
+                                            <span key={a.id} className={`inline-flex items-center gap-1 text-[12.5px] font-medium min-w-0 ${rechazada ? 'text-red-600' : 'text-sky-600'}`}>
+                                              <Paperclip className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
+                                              <span className="truncate" title={a.nombre}>{a.nombre}</span>
+                                            </span>
+                                          ))}
+                                        </div>
+                                        {u.estado === 'observado' && u.observacion && (
+                                          <div className="mt-1.5 text-[12px] text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1">En observación: {u.observacion}</div>
+                                        )}
+                                        {rechazada && u.rechazoMotivo && (
+                                          <div className="mt-1.5 text-[12.5px] text-red-700 font-medium">Rechazado: {u.rechazoMotivo}</div>
+                                        )}
+                                        {panelActivo && (
+                                          <div className="mt-2" data-testid={`doc-action-panel-${u.id}`}>
+                                            <div className="rounded-lg border border-slate-200 bg-white p-3">
+                                              {docAction.type === 'delete' ? (
+                                                <div className="flex items-center justify-between gap-3 flex-wrap">
+                                                  <span className="text-[12.5px] text-slate-600">¿Eliminar esta carga del legajo (demo/local)? No se puede deshacer.</span>
+                                                  <div className="flex gap-2">
+                                                    <Button variant="ghost" size="sm" onClick={closeDocAction} className="h-8">Cancelar</Button>
+                                                    <Button size="sm" onClick={confirmDocAction} className="h-8 bg-destructive text-white hover:opacity-90">Eliminar</Button>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <>
+                                                  <label className="text-[12px] font-medium text-slate-700">
+                                                    {docAction.type === 'observe' ? 'Observación' : 'Motivo del rechazo'}
+                                                  </label>
+                                                  <textarea
+                                                    value={docActionNote}
+                                                    onChange={(ev) => setDocActionNote(ev.target.value)}
+                                                    rows={2}
+                                                    placeholder={docAction.type === 'observe' ? 'Indicá qué debe corregirse o completarse.' : 'Indicá el motivo del rechazo.'}
+                                                    className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] text-slate-900 resize-none focus:outline-none focus:border-primary"
+                                                  />
+                                                  <div className="flex justify-end gap-2 mt-2">
+                                                    <Button variant="ghost" size="sm" onClick={closeDocAction} className="h-8">Cancelar</Button>
+                                                    <Button
+                                                      size="sm" onClick={confirmDocAction} disabled={!docActionNote.trim()}
+                                                      className={`h-8 text-white hover:opacity-90 ${docAction.type === 'observe' ? 'bg-orange-500' : 'bg-destructive'}`}
+                                                    >
+                                                      {docAction.type === 'observe' ? 'Poner en observación' : 'Rechazar'}
+                                                    </Button>
+                                                  </div>
+                                                </>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
+                      )}
+                    </div>
                     );
                   })}
                 </div>
@@ -891,6 +1205,7 @@ const OperacionDetail = () => {
                   {evs.map((ev, idx) => {
                     const Icon = {
                       documento: FileText,
+                      document_uploaded: Paperclip,
                       alerta: AlertTriangle,
                       decision: FileSignature,
                       signature_scheduled: FileSignature,
@@ -914,10 +1229,61 @@ const OperacionDetail = () => {
                               {ev.fecha} · {ev.hora} hs · {ev.responsable}
                             </div>
                           </div>
-                          <button className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 shrink-0">
-                            Ver {ev.evidencia} <ChevronRight className="w-3 h-3" strokeWidth={1.5} />
-                          </button>
+                          {ev.tipo === 'document_uploaded' ? (
+                            <button
+                              onClick={() => setTab('documentos')}
+                              className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 shrink-0"
+                              data-testid="timeline-ver-documentos"
+                            >
+                              Ver en Documentos <ChevronRight className="w-3 h-3" strokeWidth={1.5} />
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              title="Próximamente"
+                              className="text-xs font-medium text-slate-300 cursor-not-allowed inline-flex items-center gap-1 shrink-0"
+                            >
+                              Ver {ev.evidencia} <ChevronRight className="w-3 h-3" strokeWidth={1.5} />
+                            </button>
+                          )}
                         </div>
+                        {/* Carga documental: branch hijo "Archivos incorporados" con
+                            los archivos, y branch de resultado (validado/observado/
+                            rechazado) bajo el evento padre. */}
+                        {(ev.files || ev.outcome) && (
+                          <div className="mt-2 ml-1 pl-4 border-l border-slate-200 space-y-2" data-testid="timeline-doc-children">
+                            {ev.files && ev.files.length > 0 && (
+                              <div>
+                                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                  Archivos incorporados{ev.enRevision ? ' · Pendiente de revisión' : ''}
+                                </div>
+                                <div className="mt-1 space-y-1">
+                                  {ev.files.map((t, ci) => (
+                                    <div key={ci} className="flex items-center gap-2 text-[12px] text-slate-600 min-w-0">
+                                      <Paperclip className="w-3 h-3 text-slate-400 shrink-0" strokeWidth={1.5} />
+                                      <span className="truncate" title={t}>{t}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {ev.outcome && (() => {
+                              const Oi = { revisado: CheckCircle2, observado: AlertTriangle, rechazado: XCircle }[ev.outcome.kind] || CheckCircle2;
+                              const tint = { revisado: 'text-emerald-600', observado: 'text-orange-600', rechazado: 'text-red-600' }[ev.outcome.kind] || 'text-slate-600';
+                              return (
+                                <div className="flex items-start gap-2 text-[12px]" data-testid="timeline-doc-outcome">
+                                  <Oi className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${tint}`} strokeWidth={1.8} />
+                                  <div className="min-w-0">
+                                    <div className={`font-medium ${tint}`}>{ev.outcome.text}</div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5">
+                                      {ev.outcome.fecha} · {ev.outcome.hora} hs · {ev.outcome.responsable}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
                       </li>
                     );
                   })}
@@ -939,6 +1305,12 @@ const OperacionDetail = () => {
       </div>
 
       <ProgramarFirmaDialog op={op} open={firmaDialogOpen} onOpenChange={setFirmaDialogOpen} />
+      <SubirDocumentoDialog
+        op={op}
+        open={subirDocOpen}
+        onOpenChange={(v) => { setSubirDocOpen(v); if (!v) setSubirDocReqId(null); }}
+        initialRequirementId={subirDocReqId}
+      />
     </PanelShell>
   );
 };
