@@ -6,24 +6,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Paperclip, Plus, Trash2, Upload, Clock, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { Pill } from './OperacionDetailPrimitives';
 import { documentUploads, useDocumentUploads, aportadoPorDisplay } from './documentUploadsStore';
-import { DEMO_DOCUMENT_REQUIREMENTS, DEMO_REQUIREMENTS_VISIBLES, DOC_CATEGORIES, DOC_CATEGORY_LABEL } from './documentRequirements';
+import { DEMO_DOCUMENT_REQUIREMENTS, DEMO_REQUIREMENTS_VISIBLES, DOC_CATEGORIES, DOC_CATEGORY_LABEL, inferAportadoPor } from './documentRequirements';
 
 const OTRO = '__otro__';
 const APORTADO_POR_OPCIONES = ['Comprador', 'Vendedor', 'Gestoría', 'Escribanía', 'Base de datos', 'Banco', 'Tercero', 'Otro'];
-
-// Sugerencia editable de "Aportado por" según el requisito (nombre/categoría).
-// Devuelve '' cuando no hay mejor inferencia (obliga selección explícita).
-const inferAportadoPor = (req) => {
-  if (!req) return '';
-  const n = (req.nombre || '').toLowerCase();
-  if (n.includes('comprador')) return 'Comprador';
-  if (n.includes('vendedor')) return 'Vendedor';
-  if (req.categoria === 'banco') return 'Banco';
-  if (req.categoria === 'registral') return 'Gestoría';
-  if (req.categoria === 'fiscal') return 'Gestoría';
-  if (req.categoria === 'uif') return 'Comprador';
-  return '';
-};
 
 // Tamaño legible (la metadata del browser file input puede no traer size).
 const fmtSize = (bytes) => {

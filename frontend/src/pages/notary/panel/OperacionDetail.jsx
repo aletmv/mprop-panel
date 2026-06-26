@@ -22,9 +22,11 @@ import { useSignatures, signatures } from './signaturesStore';
 import { ProgramarFirmaDialog } from './ProgramarFirmaDialog';
 import { documentUploads, useDocumentUploads, aportadoPorDisplay } from './documentUploadsStore';
 import { documentCorrections, useDocumentCorrections } from './documentCorrectionsStore';
+import { useDocumentRequests } from './documentRequestsStore';
 import { DEMO_REQUIREMENTS_VISIBLES, DOC_CATEGORIES } from './documentRequirements';
 import { SubirDocumentoDialog } from './SubirDocumentoDialog';
 import { SolicitarCorreccionDialog } from './SolicitarCorreccionDialog';
+import { SolicitarDocumentoDialog } from './SolicitarDocumentoDialog';
 import { operationalTasks, useOperationalTasks } from './operationalTasksStore';
 import TimelineProceso from './TimelineProceso';
 import { buyerCosts, sellerCosts } from '@/lib/costs';
@@ -434,6 +436,26 @@ const buildOutcome = (u) => {
   return null;
 };
 
+// Eventos top-level de "documento solicitado" (requisitos pendientes, sin carga
+// padre). A diferencia de la corrección (branch de una carga), la solicitud de
+// documento es un evento documental propio en la línea de tiempo.
+const buildRequestEventos = (requests) =>
+  requests.map((r) => {
+    const canales = [
+      r.canalSugerido && r.canalSugerido.email && 'Email',
+      r.canalSugerido && r.canalSugerido.whatsapp && 'WhatsApp',
+    ].filter(Boolean).join(' / ');
+    const dest = r.aportadoPor === 'Otro' && r.aportadoPorOtro ? r.aportadoPorOtro : r.aportadoPor;
+    return {
+      fecha: r.fecha,
+      hora: r.hora,
+      tipo: 'document_requested',
+      evento: `Documento solicitado · ${r.requisito} · ${dest}${canales ? ` · ${canales}` : ''}`,
+      responsable: r.responsable,
+      evidencia: 'documentos',
+    };
+  });
+
 // Branch de solicitud de corrección (si existe una para la carga). Se cuelga del
 // evento documental como subevento, nunca como evento top-level.
 const buildCorrectionBranch = (correction) => {
@@ -501,6 +523,8 @@ const OperacionDetail = () => {
   const uploads = useDocumentUploads().filter((u) => u.opId === op.id);
   const corrections = useDocumentCorrections().filter((c) => c.opId === op.id);
   const correctionByUpload = (uploadId) => corrections.find((c) => c.uploadId === uploadId) || null;
+  const requests = useDocumentRequests().filter((r) => r.opId === op.id);
+  const requestByRequisito = (reqId) => requests.find((r) => String(r.requisitoId) === String(reqId)) || null;
   const docMatrix = buildDocMatrix(DEMO_REQUIREMENTS_VISIBLES, derivedDocs, uploads);
   // Firma programada (demo Fase D) — store local aditivo; NO muta op.firma.
   useSignatures();
@@ -523,7 +547,7 @@ const OperacionDetail = () => {
         evidencia: 'programación',
       }]
     : [];
-  const eventosInyectados = [...firmaEvento, ...buildUploadEventos(uploads, corrections)].sort(
+  const eventosInyectados = [...firmaEvento, ...buildUploadEventos(uploads, corrections), ...buildRequestEventos(requests)].sort(
     (a, b) => evSortKey(b) - evSortKey(a)
   );
   const evs = [...eventosInyectados, ...getEventosByOp(op)];
@@ -584,6 +608,8 @@ const OperacionDetail = () => {
   });
   // Carga seleccionada para "Solicitar corrección" (abre dialog); null = cerrado.
   const [correccionUpload, setCorreccionUpload] = useState(null);
+  // Requisito seleccionado para "Solicitar documento" (abre dialog); null = cerrado.
+  const [solicitudReq, setSolicitudReq] = useState(null);
   // Panel inline de acción sobre una carga: { uploadId, type: 'observe'|'reject'|'delete' }.
   const [docAction, setDocAction] = useState(null);
   const [docActionNote, setDocActionNote] = useState('');
@@ -612,6 +638,9 @@ const OperacionDetail = () => {
     const reqKey = item.key;
     const hasUpload = Boolean(target);
     const estado = target ? target.estado : 'pendiente';
+    const esReq = !String(reqKey).startsWith('otro_');
+    // "Solicitar documento": requisito pendiente, sin carga, sin solicitud activa.
+    const canSolicitarDoc = esReq && !hasUpload && estado === 'pendiente' && !requestByRequisito(reqKey);
     const canValidar = estado === 'en_revision' || estado === 'observado';
     const canObservar = estado === 'en_revision';
     const canRechazar = estado === 'en_revision' || estado === 'observado';
@@ -641,6 +670,11 @@ const OperacionDetail = () => {
           <DropdownMenuItem onClick={() => openSubirDoc(reqKey)} data-testid={`menu-cargar-${reqKey}`}>
             <CargaIcon className="w-4 h-4 mr-2 text-slate-500" /> {cargaItem.label}
           </DropdownMenuItem>
+          {canSolicitarDoc && (
+            <DropdownMenuItem onClick={() => setSolicitudReq({ id: item.key, nombre: item.nombre, categoria: item.categoria })} data-testid={`menu-solicitar-doc-${reqKey}`}>
+              <MessageSquareWarning className="w-4 h-4 mr-2 text-slate-500" /> Solicitar documento
+            </DropdownMenuItem>
+          )}
           {hasUpload && (
             <DropdownMenuItem onClick={() => openDocAction(target.id, 'delete')} className="text-red-600 focus:text-red-700" data-testid={`menu-borrar-${reqKey}`}>
               <Trash2 className="w-4 h-4 mr-2" /> Borrar documento
@@ -1184,6 +1218,24 @@ const OperacionDetail = () => {
                                 <Pill variant={icfg.dot} className="shrink-0">{icfg.label}</Pill>
                               </div>
 
+                              {/* Chip "Documento solicitado": requisito pendiente con
+                                  solicitud activa (oculta la acción del menú). */}
+                              {item.estado === 'pendiente' && (() => {
+                                const reqActiva = requestByRequisito(item.key);
+                                if (!reqActiva) return null;
+                                const dest = reqActiva.aportadoPor === 'Otro' && reqActiva.aportadoPorOtro ? reqActiva.aportadoPorOtro : reqActiva.aportadoPor;
+                                return (
+                                  <div
+                                    className="mt-1.5 ml-8 inline-flex items-center gap-1.5 text-[11.5px] font-medium text-primary bg-primary/5 border border-primary/15 rounded-full px-2.5 py-0.5"
+                                    title={`Solicitado el ${reqActiva.fecha} ${reqActiva.hora} hs`}
+                                    data-testid={`solicitud-chip-${item.key}`}
+                                  >
+                                    <MessageSquareWarning className="w-3 h-3 shrink-0" strokeWidth={1.8} />
+                                    Documento solicitado a {dest}
+                                  </div>
+                                );
+                              })()}
+
                               {item.uploads.length > 0 && (
                                 <div className="mt-2 ml-8 space-y-2">
                                   {item.uploads.map((u) => {
@@ -1336,6 +1388,7 @@ const OperacionDetail = () => {
                     const Icon = {
                       documento: FileText,
                       document_uploaded: Paperclip,
+                      document_requested: MessageSquareWarning,
                       alerta: AlertTriangle,
                       decision: FileSignature,
                       signature_scheduled: FileSignature,
@@ -1359,7 +1412,7 @@ const OperacionDetail = () => {
                               {ev.fecha} · {ev.hora} hs · {ev.responsable}
                             </div>
                           </div>
-                          {ev.tipo === 'document_uploaded' ? (
+                          {(ev.tipo === 'document_uploaded' || ev.tipo === 'document_requested') ? (
                             <button
                               onClick={() => setTab('documentos')}
                               className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 shrink-0"
@@ -1457,6 +1510,12 @@ const OperacionDetail = () => {
         upload={correccionUpload}
         open={Boolean(correccionUpload)}
         onOpenChange={(v) => { if (!v) setCorreccionUpload(null); }}
+      />
+      <SolicitarDocumentoDialog
+        op={op}
+        requisito={solicitudReq}
+        open={Boolean(solicitudReq)}
+        onOpenChange={(v) => { if (!v) setSolicitudReq(null); }}
       />
     </PanelShell>
   );
