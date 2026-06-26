@@ -78,3 +78,18 @@ export const DEMO_DOCUMENT_REQUIREMENTS = [
 
 // Subset visible en la demo (matrix + selector del drawer).
 export const DEMO_REQUIREMENTS_VISIBLES = DEMO_DOCUMENT_REQUIREMENTS.filter((r) => r.aplicableDemo);
+
+// Sugerencia editable de origen/destinatario ("Aportado por") según el requisito
+// (nombre/categoría). Devuelve '' cuando no hay mejor inferencia (obliga selección
+// explícita). Compartido por el drawer de carga y el dialog de solicitud.
+export const inferAportadoPor = (req) => {
+  if (!req) return '';
+  const n = (req.nombre || '').toLowerCase();
+  if (n.includes('comprador')) return 'Comprador';
+  if (n.includes('vendedor')) return 'Vendedor';
+  if (req.categoria === 'banco') return 'Banco';
+  if (req.categoria === 'registral') return 'Gestoría';
+  if (req.categoria === 'fiscal') return 'Gestoría';
+  if (req.categoria === 'uif') return 'Comprador';
+  return '';
+};
