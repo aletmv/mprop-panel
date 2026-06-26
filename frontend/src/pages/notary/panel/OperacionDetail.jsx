@@ -21,7 +21,7 @@ import { BloqueoBadge } from './Kanban';
 import { useSignatures, signatures } from './signaturesStore';
 import { ProgramarFirmaDialog } from './ProgramarFirmaDialog';
 import { documentUploads, useDocumentUploads, aportadoPorDisplay } from './documentUploadsStore';
-import { useDocumentCorrections } from './documentCorrectionsStore';
+import { documentCorrections, useDocumentCorrections } from './documentCorrectionsStore';
 import { DEMO_REQUIREMENTS_VISIBLES, DOC_CATEGORIES } from './documentRequirements';
 import { SubirDocumentoDialog } from './SubirDocumentoDialog';
 import { SolicitarCorreccionDialog } from './SolicitarCorreccionDialog';
@@ -594,7 +594,13 @@ const OperacionDetail = () => {
     const { uploadId, type } = docAction;
     if (type === 'observe') documentUploads.observe(uploadId, docActionNote.trim());
     else if (type === 'reject') documentUploads.reject(uploadId, docActionNote.trim());
-    else if (type === 'delete') documentUploads.remove(uploadId);
+    else if (type === 'delete') {
+      // Limpieza de entidades derivadas: cancelar tareas operativas de seguimiento
+      // vinculadas y eliminar las correcciones de esa carga (no dejar huérfanos).
+      const correccionesCarga = documentCorrections.removeByUploadId(uploadId);
+      correccionesCarga.forEach((c) => { if (c.operationalTaskId) operationalTasks.cancel(c.operationalTaskId); });
+      documentUploads.remove(uploadId);
+    }
     closeDocAction();
   };
 

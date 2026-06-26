@@ -113,6 +113,15 @@ export const documentCorrections = {
   byUploadId(uploadId) {
     return state.filter((c) => c.uploadId === uploadId);
   },
+
+  // Elimina las correcciones asociadas a una carga (al borrar esa carga, la
+  // solicitud ya no tiene objeto documental al que apuntar). Devuelve las
+  // correcciones eliminadas (para cancelar tareas operativas vinculadas).
+  removeByUploadId(uploadId) {
+    const eliminadas = state.filter((c) => c.uploadId === uploadId);
+    if (eliminadas.length) setState(state.filter((c) => c.uploadId !== uploadId));
+    return eliminadas;
+  },
 };
 
 export const useDocumentCorrections = () =>
